@@ -1,3 +1,4 @@
+import 'package:credlawn/screens/follow_up_lead_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,7 +10,7 @@ import '../screens/new_card_login_screen.dart';
 import '../screens/today_login_list_screen.dart';
 import '../screens/month_login_list_screen.dart';
 import '../screens/cnr_lead_screen.dart';
-import '../screens/manager_cnr_lead_screen.dart'; 
+import '../screens/manager_cnr_lead_screen.dart';
 
 class CallingDataFragment extends StatefulWidget {
   final User user;
@@ -24,39 +25,44 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
   final List<Map<String, dynamic>> mockCallingData = [
     {
       'icon': Icons.phone,
-      'title': 'Normal Leads',
+      'title': 'Normal',
       'color': Colors.blue,
     },
     {
       'icon': Icons.phone_in_talk,
-      'title': 'Interested Leads',
+      'title': 'Interested',
       'color': Colors.orange,
     },
     {
       'icon': Icons.phone_forwarded,
-      'title': 'Pre Approved Leads',
+      'title': 'Pre Approved',
       'color': Colors.green,
+    },
+    {
+      'icon': Icons.call_missed,
+      'title': 'CNR',
+      'color': Colors.red,
+    },
+    {
+      'icon': Icons.calendar_today,
+      'title': 'Follow-up',
+      'color': Colors.purple,
+    },
+    {
+      'icon': Icons.today,
+      'title': 'Today\'s Login',
+      'color': Colors.green,
+    },
+    {
+      'icon': Icons.calendar_month,
+      'title': 'Month Login',
+      'color': Colors.teal,
     },
     {
       'icon': Icons.login,
       'title': 'New Login',
       'color': Colors.blue,
     },
-    {
-      'icon': Icons.call_missed,
-      'title': 'CNR Leads',
-      'color': Colors.red,
-    },
-    {
-      'icon': Icons.card_travel,
-      'title': 'Today Login',
-      'color': Colors.green,
-    },
-    {
-      'icon': Icons.card_travel,
-      'title': 'Month Login',
-      'color': Colors.green,
-    }
   ];
 
   @override
@@ -67,40 +73,56 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
         itemCount: mockCallingData.length,
         crossAxisCount: 3,
-        mainAxisSpacing: 6,
-        crossAxisSpacing: 6,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
         itemBuilder: (context, index) {
           return GestureDetector(
             onTap: () {
-              if (mockCallingData[index]['title'] == 'Interested Leads') {
+              if (mockCallingData[index]['title'] == 'Interested') {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => InterestedLeadsScreen(user: widget.user),
                   ),
                 );
-              } else if (mockCallingData[index]['title'] == 'Pre Approved Leads') {
+              } else if (mockCallingData[index]['title'] == 'Pre Approved') {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => PreApprovedLeadsScreen(user: widget.user),
                   ),
                 );
-              } else if (mockCallingData[index]['title'] == 'Normal Leads') {
+              } else if (mockCallingData[index]['title'] == 'Normal') {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => NormalLeadsScreen(user: widget.user),
                   ),
                 );
-              } else if (mockCallingData[index]['title'] == 'New Login') {
+              } else if (mockCallingData[index]['title'] == 'CNR') {
+                if (widget.user.designation != null && widget.user.designation == 'Branch Manager') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ManagerCnrLeadScreen(user: widget.user),
+                    ),
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CnrLeadScreen(user: widget.user),
+                    ),
+                  );
+                }
+              } else if (mockCallingData[index]['title'] == 'Follow-up') {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const NewCardLoginScreen(),
+                    builder: (context) => FollowUpLeadScreen(user: widget.user),
                   ),
                 );
-              } else if (mockCallingData[index]['title'] == 'Today Login') {
+              } else if (mockCallingData[index]['title'] == 'Today\'s Login') {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -114,23 +136,13 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
                     builder: (context) => MonthLoginListScreen(user: widget.user),
                   ),
                 );
-              } else if (mockCallingData[index]['title'] == 'CNR Leads') {
-                // Check if the user's designation is Branch Manager
-                if (widget.user.designation != null && widget.user.designation == 'Branch Manager') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ManagerCnrLeadScreen(user: widget.user), // Navigate to ManagerCnrLeadScreen
-                    ),
-                  );
-                } else {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CnrLeadScreen(user: widget.user), // Navigate to CnrLeadScreen
-                    ),
-                  );
-                }
+              } else if (mockCallingData[index]['title'] == 'New Login') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NewCardLoginScreen(),
+                  ),
+                );
               }
             },
             child: Container(
@@ -162,7 +174,7 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
                   Text(
                     mockCallingData[index]['title'],
                     style: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: 13,
                       color: Colors.black,
                     ),
                   ),

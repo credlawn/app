@@ -14,7 +14,7 @@ class HomeScreen extends StatefulWidget {
   final User user;
   final int selectedTab;
 
-  const HomeScreen({super.key, required this.user, this.selectedTab = 0});
+  const HomeScreen({super.key, required this.user, this.selectedTab = 2});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
