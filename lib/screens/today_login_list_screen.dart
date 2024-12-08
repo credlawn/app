@@ -6,27 +6,27 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:credlawn/custom/custom_color.dart';
 
-class CardLoginListScreen extends StatefulWidget {
+class TodayLoginListScreen extends StatefulWidget {
   final User user;
 
-  CardLoginListScreen({super.key, required this.user});
+  const TodayLoginListScreen({super.key, required this.user});
 
   @override
-  _CardLoginListScreenState createState() => _CardLoginListScreenState();
+  _TodayLoginListScreenState createState() => _TodayLoginListScreenState();
 }
 
-class _CardLoginListScreenState extends State<CardLoginListScreen> {
-  late Future<List<CardLoginListModel>> _cardLoginList;
+class _TodayLoginListScreenState extends State<TodayLoginListScreen> {
+  late Future<List<CardLoginListModel>> _todayLoginList;
 
   @override
   void initState() {
     super.initState();
-    _cardLoginList = fetchCardLoginData(widget.user.userId, widget.user.sid);
+    _todayLoginList = fetchTodayLoginData(widget.user.userId, widget.user.sid);
   }
 
-  Future<void> _refreshCardLoginList() async {
+  Future<void> _refreshTodayLoginList() async {
     setState(() {
-      _cardLoginList = fetchCardLoginData(widget.user.userId, widget.user.sid);
+      _todayLoginList = fetchTodayLoginData(widget.user.userId, widget.user.sid);
     });
   }
 
@@ -35,7 +35,7 @@ class _CardLoginListScreenState extends State<CardLoginListScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('Card Login List', style: GoogleFonts.poppins(color: Colors.white, fontSize: 20)),
+        title: Text('Today Login List', style: GoogleFonts.poppins(color: Colors.white, fontSize: 20)),
         backgroundColor: CustomColor.MainColor,
         elevation: 0.5,
       ),
@@ -43,9 +43,9 @@ class _CardLoginListScreenState extends State<CardLoginListScreen> {
         children: [
           Expanded(
             child: RefreshIndicator(
-              onRefresh: _refreshCardLoginList,
+              onRefresh: _refreshTodayLoginList,
               child: FutureBuilder<List<CardLoginListModel>>(
-                future: _cardLoginList,
+                future: _todayLoginList,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(
@@ -58,11 +58,11 @@ class _CardLoginListScreenState extends State<CardLoginListScreen> {
                   } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                     return Center(child: Text('No data available'));
                   } else {
-                    final cardLoginList = snapshot.data!;
+                    final todayLoginList = snapshot.data!;
                     return ListView.builder(
-                      itemCount: cardLoginList.length,
+                      itemCount: todayLoginList.length,
                       itemBuilder: (context, index) {
-                        final card = cardLoginList[index];
+                        final card = todayLoginList[index];
                         return Container(
                           margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 15),
                           decoration: BoxDecoration(
@@ -77,9 +77,10 @@ class _CardLoginListScreenState extends State<CardLoginListScreen> {
                             ],
                           ),
                           child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                             leading: CircleAvatar(
-                              child: Icon(Icons.person),
+                              backgroundColor: Colors.grey[100],
+                              child: Icon(Icons.person, color: CustomColor.MainColor),
                             ),
                             title: Text(
                               card.customerName,

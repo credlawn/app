@@ -3,11 +3,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../models/user.dart';
 import '../models/profile_model.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../models/user.dart';
-import '../models/profile_model.dart';
 import '../network/api_profile_helper.dart'; 
 import 'package:credlawn/custom/custom_color.dart';
-import 'package:credlawn/helpers/session_manager.dart';
 
 class ProfileScreen extends StatelessWidget {
   final User user;

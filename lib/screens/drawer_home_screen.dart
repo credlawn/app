@@ -6,7 +6,6 @@ import '../helpers/session_manager.dart';
 import 'login_screen.dart'; 
 import '../models/user.dart'; 
 import 'profile_screen.dart';  
-import 'card_login_list_screen.dart'; // Import the new screen
 import 'package:cached_network_image/cached_network_image.dart';  
 
 class DrawerHomeScreen extends StatelessWidget {
@@ -39,7 +38,7 @@ class DrawerHomeScreen extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const SizedBox(height: 15),
-                    Container(
+                    SizedBox(
                       height: 90,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(75),
@@ -80,18 +79,6 @@ class DrawerHomeScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => ProfileScreen(user: user)),
-                );
-              },
-            ),
-            // Add the new ListTile for the "Card Login List" option
-            ListTile(
-              leading: Icon(Icons.credit_card, color: CustomColor.MainColor, size: 30),
-              title: Text('Card Login List', style: GoogleFonts.poppins(color: CustomColor.MainColor, fontSize: 18)),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => CardLoginListScreen(user: user)), // Navigate to the CardLoginListScreen
                 );
               },
             ),

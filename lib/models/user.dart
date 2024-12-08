@@ -4,6 +4,7 @@ class User {
   final String sid;
   final String fullName;
   final String userId;
+  final String? designation;
   final String? userImage;
 
   final String? employeeName;
@@ -12,7 +13,6 @@ class User {
   final String? dateOfBirth;
   final String? gender;
   final String? department;
-  final String? designation;
   final String? mobileNo;
   final String? email;
   final String? age;
@@ -22,6 +22,7 @@ class User {
     required this.sid,
     required this.fullName,
     required this.userId,
+    this.designation,
     this.userImage,
     this.employeeName,
     this.employeeCode,
@@ -29,7 +30,6 @@ class User {
     this.dateOfBirth,
     this.gender,
     this.department,
-    this.designation,
     this.mobileNo,
     this.email,
     this.age,

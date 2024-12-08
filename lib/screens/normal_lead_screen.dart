@@ -16,7 +16,7 @@ import 'lead_status_update_screen.dart'; // Import the new screen
 class NormalLeadsScreen extends StatefulWidget {
   final User user;
 
-  NormalLeadsScreen({required this.user});
+  const NormalLeadsScreen({super.key, required this.user});
 
   @override
   _NormalLeadsScreenState createState() => _NormalLeadsScreenState();
@@ -31,7 +31,7 @@ class _NormalLeadsScreenState extends State<NormalLeadsScreen> with WidgetsBindi
   @override
   void initState() {
     super.initState();
-    _normalLeads = fetchNormalCallingData(widget.user.userId, widget.user.sid);
+    _normalLeads = fetchNormalCallingData(widget.user.userId, widget.user.sid, widget.user.designation);
     _lastCallDuration = '';
     WidgetsBinding.instance.addObserver(this);
   }
@@ -139,7 +139,7 @@ class _NormalLeadsScreenState extends State<NormalLeadsScreen> with WidgetsBindi
 
   Future<void> _refreshLeads() async {
     setState(() {
-      _normalLeads = fetchNormalCallingData(widget.user.userId, widget.user.sid);
+      _normalLeads = fetchNormalCallingData(widget.user.userId, widget.user.sid, widget.user.designation);
     });
   }
 
@@ -192,7 +192,8 @@ class _NormalLeadsScreenState extends State<NormalLeadsScreen> with WidgetsBindi
                           child: ListTile(
                             contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
                             leading: CircleAvatar(
-                              child: Icon(Icons.person),
+                              backgroundColor: Colors.grey[100],
+                              child: Icon(Icons.person, color: CustomColor.MainColor),
                             ),
                             title: InkWell(
                               onTap: () {
@@ -203,6 +204,7 @@ class _NormalLeadsScreenState extends State<NormalLeadsScreen> with WidgetsBindi
                                     builder: (context) => LeadStatusUpdateScreen(
                                       leadName: lead.name,  // Pass the lead name here
                                       customerName: lead.customerName,
+                                      mobileNo: lead.mobileNo,
                                     ),
                                   ),
                                 );
@@ -221,6 +223,7 @@ class _NormalLeadsScreenState extends State<NormalLeadsScreen> with WidgetsBindi
                                     builder: (context) => LeadStatusUpdateScreen(
                                       leadName: lead.name, // Pass the lead name here
                                       customerName: lead.customerName,
+                                      mobileNo: lead.mobileNo,
                                     ),
                                   ),
                                 );

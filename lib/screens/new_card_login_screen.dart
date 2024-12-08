@@ -1,9 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'package:credlawn/custom/custom_text_field.dart';
 import 'package:credlawn/custom/pan_field.dart';
 import 'package:credlawn/custom/mobile_field.dart';
 import 'package:credlawn/custom/customer_name_field.dart';
@@ -14,7 +12,7 @@ import 'package:credlawn/network/api_profile_helper.dart';
 import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/models/user.dart';
 import 'package:credlawn/models/profile_model.dart';
-import 'card_login_list_screen.dart';
+import 'today_login_list_screen.dart';
 
 class NewCardLoginScreen extends StatefulWidget {
   const NewCardLoginScreen({super.key});
@@ -30,10 +28,11 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
   final _panNoController = TextEditingController();
   final _referenceNoController = TextEditingController();
 
-  String? selectIpStatus, selectKycStatus, selectIncompleteReason;
+  String? selectIpStatus, selectKycStatus, selectIncompleteReason, selectIpRejectedReason;
   List<String> ipStatus = ['IP Approved', 'IP Rejected', 'Incomplete Journey'];
   List<String> kycStatus = ['VKYC Success', 'VKYC Pending', 'BKYC'];
   List<String> incompleteReason = ['Docs Not Available', 'Customer Denied'];
+  List<String> ipRejectedReason = ['Recently Applied', 'No Offer'];
 
   @override
   Widget build(BuildContext context) {
@@ -56,13 +55,12 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
                   SizedBox(height: 15),
                   MobileField(controller: _mobileNoController, label: 'Mobile No'),
                   SizedBox(height: 15),
-                  PanCardField(controller: _panNoController),
-                  SizedBox(height: 15),
                   _buildDropdown(ipStatus, 'Select IP Status', selectIpStatus, (value) {
                     setState(() {
                       selectIpStatus = value;
                       selectKycStatus = null;
                       selectIncompleteReason = null;
+                      selectIpRejectedReason = null;
                       _referenceNoController.clear();
                     });
                   }),
@@ -73,17 +71,23 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
                         selectKycStatus = value;
                       });
                     }),
-                  SizedBox(height: 15),
-                  if (selectIpStatus == 'IP Approved' && selectKycStatus != null)
-                    ReferenceNoField(controller: _referenceNoController, enable: true),
-                  SizedBox(height: 15),
                   if (selectIpStatus == 'Incomplete Journey') 
                     _buildDropdown(incompleteReason, 'Select Incomplete Reason', selectIncompleteReason, (value) {
                       setState(() {
                         selectIncompleteReason = value;
                       });
                     }),
+                  if (selectIpStatus == 'IP Rejected')
+                    _buildDropdown(ipRejectedReason, 'Select Rejection Reason', selectIpRejectedReason, (value) {
+                      setState(() {
+                        selectIpRejectedReason = value;
+                      });
+                    }), 
                   SizedBox(height: 15),
+                  if (selectIpStatus == 'IP Approved' && selectKycStatus != null)
+                    ReferenceNoField(controller: _referenceNoController, enable: true),
+
+                  SizedBox(height: 20),
                   CustomColor.customButton(
                     context: context,
                     text: 'Submit',
@@ -129,26 +133,33 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
   }
 
   Future<void> submitDataToServer() async {
-    if (_customerNameController.text.isEmpty)
+    if (_customerNameController.text.isEmpty) {
       return CustomColor.showErrorSnackBar(context, 'Please enter Customer Full Name');
+    }
 
-    if (_mobileNoController.text.length < 10)
+    if (_mobileNoController.text.length < 10) {
       return CustomColor.showErrorSnackBar(context, 'Please enter correct mobile number');
+    }
 
-    if (_panNoController.text.length < 10) 
-      return CustomColor.showErrorSnackBar(context, 'Please enter correct PAN number');
-
-    if (selectIpStatus?.isEmpty ?? true)
+    if (selectIpStatus?.isEmpty ?? true) {
       return CustomColor.showErrorSnackBar(context, 'Please select IP Status');
+    }
 
-    if (selectIpStatus == 'IP Approved' && (selectKycStatus?.isEmpty ?? true))
+    if (selectIpStatus == 'IP Approved' && (selectKycStatus?.isEmpty ?? true)) {
       return CustomColor.showErrorSnackBar(context, 'Please select KYC Status');
+    }
 
-    if (selectIpStatus == 'IP Approved' && _referenceNoController.text.length != 16) 
+    if (selectIpStatus == 'IP Approved' && _referenceNoController.text.length != 16) {
       return CustomColor.showErrorSnackBar(context, 'Please enter correct Reference No');
+    }
 
-    if (selectIpStatus == 'Incomplete Journey' && (selectIncompleteReason?.isEmpty ?? true))
+    if (selectIpStatus == 'Incomplete Journey' && (selectIncompleteReason?.isEmpty ?? true)) {
       return CustomColor.showErrorSnackBar(context, 'Please select Incomplete Reason');
+    }
+
+    if (selectIpStatus == 'IP Rejected' && (selectIpRejectedReason?.isEmpty ?? true)) {
+      return CustomColor.showErrorSnackBar(context, 'Please select Rejection Reason');
+    }
 
     setState(() {
       _isLoading = true;
@@ -166,6 +177,7 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
         'ip_status': selectIpStatus,
         'kyc_status': selectKycStatus,
         'incomplete_reason': selectIncompleteReason,
+        'rejection_reason': selectIpRejectedReason,
       };
 
       User? user = await SessionManager.getSessionData();
@@ -178,13 +190,8 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
       String userId = user.userId;
 
       ProfileModel? profile = await fetchProfileData(userId, sid);
-      if (profile != null) {
-        body['employee_code'] = profile.employeeCode;
-      } else {
-        CustomColor.showErrorSnackBar(context, 'Profile data not found. Please try again.');
-        return;
-      }
-
+      body['employee_code'] = profile.employeeCode;
+    
       final response = await http.post(
         url,
         headers: {
@@ -200,11 +207,11 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
         Future.delayed(Duration(milliseconds: 300), () {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => CardLoginListScreen(user: user)),
+            MaterialPageRoute(builder: (context) => TodayLoginListScreen(user: user)),
           );
         });
       } else {
-        CustomColor.showErrorSnackBar(context, 'Failed to submit Data');
+        CustomColor.showErrorSnackBar(context, 'Please log out & log in again');
         return;
       }
     } catch (e) {

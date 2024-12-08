@@ -6,7 +6,7 @@ class CustomerNameField extends StatefulWidget {
   final TextEditingController controller;
   final bool enable;
 
-  const CustomerNameField({Key? key, required this.controller, this.enable = true}) : super(key: key);
+  const CustomerNameField({super.key, required this.controller, this.enable = true});
 
   @override
   _CustomerNameFieldState createState() => _CustomerNameFieldState();

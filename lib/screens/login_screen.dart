@@ -12,6 +12,8 @@ import 'package:credlawn/network/api_network.dart';
 import 'package:credlawn/network/api_login_helper.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }

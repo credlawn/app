@@ -17,7 +17,7 @@ import 'lead_status_update_screen.dart'; // Import the LeadStatusUpdateScreen
 class InterestedLeadsScreen extends StatefulWidget {
   final User user;
 
-  InterestedLeadsScreen({required this.user});
+  const InterestedLeadsScreen({super.key, required this.user});
 
   @override
   _InterestedLeadsScreenState createState() => _InterestedLeadsScreenState();
@@ -32,7 +32,7 @@ class _InterestedLeadsScreenState extends State<InterestedLeadsScreen> with Widg
   @override
   void initState() {
     super.initState();
-    _interestedLeads = fetchInterestedCallingData(widget.user.userId, widget.user.sid);
+    _interestedLeads = fetchInterestedCallingData(widget.user.userId, widget.user.sid, widget.user.designation);
     _lastCallDuration = '';
     WidgetsBinding.instance.addObserver(this);
   }
@@ -59,8 +59,8 @@ class _InterestedLeadsScreenState extends State<InterestedLeadsScreen> with Widg
 
   void _openWhatsApp(String mobileNo) async {
     final mobileWithCode = '+91$mobileNo';
-    final String androidUrl = "whatsapp://send?phone=$mobileWithCode&text=Hello";
-    final String iosUrl = "https://wa.me/$mobileWithCode?text=${Uri.parse('Hello')}";
+    final String androidUrl = "whatsapp://send?phone=$mobileWithCode&text=https://cipl.me/tata";
+    final String iosUrl = "https://wa.me/$mobileWithCode?text=${Uri.parse('https://cipl.me/tata')}";
 
     try {
       if (Platform.isIOS) {
@@ -140,7 +140,7 @@ class _InterestedLeadsScreenState extends State<InterestedLeadsScreen> with Widg
 
   Future<void> _refreshLeads() async {
     setState(() {
-      _interestedLeads = fetchInterestedCallingData(widget.user.userId, widget.user.sid);
+      _interestedLeads = fetchInterestedCallingData(widget.user.userId, widget.user.sid, widget.user.designation);
     });
   }
 
@@ -195,7 +195,9 @@ class _InterestedLeadsScreenState extends State<InterestedLeadsScreen> with Widg
                             contentPadding: const EdgeInsets.symmetric(
                                 vertical: 10, horizontal: 15),
                             leading: CircleAvatar(
-                              child: Icon(Icons.person),
+                              backgroundColor: Colors.grey[100],
+                              child: Icon(Icons.person, color: CustomColor.MainColor),
+                              
                             ),
                             title: InkWell(
                               onTap: () {
@@ -205,6 +207,7 @@ class _InterestedLeadsScreenState extends State<InterestedLeadsScreen> with Widg
                                     builder: (context) => LeadStatusUpdateScreen(
                                       leadName: lead.name,
                                       customerName: lead.customerName,
+                                      mobileNo: lead.mobileNo,
                                     ),
                                   ),
                                 );
@@ -225,6 +228,7 @@ class _InterestedLeadsScreenState extends State<InterestedLeadsScreen> with Widg
                                     builder: (context) => LeadStatusUpdateScreen(
                                       leadName: lead.name,
                                       customerName: lead.customerName,
+                                      mobileNo: lead.mobileNo,
                                     ),
                                   ),
                                 );

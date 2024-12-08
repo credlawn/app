@@ -6,7 +6,10 @@ import '../screens/normal_lead_screen.dart';
 import '../screens/interested_lead_screen.dart';
 import '../screens/pre_approved_lead_screen.dart';
 import '../screens/new_card_login_screen.dart';
-import '../screens/card_login_list_screen.dart';
+import '../screens/today_login_list_screen.dart';
+import '../screens/month_login_list_screen.dart';
+import '../screens/cnr_lead_screen.dart';
+import '../screens/manager_cnr_lead_screen.dart'; 
 
 class CallingDataFragment extends StatefulWidget {
   final User user;
@@ -37,13 +40,22 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
     {
       'icon': Icons.login,
       'title': 'New Login',
-      'count': '',
       'color': Colors.blue,
     },
     {
+      'icon': Icons.call_missed,
+      'title': 'CNR Leads',
+      'color': Colors.red,
+    },
+    {
       'icon': Icons.card_travel,
-      'title': 'Card Login List',
-      'color': Colors.green, 
+      'title': 'Today Login',
+      'color': Colors.green,
+    },
+    {
+      'icon': Icons.card_travel,
+      'title': 'Month Login',
+      'color': Colors.green,
     }
   ];
 
@@ -88,13 +100,37 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
                     builder: (context) => const NewCardLoginScreen(),
                   ),
                 );
-              } else if (mockCallingData[index]['title'] == 'Card Login List') {
+              } else if (mockCallingData[index]['title'] == 'Today Login') {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => CardLoginListScreen(user: widget.user),
+                    builder: (context) => TodayLoginListScreen(user: widget.user),
                   ),
                 );
+              } else if (mockCallingData[index]['title'] == 'Month Login') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MonthLoginListScreen(user: widget.user),
+                  ),
+                );
+              } else if (mockCallingData[index]['title'] == 'CNR Leads') {
+                // Check if the user's designation is Branch Manager
+                if (widget.user.designation != null && widget.user.designation == 'Branch Manager') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ManagerCnrLeadScreen(user: widget.user), // Navigate to ManagerCnrLeadScreen
+                    ),
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CnrLeadScreen(user: widget.user), // Navigate to CnrLeadScreen
+                    ),
+                  );
+                }
               }
             },
             child: Container(

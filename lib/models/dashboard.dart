@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'sample_page.dart'; // Import your sample page
+import '../screens/sample_screen.dart';
 
 class Dashboard {
   IconData? icon;
@@ -36,7 +36,7 @@ class DashboardScreen extends StatelessWidget {
               if (index == 0) {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SamplePage()), // Navigate to SamplePage
+                  MaterialPageRoute(builder: (context) => const SampleScreen()), // Navigate to SamplePage
                 );
               }
               // You can add more navigation conditions based on other icons

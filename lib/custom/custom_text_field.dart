@@ -32,7 +32,7 @@ class CustomTextField extends StatefulWidget {
 }
 
 class _CustomTextFieldState extends State<CustomTextField> {
-  FocusNode _focusNode = FocusNode(); // Focus node to manage the focus state
+  final FocusNode _focusNode = FocusNode(); // Focus node to manage the focus state
 
   @override
   void initState() {

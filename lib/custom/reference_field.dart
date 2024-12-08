@@ -6,7 +6,7 @@ class ReferenceNoField extends StatefulWidget {
   final TextEditingController controller;
   final bool enable;
 
-  const ReferenceNoField({Key? key, required this.controller, this.enable = true}) : super(key: key);
+  const ReferenceNoField({super.key, required this.controller, this.enable = true});
 
   @override
   _ReferenceNoFieldState createState() => _ReferenceNoFieldState();

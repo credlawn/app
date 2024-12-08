@@ -6,7 +6,7 @@ class PanCardField extends StatefulWidget {
   final TextEditingController controller;
   final bool enable;
 
-  const PanCardField({Key? key, required this.controller, this.enable = true}) : super(key: key);
+  const PanCardField({super.key, required this.controller, this.enable = true});
 
   @override
   _PanCardFieldState createState() => _PanCardFieldState();

@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:credlawn/models/user.dart';
 import 'package:credlawn/network/api_network.dart';
 import 'package:credlawn/helpers/session_manager.dart';

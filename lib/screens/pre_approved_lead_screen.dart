@@ -17,7 +17,7 @@ import 'lead_status_update_screen.dart'; // Import LeadStatusUpdateScreen
 class PreApprovedLeadsScreen extends StatefulWidget {
   final User user;
 
-  PreApprovedLeadsScreen({required this.user});
+  const PreApprovedLeadsScreen({super.key, required this.user});
 
   @override
   _PreApprovedLeadsScreenState createState() => _PreApprovedLeadsScreenState();
@@ -32,7 +32,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
   @override
   void initState() {
     super.initState();
-    _preApprovedLeads = fetchPreApprovedCallingData(widget.user.userId, widget.user.sid);
+    _preApprovedLeads = fetchPreApprovedCallingData(widget.user.userId, widget.user.sid, widget.user.designation);
     _lastCallDuration = '';
     WidgetsBinding.instance.addObserver(this);
   }
@@ -59,8 +59,8 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
 
   void _openWhatsApp(String mobileNo) async {
     final mobileWithCode = '+91$mobileNo';
-    final String androidUrl = "whatsapp://send?phone=$mobileWithCode&text=Hello";
-    final String iosUrl = "https://wa.me/$mobileWithCode?text=${Uri.parse('Hello')}";
+    final String androidUrl = "whatsapp://send?phone=$mobileWithCode&text=https://cipl.me/tata";
+    final String iosUrl = "https://wa.me/$mobileWithCode?text=${Uri.parse('https://cipl.me/tata')}";
 
     try {
       if (Platform.isIOS) {
@@ -140,7 +140,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
 
   Future<void> _refreshLeads() async {
     setState(() {
-      _preApprovedLeads = fetchPreApprovedCallingData(widget.user.userId, widget.user.sid);
+      _preApprovedLeads = fetchPreApprovedCallingData(widget.user.userId, widget.user.sid, widget.user.designation);
     });
   }
 
@@ -195,7 +195,8 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
                             contentPadding: const EdgeInsets.symmetric(
                                 vertical: 10, horizontal: 15),
                             leading: CircleAvatar(
-                              child: Icon(Icons.person),
+                              backgroundColor: Colors.grey[100],
+                              child: Icon(Icons.person, color: CustomColor.MainColor),
                             ),
                             title: InkWell(
                               onTap: () {
@@ -205,6 +206,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
                                     builder: (context) => LeadStatusUpdateScreen(
                                       leadName: lead.name,
                                       customerName: lead.customerName,
+                                      mobileNo: lead.mobileNo,
                                     ),
                                   ),
                                 );
@@ -225,6 +227,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
                                     builder: (context) => LeadStatusUpdateScreen(
                                       leadName: lead.name,
                                       customerName: lead.customerName,
+                                      mobileNo: lead.mobileNo,
                                     ),
                                   ),
                                 );

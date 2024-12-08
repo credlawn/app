@@ -10,10 +10,12 @@ import 'package:credlawn/models/user.dart';
 class LeadStatusUpdateScreen extends StatefulWidget {
   final String leadName;
   final String customerName;
+  final String mobileNo;
 
-  LeadStatusUpdateScreen({required this.leadName, required this.customerName});
+  const LeadStatusUpdateScreen({super.key, required this.leadName, required this.customerName, required this.mobileNo});
 
   @override
+
   _LeadStatusUpdateScreenState createState() => _LeadStatusUpdateScreenState();
 }
 
@@ -25,7 +27,8 @@ class _LeadStatusUpdateScreenState extends State<LeadStatusUpdateScreen> {
     'Login Done',
     'CNR',
     'Not Interested',
-    'Follow-up'
+    'Follow-up',
+    'Already Carded'
   ];
 
   @override
@@ -48,11 +51,11 @@ class _LeadStatusUpdateScreenState extends State<LeadStatusUpdateScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     child: Text(
-                      'Customer Name: ${widget.customerName}',
-                      style: GoogleFonts.poppins(fontSize: 18, color: CustomColor.MainColor),
+                      'Customer Name: ${widget.customerName}\n\nMobile Number: ${widget.mobileNo}',
+                      style: GoogleFonts.poppins(fontSize: 15, color: CustomColor.MainColor),
                     ),
                   ),
-                  SizedBox(height: 20),
+                  SizedBox(height: 30),
                   _buildDropdown(leadStatusOptions, 'Select Lead Status', selectedLeadStatus, (value) {
                     setState(() {
                       selectedLeadStatus = value;
@@ -191,7 +194,7 @@ class _LeadStatusUpdateScreenState extends State<LeadStatusUpdateScreen> {
         CustomColor.showSuccessSnackBar(context, 'Lead Status Updated Successfully');
         Navigator.pop(context);
       } else {
-        CustomColor.showErrorSnackBar(context, 'Failed to update lead status: ${response.body}');
+        CustomColor.showErrorSnackBar(context, 'Please log out & log in again.');
       }
     } catch (e) {
       CustomColor.showErrorSnackBar(context, 'Error: $e');
