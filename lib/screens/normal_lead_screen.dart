@@ -1,9 +1,9 @@
+// ignore_for_file: library_private_types_in_public_api, unused_field, unused_element
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:call_log/call_log.dart';
-import 'package:intl/intl.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:credlawn/custom/custom_color.dart';
 import '../network/api_calling_data_helper.dart';
 import '../models/calling_data_model.dart';

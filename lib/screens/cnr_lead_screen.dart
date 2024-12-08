@@ -1,3 +1,5 @@
+// ignore_for_file: unused_field
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
@@ -17,6 +19,7 @@ class CnrLeadScreen extends StatefulWidget {
   const CnrLeadScreen({super.key, required this.user});
 
   @override
+  // ignore: library_private_types_in_public_api
   _CnrLeadsScreenState createState() => _CnrLeadsScreenState();
 }
 

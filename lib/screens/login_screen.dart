@@ -1,7 +1,8 @@
+// ignore_for_file: library_private_types_in_public_api, unused_field
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/models/user.dart';
 import 'home_screen.dart';
 import 'package:google_fonts/google_fonts.dart';

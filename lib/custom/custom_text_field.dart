@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Required import for LengthLimitingTextInputFormatter
+import 'package:flutter/services.dart'; 
 import 'package:google_fonts/google_fonts.dart';
-import 'custom_color.dart'; // Assuming this is for styling
+
 
 class CustomTextField extends StatefulWidget {
   const CustomTextField({
@@ -28,6 +28,7 @@ class CustomTextField extends StatefulWidget {
   final Color borderColor; // Define borderColor as a parameter
 
   @override
+  // ignore: library_private_types_in_public_api
   _CustomTextFieldState createState() => _CustomTextFieldState();
 }
 

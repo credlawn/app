@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'package:credlawn/custom/pan_field.dart';
 import 'package:credlawn/custom/mobile_field.dart';
 import 'package:credlawn/custom/customer_name_field.dart';
 import 'package:credlawn/custom/reference_field.dart';
