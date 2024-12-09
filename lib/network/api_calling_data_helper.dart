@@ -17,7 +17,7 @@ Future<List<CallingDataModel>> fetchNormalCallingData(String userId, String sid,
     filters = '[["email", "=", "$userId"], ["data_type", "=", "Normal Leads"], ["lead_status", "=", "New Lead"]]';
   }
 
-  final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status"]';
+  final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status", "update_date"]';
   final orderBy = 'creation asc';
   final noLimit = '40';
 
@@ -55,7 +55,7 @@ Future<List<CallingDataModel>> fetchInterestedCallingData(String userId, String 
     filters = '[["email", "=", "$userId"], ["data_type", "=", "Interested Leads"], ["lead_status", "=", "New Lead"]]';
   }
 
-  final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status"]';
+  final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status", "update_date"]';
   final orderBy = 'creation asc';
   final noLimit = '40';
 
@@ -93,7 +93,7 @@ Future<List<CallingDataModel>> fetchPreApprovedCallingData(String userId, String
     filters = '[["email", "=", "$userId"], ["data_type", "=", "Pre Approved Leads"], ["lead_status", "=", "New Lead"]]';
   }
 
-  final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status"]';
+  final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status", "update_date"]';
   final orderBy = 'creation asc';
   final noLimit = '30';
 
@@ -131,7 +131,7 @@ Future<List<CallingDataModel>> fetchCnrCallingData(String userId, String sid, St
     filters = '[["email", "=", "$userId"], ["lead_status", "=", "CNR"]]';
   }
 
-  final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status"]';
+  final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status", "update_date"]';
   final orderBy = 'creation asc';
   final noLimit = '100';
 
@@ -169,7 +169,7 @@ Future<List<CallingDataModel>> fetchFollowUpCallingData(String userId, String si
     filters = '[["email", "=", "$userId"], ["lead_status", "=", "Follow-up"], ["follow_up_date", "=", "$today"]]';
   }
 
-  final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status"]';
+  final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status", "update_date"]';
   final orderBy = 'creation asc';
   final noLimit = '30';
 

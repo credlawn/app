@@ -12,6 +12,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'lead_status_update_screen.dart';
+import 'package:intl/intl.dart';
 
 class CnrLeadScreen extends StatefulWidget {
   final User user;
@@ -143,6 +144,15 @@ class _CnrLeadsScreenState extends State<CnrLeadScreen> with WidgetsBindingObser
       _cnrLeads = fetchCnrCallingData(widget.user.userId, widget.user.sid, widget.user.designation);
     });
   }
+  String _formatDate(String dateString) {
+    if (dateString.isEmpty) return '';
+    try {
+     final DateTime date = DateFormat("yyyy-MM-dd HH:mm:ss.SSSSSS").parse(dateString);
+      return DateFormat('dd-MMM hh:mm a').format(date);
+      } catch (e) {
+        return dateString;
+      }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -212,7 +222,7 @@ class _CnrLeadsScreenState extends State<CnrLeadScreen> with WidgetsBindingObser
                               },
                               child: Text(
                                 lead.customerName,
-                                style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500),
+                                style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w500, color: CustomColor.MainColor),
                               ),
                             ),
                             subtitle: InkWell(
@@ -230,8 +240,8 @@ class _CnrLeadsScreenState extends State<CnrLeadScreen> with WidgetsBindingObser
                                 );
                               },
                               child: Text(
-                                lead.leadStatus,
-                                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.blue),
+                                _formatDate(lead.updateDate),
+                                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.red),
                               ),
                             ),
                             trailing: Row(
@@ -240,7 +250,7 @@ class _CnrLeadsScreenState extends State<CnrLeadScreen> with WidgetsBindingObser
                                 IconButton(
                                   icon: Icon(
                                     Icons.chat,
-                                    size: 30,
+                                    size: 22,
                                     color: Colors.greenAccent.shade700,
                                   ),
                                   onPressed: () => _openWhatsApp(lead.mobileNo),

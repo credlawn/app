@@ -84,7 +84,7 @@ class _TodayLoginListScreenState extends State<TodayLoginListScreen> {
                             ),
                             title: Text(
                               card.customerName,
-                              style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500),
+                              style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500, color: CustomColor.MainColor),
                             ),
                             subtitle: Text(
                               card.punchingDate,
@@ -96,7 +96,7 @@ class _TodayLoginListScreenState extends State<TodayLoginListScreen> {
                               children: [
                                 Text(
                                   card.ipStatus,
-                                  style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.blue),
+                                  style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.teal),
                                 ),
                                 SizedBox(height: 5),
                                 Text(

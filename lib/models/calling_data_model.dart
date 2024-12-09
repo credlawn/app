@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 
 class CallingDataModel {
   final String name;
@@ -9,7 +10,8 @@ class CallingDataModel {
   final String email;
   final String leadStatus;
   final String remarks;
-  
+  final String updateDate;
+
   CallingDataModel({
     required this.name,
     required this.customerName,
@@ -20,6 +22,7 @@ class CallingDataModel {
     required this.email,
     required this.leadStatus,
     required this.remarks,
+    required this.updateDate,
   });
 
   factory CallingDataModel.fromJson(Map<String, dynamic> json) {
@@ -33,9 +36,21 @@ class CallingDataModel {
       email: json['email'] ?? '',
       leadStatus: json['lead_status'] ?? '',
       remarks: json['remarks'] ?? '',
+      updateDate: json['update_date'] ?? '',
     );
   }
 
+  static String _formatDate(String date) {
+    if (date.isEmpty) {
+      return '';
+    }
+    try {
+      final parsedDate = DateFormat('dd-MM-yyyy').parse(date);
+      return DateFormat('dd-MM-yyyy').format(parsedDate);
+    } catch (e) {
+      return date;
+    }
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -43,9 +58,11 @@ class CallingDataModel {
       'mobile_no': mobileNo,
       'data_status': dataStatus,
       'data_type': dataType,
+      'employee_name': employeeName,
       'email': email,
       'lead_status': leadStatus,
       'remarks': remarks,
+      'update_date': updateDate,
     };
   }
 }

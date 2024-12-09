@@ -212,7 +212,7 @@ class _FollowUpLeadsScreenState extends State<FollowUpLeadScreen> with WidgetsBi
                               },
                               child: Text(
                                 lead.customerName,
-                                style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500),
+                                style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w500, color: CustomColor.MainColor),
                               ),
                             ),
                             subtitle: InkWell(
@@ -231,7 +231,7 @@ class _FollowUpLeadsScreenState extends State<FollowUpLeadScreen> with WidgetsBi
                               },
                               child: Text(
                                 lead.leadStatus,
-                                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.blue),
+                                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.green),
                               ),
                             ),
                             trailing: Row(

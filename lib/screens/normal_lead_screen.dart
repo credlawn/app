@@ -211,7 +211,7 @@ class _NormalLeadsScreenState extends State<NormalLeadsScreen> with WidgetsBindi
                               },
                               child: Text(
                                 lead.customerName,
-                                style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500),
+                                style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w500, color: CustomColor.MainColor),
                               ),
                             ),
                             subtitle: InkWell(
@@ -228,10 +228,12 @@ class _NormalLeadsScreenState extends State<NormalLeadsScreen> with WidgetsBindi
                                   ),
                                 );
                               },
+                              
                               child: Text(
                                 lead.leadStatus,
-                                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.blue),
+                                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.teal),
                               ),
+                  
                             ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -239,7 +241,7 @@ class _NormalLeadsScreenState extends State<NormalLeadsScreen> with WidgetsBindi
                                 IconButton(
                                   icon: Icon(
                                     Icons.chat,
-                                    size: 30,
+                                    size: 22,
                                     color: Colors.greenAccent.shade700,
                                   ),
                                   onPressed: () => _openWhatsApp(lead.mobileNo),
