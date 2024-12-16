@@ -240,7 +240,7 @@ class _FollowUpLeadsScreenState extends State<FollowUpLeadScreen> with WidgetsBi
                                 IconButton(
                                   icon: Icon(
                                     Icons.chat,
-                                    size: 30,
+                                    size: 22,
                                     color: Colors.greenAccent.shade700,
                                   ),
                                   onPressed: () => _openWhatsApp(lead.mobileNo),

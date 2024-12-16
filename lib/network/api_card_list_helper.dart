@@ -41,8 +41,9 @@ Future<List<CardLoginListModel>> fetchMonthLoginData(String userId, String sid) 
   final filters = '[["email", "=", "$userId"], ["punching_date", ">=", "$firstDayOfMonth"], ["punching_date", "<=", "$lastDayOfMonth"]]'; 
   final fields = '["name", "customer_name", "mobile_no", "punching_date", "ip_status", "pan_no", "kyc_status", "incomplete_reason", "employee_name", "reference_no"]';
   final orderBy = 'creation desc';
+  final noLimit = '100';
 
-  final url = '${ApiNetwork.fetchCardLoginData}?order_by=${Uri.encodeQueryComponent(orderBy)}&filters=${Uri.encodeQueryComponent(filters)}&fields=${Uri.encodeQueryComponent(fields)}';
+  final url = '${ApiNetwork.fetchCardLoginData}?order_by=${Uri.encodeQueryComponent(orderBy)}&filters=${Uri.encodeQueryComponent(filters)}&fields=${Uri.encodeQueryComponent(fields)}&limit=${Uri.encodeQueryComponent(noLimit)}';
 
   try {
     final response = await http.get(
