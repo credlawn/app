@@ -12,7 +12,6 @@ class LeadStatusUpdateScreen extends StatefulWidget {
   final String leadName;
   String customerName;  // Changed to mutable
   final String mobileNo;
-
   final _referenceNoController = TextEditingController();
 
   LeadStatusUpdateScreen({
@@ -31,6 +30,7 @@ class _LeadStatusUpdateScreenState extends State<LeadStatusUpdateScreen> {
   bool _isEditingCustomerName = false;
   String _editableCustomerName = '';
   TextEditingController _customerNameController = TextEditingController();
+  TextEditingController _referenceNoController = TextEditingController();
 
   // Selected values for dropdowns
   String? selectedLeadStatus;
@@ -343,16 +343,29 @@ class _LeadStatusUpdateScreenState extends State<LeadStatusUpdateScreen> {
     }
   }
 
-  // Submit data to the server (kept as is)
   Future<void> submitDataToServer() async {
     if (selectedLeadStatus?.isEmpty ?? true) {
       return CustomColor.showErrorSnackBar(context, 'Please select Lead Status');
     }
-
-    // Follow-up Date validation for "Follow-up" status
     if (selectedLeadStatus == 'Follow-up' && followUpDate == null) {
       return CustomColor.showErrorSnackBar(context, 'Please select Follow-up Date');
     }
+    if (selectedLeadStatus == 'Login Done' && (selectedIpStatus?.isEmpty ?? true)) {
+      return CustomColor.showErrorSnackBar(context, 'Please select IP Status');
+    }
+    if (selectedIpStatus == 'IP Approved' && (selectedKycStatus?.isEmpty ?? true)) {
+      return CustomColor.showErrorSnackBar(context, 'Please select KYC Status');
+    }
+    if (selectedIpStatus == 'Incomplete Journey' && (selectedIncompleteReason?.isEmpty ?? true)) {
+      return CustomColor.showErrorSnackBar(context, 'Please select Incomplete Reason');
+    }
+    if (selectedIpStatus == 'IP Rejected' && (selectedRejectionReason?.isEmpty ?? true)) {
+      return CustomColor.showErrorSnackBar(context, 'Please select Rejection Reason');
+    }
+    if (selectedIpStatus == 'IP Approved' && _referenceNoController.text.length != 16) {
+      return CustomColor.showErrorSnackBar(context, 'Please enter correct Reference No');
+    }
+
 
     setState(() {
       _isLoading = true;
