@@ -28,6 +28,12 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: Colors.white,
+        colorScheme: ColorScheme.light(
+          primary: Colors.blue,
+          secondary: Colors.blueAccent,
+        ),
+        dialogBackgroundColor: Colors.white,
+        buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary),
       ),
       home: FutureBuilder<User?>(
         future: _checkSession(context),

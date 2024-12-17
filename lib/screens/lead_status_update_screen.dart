@@ -152,7 +152,6 @@ class _LeadStatusUpdateScreenState extends State<LeadStatusUpdateScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 10),
 
                   // Display Mobile Number (Non-editable)
                   Row(
@@ -165,7 +164,7 @@ class _LeadStatusUpdateScreenState extends State<LeadStatusUpdateScreen> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 30),
+                  SizedBox(height: 20),
 
                   // Dropdown for Lead Status
                   _buildDropdown(
@@ -186,7 +185,7 @@ class _LeadStatusUpdateScreenState extends State<LeadStatusUpdateScreen> {
                       });
                     },
                   ),
-                  SizedBox(height: 15),
+                  SizedBox(height: 10),
 
                   // Conditional rendering of other dropdowns based on Lead Status selection
                   if (selectedLeadStatus == 'Login Done') 
@@ -205,7 +204,7 @@ class _LeadStatusUpdateScreenState extends State<LeadStatusUpdateScreen> {
                         });
                       },
                     ),
-                  SizedBox(height: 15),
+                  SizedBox(height: 10),
 
                   // Show KYC Status dropdown if IP Approved is selected
                   if (selectedIpStatus == 'IP Approved') 
@@ -245,14 +244,13 @@ class _LeadStatusUpdateScreenState extends State<LeadStatusUpdateScreen> {
                         });
                       },
                     ),
-                  
-                  SizedBox(height: 15),
+                  SizedBox(height: 10),
                   if (selectedIpStatus == 'IP Approved' && selectedKycStatus != null)
                     ReferenceNoField(controller: widget._referenceNoController, enable: true),
                   
                   if (selectedLeadStatus == 'Follow-up') 
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 15),
+                      padding: const EdgeInsets.only(bottom: 10),
                       child: GestureDetector(
                         onTap: () => _selectFollowUpDate(context),
                         child: Container(
