@@ -11,6 +11,7 @@ class CallingDataModel {
   final String leadStatus;
   final String remarks;
   final String updateDate;
+  final String followUpDate;
 
   CallingDataModel({
     required this.name,
@@ -23,6 +24,7 @@ class CallingDataModel {
     required this.leadStatus,
     required this.remarks,
     required this.updateDate,
+    required this.followUpDate,
   });
 
   factory CallingDataModel.fromJson(Map<String, dynamic> json) {
@@ -37,6 +39,7 @@ class CallingDataModel {
       leadStatus: json['lead_status'] ?? '',
       remarks: json['remarks'] ?? '',
       updateDate: json['update_date'] ?? '',
+      followUpDate: json['follow_up_date'] ?? '',
     );
   }
 
@@ -63,6 +66,7 @@ class CallingDataModel {
       'lead_status': leadStatus,
       'remarks': remarks,
       'update_date': updateDate,
+      'follow_up_date': followUpDate,
     };
   }
 }

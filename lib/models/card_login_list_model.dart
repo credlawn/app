@@ -10,6 +10,7 @@ class CardLoginListModel {
   final String incompleteReason;
   final String employeeName;
   final String referenceNo;
+  final String rejectionReason;
 
   CardLoginListModel({
     required this.customerName,
@@ -21,6 +22,7 @@ class CardLoginListModel {
     required this.incompleteReason,
     required this.employeeName,
     required this.referenceNo,
+    required this.rejectionReason,
   });
 
   factory CardLoginListModel.fromJson(Map<String, dynamic> json) {
@@ -34,6 +36,7 @@ class CardLoginListModel {
       incompleteReason: json['incomplete_reason'] ?? '',
       employeeName: json['employee_name'] ?? '',
       referenceNo: json['reference_no'] ?? '',
+      rejectionReason: json['rejection_reason'] ?? '',
     );
   }
 
@@ -60,6 +63,7 @@ class CardLoginListModel {
       'incomplete_reason': incompleteReason,
       'employee_name': employeeName,
       'reference_no': referenceNo,
+      'rejection_reason': rejectionReason,
     };
   }
 }

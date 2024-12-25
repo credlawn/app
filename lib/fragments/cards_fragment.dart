@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../screens/sample_screen.dart';
-import '../screens/new_card_login_screen.dart';
+import '../screens/vkyc_expiry_today_screen.dart';
+import '../screens/vkyc_total_pending_screen.dart';
+import '../models/user.dart';
 
 class CardsFragment extends StatefulWidget {
-  const CardsFragment({super.key});
+  final User user;
+  const CardsFragment({super.key, required this.user});
 
   @override
   State<CardsFragment> createState() => _CardsFragmentState();
@@ -14,28 +16,14 @@ class CardsFragment extends StatefulWidget {
 class _CardsFragmentState extends State<CardsFragment> {
   final List<Map<String, dynamic>> mockCardData = [
     {
-      'icon': Icons.credit_card,
-      'title': 'Card 1',
-      'count': '3',
-      'color': Colors.orange,
-    },
-    {
       'icon': Icons.credit_card_rounded,
-      'title': 'Card 2',
-      'count': '7',
+      'title': 'Total VKYC Pending',
       'color': Colors.purple,
     },
     {
       'icon': Icons.credit_card_outlined,
-      'title': 'Card 3',
-      'count': '2',
+      'title': 'Vkyc Expire Today',
       'color': Colors.green,
-    },
-    {
-      'icon': Icons.login,
-      'title': 'New Login',
-      'count': '',
-      'color': Colors.blue,
     },
   ];
 
@@ -47,23 +35,24 @@ class _CardsFragmentState extends State<CardsFragment> {
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
         itemCount: mockCardData.length,
         crossAxisCount: 3,
-        mainAxisSpacing: 6,
-        crossAxisSpacing: 6,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
         itemBuilder: (context, index) {
           return GestureDetector(
             onTap: () {
-              if (mockCardData[index]['title'] == 'New Login') {
+              // Navigate based on the title of the card
+              if (mockCardData[index]['title'] == 'Vkyc Expire Today') {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const NewCardLoginScreen(),
+                    builder: (context) => VkycExpiryTodayScreen(user: widget.user),
                   ),
                 );
-              } else {
+              } else if (mockCardData[index]['title'] == 'Total VKYC Pending') {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => SampleScreen(),
+                    builder: (context) => VkycTotalPendingScreen(user: widget.user),
                   ),
                 );
               }
@@ -91,28 +80,13 @@ class _CardsFragmentState extends State<CardsFragment> {
                     size: 30.0,
                     color: mockCardData[index]['color'],
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        textAlign: TextAlign.center,
-                        mockCardData[index]['title'],
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        textAlign: TextAlign.center,
-                        mockCardData[index]['count'],
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: mockCardData[index]['color'],
-                        ),
-                      ),
-                    ],
+                  Text(
+                    textAlign: TextAlign.center,
+                    mockCardData[index]['title'],
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.black,
+                    ),
                   ),
                 ],
               ),

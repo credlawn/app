@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 Future<List<CardLoginListModel>> fetchTodayLoginData(String userId, String sid) async {
   final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
   final filters = '[["email", "=", "$userId"], ["punching_date", "=", "$today"]]'; 
-  final fields = '["name", "customer_name", "mobile_no", "punching_date", "ip_status", "pan_no", "kyc_status", "incomplete_reason", "employee_name", "reference_no"]';
+  final fields = '["name", "customer_name", "mobile_no", "punching_date", "ip_status", "pan_no", "kyc_status", "incomplete_reason", "employee_name", "reference_no", "rejection_reason"]';
   final orderBy = 'creation desc';
 
   final url = '${ApiNetwork.fetchCardLoginData}?order_by=${Uri.encodeQueryComponent(orderBy)}&filters=${Uri.encodeQueryComponent(filters)}&fields=${Uri.encodeQueryComponent(fields)}';
@@ -31,15 +31,15 @@ Future<List<CardLoginListModel>> fetchTodayLoginData(String userId, String sid) 
     return Future.error('Failed to load data');
   }
 
-  return Future.error('No data available');
+  return Future.error('No Case Login for Today');
 }
 
 Future<List<CardLoginListModel>> fetchMonthLoginData(String userId, String sid) async {
   final firstDayOfMonth = DateFormat('yyyy-MM-dd').format(DateTime(DateTime.now().year, DateTime.now().month, 1));
   final lastDayOfMonth = DateFormat('yyyy-MM-dd').format(
       DateTime(DateTime.now().year, DateTime.now().month + 1, 0));
-  final filters = '[["email", "=", "$userId"], ["punching_date", ">=", "$firstDayOfMonth"], ["punching_date", "<=", "$lastDayOfMonth"]]'; 
-  final fields = '["name", "customer_name", "mobile_no", "punching_date", "ip_status", "pan_no", "kyc_status", "incomplete_reason", "employee_name", "reference_no"]';
+  final filters = '[["email", "=", "$userId"], ["punching_date", ">=", "$firstDayOfMonth"], ["punching_date", "<=", "$lastDayOfMonth"], ["ip_status", "=", "IP Approved"]]'; 
+  final fields = '["name", "customer_name", "mobile_no", "punching_date", "ip_status", "pan_no", "kyc_status", "incomplete_reason", "employee_name", "reference_no", "rejection_reason"]';
   final orderBy = 'creation desc';
   final noLimit = '100';
 
@@ -64,5 +64,5 @@ Future<List<CardLoginListModel>> fetchMonthLoginData(String userId, String sid) 
     return Future.error('Failed to load data');
   }
 
-  return Future.error('No data available');
+  return Future.error('You have no Login this month');
 }

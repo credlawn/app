@@ -178,9 +178,7 @@ class _CnrLeadsScreenState extends State<CnrLeadScreen> with WidgetsBindingObser
                           waveColor: Colors.greenAccent.shade700),
                     );
                   } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return Center(child: Text('No CNR leads available.'));
+                    return Center(child: Text('${snapshot.error}', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w500, color: Colors.red)));
                   } else {
                     final leads = snapshot.data!;
                     return ListView.builder(

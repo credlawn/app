@@ -10,11 +10,9 @@ Future<List<CallingDataModel>> fetchNormalCallingData(String userId, String sid,
   String filters;
   
   if (designation != null && designation == 'Branch Manager') {
-    // For Branch Manager, fetch all leads without email filter
     filters = '[["data_type", "=", "Normal Leads"], ["lead_status", "=", "New Lead"]]';
   } else {
-    // For other roles, use the userId to filter leads
-    filters = '[["email", "=", "$userId"], ["data_type", "=", "Normal Leads"], ["lead_status", "=", "New Lead"]]';
+    filters = '[["email", "=", "$userId"], ["data_type", "=", "Normal Leads"], ["lead_status", "=", "New Lead"], ["data_status", "=", "Allocated"]]';
   }
 
   final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status", "update_date"]';
@@ -42,17 +40,16 @@ Future<List<CallingDataModel>> fetchNormalCallingData(String userId, String sid,
     return Future.error('Failed to load data');
   }
 
-  return Future.error('No data available');
+  return Future.error('No normal leads available');
 }
 
-// Fetch Interested Calling Data
 Future<List<CallingDataModel>> fetchInterestedCallingData(String userId, String sid, String? designation) async {
   String filters;
   
   if (designation != null && designation == 'Branch Manager') {
     filters = '[["data_type", "=", "Interested Leads"], ["lead_status", "=", "New Lead"]]';
   } else {
-    filters = '[["email", "=", "$userId"], ["data_type", "=", "Interested Leads"], ["lead_status", "=", "New Lead"]]';
+    filters = '[["email", "=", "$userId"], ["data_type", "=", "Interested Leads"], ["lead_status", "=", "New Lead"], ["data_status", "=", "Allocated"]]';
   }
 
   final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status", "update_date"]';
@@ -80,17 +77,16 @@ Future<List<CallingDataModel>> fetchInterestedCallingData(String userId, String 
     return Future.error('Failed to load data');
   }
 
-  return Future.error('No data available');
+  return Future.error('No Interested leads available');
 }
 
-// Fetch Pre-Approved Calling Data
 Future<List<CallingDataModel>> fetchPreApprovedCallingData(String userId, String sid, String? designation) async {
   String filters;
   
   if (designation != null && designation == 'Branch Manager') {
     filters = '[["data_type", "=", "Pre Approved Leads"], ["lead_status", "=", "New Lead"]]';
   } else {
-    filters = '[["email", "=", "$userId"], ["data_type", "=", "Pre Approved Leads"], ["lead_status", "=", "New Lead"]]';
+    filters = '[["email", "=", "$userId"], ["data_type", "=", "Pre Approved Leads"], ["lead_status", "=", "New Lead"], ["data_status", "=", "Allocated"]]';
   }
 
   final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status", "update_date"]';
@@ -118,7 +114,7 @@ Future<List<CallingDataModel>> fetchPreApprovedCallingData(String userId, String
     return Future.error('Failed to load data');
   }
 
-  return Future.error('No data available');
+  return Future.error('No Pre Approved leads available');
 }
 
 // Fetch CNR Calling Data
@@ -128,11 +124,11 @@ Future<List<CallingDataModel>> fetchCnrCallingData(String userId, String sid, St
   if (designation != null && designation == 'Branch Manager') {
     filters = '[["lead_status", "=", "CNR"]]';
   } else {
-    filters = '[["email", "=", "$userId"], ["lead_status", "=", "CNR"]]';
+    filters = '[["email", "=", "$userId"], ["lead_status", "=", "CNR"], ["data_status", "=", "Allocated"]]';
   }
 
-  final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status", "update_date"]';
-  final orderBy = 'creation asc';
+  final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status", "update_date", "follow_up_date"]';
+  final orderBy = 'update_date asc';
   final noLimit = '100';
 
   final url = '${ApiNetwork.fetchCallingData}?order_by=${Uri.encodeQueryComponent(orderBy)}&filters=${Uri.encodeQueryComponent(filters)}&fields=${Uri.encodeQueryComponent(fields)}&limit=${Uri.encodeQueryComponent(noLimit)}';
@@ -156,7 +152,7 @@ Future<List<CallingDataModel>> fetchCnrCallingData(String userId, String sid, St
     return Future.error('Failed to load data');
   }
 
-  return Future.error('No data available');
+  return Future.error('Wow: You have no CNR');
 }
 
 Future<List<CallingDataModel>> fetchFollowUpCallingData(String userId, String sid, String? designation) async {
@@ -166,12 +162,12 @@ Future<List<CallingDataModel>> fetchFollowUpCallingData(String userId, String si
   if (designation != null && designation == 'Branch Manager') {
     filters = '[["lead_status", "=", "CNR"]]';
   } else {
-    filters = '[["email", "=", "$userId"], ["lead_status", "=", "Follow-up"], ["follow_up_date", "=", "$today"]]';
+    filters = '[["email", "=", "$userId"], ["lead_status", "=", "Follow-up"], ["follow_up_date", "<=", "$today"], ["data_status", "=", "Allocated"]]';
   }
 
-  final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status", "update_date"]';
-  final orderBy = 'creation asc';
-  final noLimit = '30';
+  final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status", "update_date", "follow_up_date"]';
+  final orderBy = 'follow_up_date asc';
+  final noLimit = '40';
 
   final url = '${ApiNetwork.fetchCallingData}?order_by=${Uri.encodeQueryComponent(orderBy)}&filters=${Uri.encodeQueryComponent(filters)}&fields=${Uri.encodeQueryComponent(fields)}&limit=${Uri.encodeQueryComponent(noLimit)}';
 
@@ -194,5 +190,5 @@ Future<List<CallingDataModel>> fetchFollowUpCallingData(String userId, String si
     return Future.error('Failed to load data');
   }
 
-  return Future.error('No data available');
+  return Future.error('All up to date. You Have no follow-ups left');
 }

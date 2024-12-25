@@ -54,15 +54,18 @@ class _MonthLoginListScreenState extends State<MonthLoginListScreen> {
                           waveColor: Colors.greenAccent.shade700),
                     );
                   } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return Center(child: Text('No data available'));
+                    return Center(child: Text('${snapshot.error}', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w500, color: Colors.red)));
                   } else {
                     final monthLoginList = snapshot.data!;
                     return ListView.builder(
                       itemCount: monthLoginList.length,
                       itemBuilder: (context, index) {
                         final card = monthLoginList[index];
+                        Color ipStatusColor = card.ipStatus == "IP Approved" ? Colors.greenAccent.shade700 : (card.ipStatus == "IP Rejected" ? Colors.red : (card.ipStatus == "Incomplete Journey" ? Colors.red : Colors.black));
+                        Color kycStatusColor = card.kycStatus == "VKYC Success" ? Colors.lightGreen.shade500 : (card.kycStatus == "VKYC Pending" ? Colors.orange.shade700 : (card.kycStatus == "BKYC" ? Colors.deepPurpleAccent.shade700 : Colors.black));
+                        Color rejectionReasonColor = card.rejectionReason == "Recently Applied" ? Colors.lightGreen.shade400 : (card.rejectionReason == "No Offer" ? Colors.orange.shade700 : Colors.black);
+                        Color incompleteReasonColor= card.incompleteReason == "Docs Not Available" ? Colors.lightGreen.shade500 : (card.rejectionReason == "Customer Denied" ? Colors.orange.shade700 : Colors.black);
+                        
                         return Container(
                           margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                           decoration: BoxDecoration(
@@ -96,18 +99,24 @@ class _MonthLoginListScreenState extends State<MonthLoginListScreen> {
                               children: [
                                 Text(
                                   card.ipStatus,
-                                  style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.teal),
+                                  style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: ipStatusColor),
                                 ),
                                 SizedBox(height: 5),
-                                Text(
-                                  card.kycStatus,
-                                  style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.amber),
-                                ),
-                                SizedBox(height: 5),
-                                Text(
-                                  card.incompleteReason,
-                                  style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.amber),
-                                ),
+                                if (card.ipStatus == "IP Approved") 
+                                  Text(
+                                    card.kycStatus,
+                                    style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: kycStatusColor),
+                                  )
+                                else if (card.ipStatus == "IP Rejected")
+                                  Text(
+                                    card.rejectionReason,
+                                    style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: rejectionReasonColor),
+                                  )
+                                else if (card.ipStatus == "Incomplete Journey")
+                                  Text(
+                                    card.incompleteReason,
+                                    style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: incompleteReasonColor),
+                                  ),
                               ],
                             ),
                             onTap: () {

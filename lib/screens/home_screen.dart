@@ -38,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Initialize the fragments here where widget.user is accessible
     _fragment = [
       const DashboardFragment(),
-      const CardsFragment(),
+      CardsFragment(user: widget.user),
       CallingDataFragment(user: widget.user), // Now this works correctly
     ];
 

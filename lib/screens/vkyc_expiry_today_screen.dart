@@ -3,10 +3,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
-import 'package:call_log/call_log.dart';
 import 'package:credlawn/custom/custom_color.dart';
-import '../network/api_calling_data_helper.dart';
-import '../models/calling_data_model.dart';
+import '../network/api_adobe_database_helper.dart';
+import '../models/adobe_database_model.dart';
 import '../models/user.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -14,27 +13,25 @@ import 'package:url_launcher/url_launcher.dart';
 import 'lead_status_update_screen.dart';
 import 'package:intl/intl.dart';
 
-class FollowUpLeadScreen extends StatefulWidget {
+class VkycExpiryTodayScreen extends StatefulWidget {
   final User user;
 
-  const FollowUpLeadScreen({super.key, required this.user});
+  const VkycExpiryTodayScreen({super.key, required this.user});
 
   @override
-  // ignore: library_private_types_in_public_api
-  _FollowUpLeadsScreenState createState() => _FollowUpLeadsScreenState();
+  _VkycExpiryTodayScreenState createState() => _VkycExpiryTodayScreenState();
 }
 
-class _FollowUpLeadsScreenState extends State<FollowUpLeadScreen> with WidgetsBindingObserver {
-  late Future<List<CallingDataModel>> _followUpLeads;
-  late String _lastCallDuration;
+class _VkycExpiryTodayScreenState extends State<VkycExpiryTodayScreen>
+    with WidgetsBindingObserver {
+  late Future<List<AdobeDatabaseModel>> _vkycExpireToday;
   bool _isLoading = false;
-  bool _isCallLogFetched = false;
 
   @override
   void initState() {
     super.initState();
-    _followUpLeads = fetchFollowUpCallingData(widget.user.userId, widget.user.sid, widget.user.designation);
-    _lastCallDuration = '';
+    _vkycExpireToday = fetchVkycExpireToday(
+        widget.user.userId, widget.user.sid, widget.user.designation);
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -44,24 +41,15 @@ class _FollowUpLeadsScreenState extends State<FollowUpLeadScreen> with WidgetsBi
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.resumed) {
-      Future.delayed(Duration(seconds: 2), () {
-        _fetchLastCallDuration();
-      });
-    }
-  }
-
   void _callNumber(String mobileNo) async {
     await FlutterPhoneDirectCaller.callNumber(mobileNo);
   }
 
-  void _openWhatsApp(String mobileNo) async {
+  void _openWhatsApp(String mobileNo, String vkycLink) async {
     final mobileWithCode = '+91$mobileNo';
-    final String androidUrl = "whatsapp://send?phone=$mobileWithCode&text=https://cipl.me/tata";
-    final String iosUrl = "https://wa.me/$mobileWithCode?text=${Uri.parse('https://cipl.me/tata')}";
+    final String androidUrl = "whatsapp://send?phone=$mobileWithCode&text=$vkycLink";
+    final String iosUrl =
+        "https://wa.me/$mobileWithCode?text=${Uri.encodeComponent(vkycLink)}";
 
     try {
       if (Platform.isIOS) {
@@ -74,84 +62,22 @@ class _FollowUpLeadsScreenState extends State<FollowUpLeadScreen> with WidgetsBi
     }
   }
 
-  Future<void> _fetchLastCallDuration() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    final Iterable<CallLogEntry> logs = await CallLog.query(
-      dateFrom: DateTime.now().subtract(Duration(days: 1)).millisecondsSinceEpoch,
-    );
-
-    final latestCall = logs.firstWhere(
-      (log) => log.duration != null,
-      orElse: () => CallLogEntry(),
-    );
-
-    if (latestCall.duration != null) {
-      final formattedDuration = _formatDuration(latestCall.duration!);
-      setState(() {
-        _lastCallDuration = formattedDuration;
-        _isLoading = false;
-        _isCallLogFetched = true;
-      });
-    }
-  }
-
-  String _formatDuration(int durationInSeconds) {
-    final minutes = (durationInSeconds / 60).floor();
-    final seconds = durationInSeconds % 60;
-    return '$minutes minutes $seconds seconds';
-  }
-
-  void _showCallDurationPopup() {
-    if (_isCallLogFetched) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text("Call Duration"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Duration: $_lastCallDuration'),
-                SizedBox(height: 10),
-                Text('Would you like to submit this call data?'),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  _submitCallData();
-                  Navigator.pop(context);
-                },
-                child: Text("Submit"),
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
-
-  void _submitCallData() {
-    print("Call data submitted: $_lastCallDuration");
-  }
-
   Future<void> _refreshLeads() async {
     setState(() {
-      _followUpLeads = fetchFollowUpCallingData(widget.user.userId, widget.user.sid, widget.user.designation);
+      _vkycExpireToday = fetchVkycExpireToday(
+          widget.user.userId, widget.user.sid, widget.user.designation);
     });
   }
+
   String _formatDate(String dateString) {
     if (dateString.isEmpty) return '';
     try {
-     final DateTime date = DateFormat("yyyy-MM-dd").parse(dateString);
-      return DateFormat('dd-MMM-yyyy').format(date);
-      } catch (e) {
-        return dateString;
-      }
+      final DateTime date =
+          DateFormat("yyyy-MM-dd HH:mm:ss").parse(dateString);
+      return DateFormat('dd-MMM-yyyy hh:mm a').format(date);
+    } catch (e) {
+      return dateString;
+    }
   }
 
   @override
@@ -159,7 +85,8 @@ class _FollowUpLeadsScreenState extends State<FollowUpLeadScreen> with WidgetsBi
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('Pending Follo-up', style: GoogleFonts.poppins(color: Colors.white, fontSize: 20)),
+        title: Text('VKYC Expiring Today',
+            style: GoogleFonts.poppins(color: Colors.white, fontSize: 20)),
         backgroundColor: CustomColor.MainColor,
         elevation: 0.5,
       ),
@@ -168,8 +95,8 @@ class _FollowUpLeadsScreenState extends State<FollowUpLeadScreen> with WidgetsBi
           Expanded(
             child: RefreshIndicator(
               onRefresh: _refreshLeads,
-              child: FutureBuilder<List<CallingDataModel>>(
-                future: _followUpLeads,
+              child: FutureBuilder<List<AdobeDatabaseModel>>(
+                future: _vkycExpireToday,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(
@@ -178,7 +105,12 @@ class _FollowUpLeadsScreenState extends State<FollowUpLeadScreen> with WidgetsBi
                           waveColor: Colors.greenAccent.shade700),
                     );
                   } else if (snapshot.hasError) {
-                    return Center(child: Text('${snapshot.error}', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w500, color: Colors.red)));
+                    return Center(
+                        child: Text('${snapshot.error}',
+                            style: GoogleFonts.poppins(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.red)));
                   } else {
                     final leads = snapshot.data!;
                     return ListView.builder(
@@ -186,7 +118,8 @@ class _FollowUpLeadsScreenState extends State<FollowUpLeadScreen> with WidgetsBi
                       itemBuilder: (context, index) {
                         final lead = leads[index];
                         return Container(
-                          margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 15),
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 5, horizontal: 15),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(5),
@@ -199,10 +132,12 @@ class _FollowUpLeadsScreenState extends State<FollowUpLeadScreen> with WidgetsBi
                             ],
                           ),
                           child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                            contentPadding: const EdgeInsets.symmetric(
+                                vertical: 5, horizontal: 10),
                             leading: CircleAvatar(
                               backgroundColor: Colors.grey[100],
-                              child: Icon(Icons.person, color: CustomColor.MainColor),
+                              child: Icon(Icons.person,
+                                  color: CustomColor.MainColor),
                             ),
                             title: InkWell(
                               onTap: () {
@@ -211,7 +146,7 @@ class _FollowUpLeadsScreenState extends State<FollowUpLeadScreen> with WidgetsBi
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => LeadStatusUpdateScreen(
-                                      leadName: lead.name,  // Pass the lead name here
+                                      leadName: lead.name, // Pass the lead name here
                                       customerName: lead.customerName,
                                       mobileNo: lead.mobileNo,
                                     ),
@@ -220,7 +155,10 @@ class _FollowUpLeadsScreenState extends State<FollowUpLeadScreen> with WidgetsBi
                               },
                               child: Text(
                                 lead.customerName,
-                                style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w500, color: CustomColor.MainColor),
+                                style: GoogleFonts.poppins(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w500,
+                                    color: CustomColor.MainColor),
                               ),
                             ),
                             subtitle: InkWell(
@@ -238,8 +176,11 @@ class _FollowUpLeadsScreenState extends State<FollowUpLeadScreen> with WidgetsBi
                                 );
                               },
                               child: Text(
-                                _formatDate(lead.followUpDate),
-                                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.red),
+                                _formatDate(lead.vkycExpireDate),
+                                style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.red),
                               ),
                             ),
                             trailing: Row(
@@ -251,7 +192,8 @@ class _FollowUpLeadsScreenState extends State<FollowUpLeadScreen> with WidgetsBi
                                     size: 22,
                                     color: Colors.greenAccent.shade700,
                                   ),
-                                  onPressed: () => _openWhatsApp(lead.mobileNo),
+                                  onPressed: () =>
+                                      _openWhatsApp(lead.mobileNo, lead.vkycLink),
                                 ),
                                 IconButton(
                                   icon: Icon(

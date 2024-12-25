@@ -15,6 +15,8 @@ class ApiNetwork {
 
   static const String updateLeadStatus = '${baseUrl}api/resource/Calling Data';
 
+  static const String fetchAdobeDumpData = '${baseUrl}api/resource/Adobe Database';
+
   
 
 }
