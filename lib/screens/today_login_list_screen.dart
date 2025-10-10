@@ -63,10 +63,21 @@ class _TodayLoginListScreenState extends State<TodayLoginListScreen> {
                       itemCount: todayLoginList.length,
                       itemBuilder: (context, index) {
                         final card = todayLoginList[index];
+
                         Color ipStatusColor = card.ipStatus == "IP Approved" ? Colors.greenAccent.shade700 : (card.ipStatus == "IP Rejected" ? Colors.red : (card.ipStatus == "Incomplete Journey" ? Colors.red : Colors.black));
+
                         Color kycStatusColor = card.kycStatus == "VKYC Success" ? Colors.teal : (card.kycStatus == "VKYC Pending" ? Colors.deepPurpleAccent.shade700 : (card.kycStatus == "BKYC" ? Colors.deepPurpleAccent.shade700 : Colors.black));
+
                         Color rejectionReasonColor = card.rejectionReason == "Recently Applied" ? Colors.lightGreen.shade400 : (card.rejectionReason == "No Offer" ? Colors.orange.shade700 : Colors.black);
-                        Color incompleteReasonColor= card.incompleteReason == "Docs Not Available" ? Colors.lightGreen.shade500 : (card.incompleteReason == "Customer Denied" ? Colors.orange.shade700 : Colors.black);
+
+                        Color incompleteReasonColor = 
+                          card.incompleteReason == "Docs Not Available"
+                            ? Colors.lightGreen.shade500
+                            : (card.incompleteReason == "Already Carded"
+                                ? Colors.greenAccent.shade700
+                                : (card.incompleteReason == "Customer Denied"
+                                    ? Colors.orange.shade700
+                                    : Colors.black));
                         
                         return Container(
                           margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 15),

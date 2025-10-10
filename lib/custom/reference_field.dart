@@ -17,7 +17,7 @@ class _ReferenceNoFieldState extends State<ReferenceNoField> {
   bool _isValidReferenceNo = true;
 
   bool _isValidReferenceNoFormat(String input) {
-    final referenceNoRegex = RegExp(r'^[0-9]{2}[A-Z]{1}[0-9]{2}[A-Z]{1}[0-9]{8}[A-Z]{1}[A-Z0-9]{1}$');
+    final referenceNoRegex = RegExp(r'^[A-Z0-9]{16}$');
     return referenceNoRegex.hasMatch(input);
   }
 
@@ -52,45 +52,16 @@ class _ReferenceNoFieldState extends State<ReferenceNoField> {
           borderColor: _borderColor,
           onChanged: (text) {
             setState(() {
-              // Convert text to uppercase without limiting the length initially
               String updatedText = text.toUpperCase();
 
               StringBuffer validText = StringBuffer();
 
-              // Process each character to fit the format of Reference No.
               for (int i = 0; i < updatedText.length; i++) {
-                if (i == 0 || i == 1) {
-                  if (RegExp(r'^[0-9]$').hasMatch(updatedText[i])) {
-                    validText.write(updatedText[i]);
-                  }
-                } else if (i == 2) {
-                  if (RegExp(r'^[A-Z]$').hasMatch(updatedText[i])) {
-                    validText.write(updatedText[i]);
-                  }
-                } else if (i == 3 || i == 4) {
-                  if (RegExp(r'^[0-9]$').hasMatch(updatedText[i])) {
-                    validText.write(updatedText[i]);
-                  }
-                } else if (i == 5) {
-                  if (RegExp(r'^[A-Z]$').hasMatch(updatedText[i])) {
-                    validText.write(updatedText[i]);
-                  }
-                } else if (i >= 6 && i < 14) {
-                  if (RegExp(r'^[0-9]$').hasMatch(updatedText[i])) {
-                    validText.write(updatedText[i]);
-                  }
-                } else if (i == 14) {
-                  if (RegExp(r'^[A-Z]$').hasMatch(updatedText[i])) {
-                    validText.write(updatedText[i]);
-                  }
-                } else if (i == 15) {
-                  if (RegExp(r'^[A-Z0-9]$').hasMatch(updatedText[i])) {
-                    validText.write(updatedText[i]);
-                  }
+                if (RegExp(r'^[A-Z0-9]$').hasMatch(updatedText[i])) {
+                  validText.write(updatedText[i]);
                 }
               }
 
-              // If the input length exceeds 16, truncate it
               String finalText = validText.toString();
               if (finalText.length > 16) {
                 finalText = finalText.substring(0, 16);
@@ -101,7 +72,6 @@ class _ReferenceNoFieldState extends State<ReferenceNoField> {
                 TextPosition(offset: finalText.length),
               );
 
-              // Check if the reference number is valid
               _isValidReferenceNo = _isValidReferenceNoFormat(finalText);
               _borderColor = _isValidReferenceNo || finalText.isEmpty
                   ? CustomColor.MainColor
@@ -109,7 +79,6 @@ class _ReferenceNoFieldState extends State<ReferenceNoField> {
             });
           },
         ),
-        // Display error message if invalid
         if (!_isValidReferenceNo && widget.controller.text.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),

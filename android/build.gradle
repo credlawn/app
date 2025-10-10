@@ -1,12 +1,12 @@
 buildscript {
-    ext.kotlin_version = '1.8.0'
+    ext.kotlin_version = '2.2.20'
     repositories {
         google()
         mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.4.0'
+        classpath 'com.android.tools.build:gradle:8.13.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -19,30 +19,37 @@ allprojects {
 }
 
 subprojects {
-    afterEvaluate { project ->
-        if (project.hasProperty("android")) {
-            project.android {
-                compileSdkVersion 34
-                compileOptions {
-                    sourceCompatibility JavaVersion.VERSION_1_8
-                    targetCompatibility JavaVersion.VERSION_1_8
-                    //compileSdkVersion 34
-                }
+    if (it.hasProperty("android")) {
+        it.android {
+            compileSdkVersion 34
+
+            defaultConfig {
+                minSdkVersion 16
+                targetSdkVersion 34
             }
- 
-            project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-                kotlinOptions {
-                    jvmTarget = "1.8"
-                }
+
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_1_8
+                targetCompatibility JavaVersion.VERSION_1_8
+            }
+
+            if (!it.hasProperty("namespace")) {
+                namespace project.group
+            }
+        }
+
+        it.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+            kotlinOptions {
+                jvmTarget = "1.8"
             }
         }
     }
 }
- 
+
 configurations.all {
     resolutionStrategy.eachDependency { details ->
         if (details.requested.group == 'org.jetbrains.kotlin') {
-            details.useVersion '1.8.0'
+            details.useVersion '2.2.20'
         }
     }
 }
@@ -51,6 +58,7 @@ rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
+
 subprojects {
     project.evaluationDependsOn(':app')
 }

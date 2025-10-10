@@ -30,7 +30,7 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
   String? selectIpStatus, selectKycStatus, selectIncompleteReason, selectIpRejectedReason;
   List<String> ipStatus = ['IP Approved', 'IP Rejected', 'Incomplete Journey'];
   List<String> kycStatus = ['VKYC Success', 'VKYC Pending', 'BKYC'];
-  List<String> incompleteReason = ['Docs Not Available', 'Customer Denied'];
+  List<String> incompleteReason = ['Docs Not Available', 'Customer Denied', 'Already Carded'];
   List<String> ipRejectedReason = ['Recently Applied', 'No Offer'];
 
   @override
