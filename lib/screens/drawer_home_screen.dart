@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../custom/custom_color.dart';
 import '../helpers/session_manager.dart'; 
+import 'package:credlawn/screens/attendance_screen.dart';
 import 'login_screen.dart'; 
 import '../models/user.dart'; 
 import 'profile_screen.dart';  
@@ -75,10 +76,21 @@ class DrawerHomeScreen extends StatelessWidget {
               leading: Icon(CupertinoIcons.person, color: CustomColor.MainColor, size: 30),
               title: Text('Profile', style: GoogleFonts.poppins(color: CustomColor.MainColor, fontSize: 18)),
               onTap: () {
-                Navigator.pop(context); 
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => ProfileScreen(user: user)),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(CupertinoIcons.timer, color: CustomColor.MainColor, size: 30),
+              title: Text('Attendance', style: GoogleFonts.poppins(color: CustomColor.MainColor, fontSize: 18)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AttendanceScreen()),
                 );
               },
             ),
@@ -92,7 +104,7 @@ class DrawerHomeScreen extends StatelessWidget {
                     await SessionManager.logout();
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => LoginScreen()), 
+                      MaterialPageRoute(builder: (context) => LoginScreen()),
                     );
                   },
                 ),
