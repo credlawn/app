@@ -7,6 +7,7 @@ import 'package:credlawn/models/user.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:google_fonts/google_fonts.dart'; // Added GoogleFonts import
 
 // Global navigator key for global navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -28,6 +29,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: Colors.white,
+        fontFamily: GoogleFonts.poppins().fontFamily, // Set global font to Poppins
         colorScheme: ColorScheme.light(
           primary: Colors.blue,
           secondary: Colors.blueAccent,

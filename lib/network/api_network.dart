@@ -16,6 +16,7 @@ class ApiNetwork {
   static const String updateLeadStatus = '${baseUrl}api/resource/Calling Data';
 
   static const String fetchAdobeDumpData = '${baseUrl}api/resource/Adobe Database';
+  static const String getDailyAttendanceSummary = '${baseUrl}api/method/credlawn.api.attendance.get_daily_attendance_summary';
 
   
 

@@ -6,6 +6,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:credlawn/models/geofence_config.dart';
+import 'package:credlawn/screens/attendance_list_widget.dart'; // Added this import
+import 'package:google_fonts/google_fonts.dart'; // Added GoogleFonts import
+import 'package:credlawn/models/today_attendance_status.dart'; // Added this import
+
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({Key? key}) : super(key: key);
@@ -15,11 +19,11 @@ class AttendanceScreen extends StatefulWidget {
 }
 
 class _AttendanceScreenState extends State<AttendanceScreen> {
-  final _remarksController = TextEditingController();
   final _formKey = GlobalKey<FormState>(); // Added for form validation
+  final GlobalKey<AttendanceListWidgetState> _attendanceListKey = GlobalKey<AttendanceListWidgetState>(); // Key for AttendanceListWidget
   bool _isButtonLoading = false;
   bool _isScreenLoading = true;
-  String? _lastLogType;
+  TodayAttendanceStatus? _todayAttendanceStatus; // Changed type to TodayAttendanceStatus
   GeofenceConfig? _geofenceConfig; // New state variable for geofence
   DateTime? _officeStartTime;
   DateTime? _officeEndTime;
@@ -32,11 +36,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   Future<void> _fetchInitialStatusAndGeofence() async {
     try {
-      final lastLog = await ApiAttendanceHelper.getLastAttendanceForToday();
+      final status = await ApiAttendanceHelper.getLastAttendanceForToday(); // Get TodayAttendanceStatus
       final geofence = await ApiAttendanceHelper.fetchActiveGeofence();
       if (mounted) {
         setState(() {
-          _lastLogType = lastLog;
+          _todayAttendanceStatus = status; // Assign the new status object
           _geofenceConfig = geofence;
           // Parse office times if available
           if (_geofenceConfig?.officeStartTime != null) {
@@ -60,33 +64,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 
-  // New function to determine if remarks should be shown and are mandatory
-  bool _shouldShowRemarks(String logType) {
-    if (_officeStartTime == null || _officeEndTime == null) {
-      return false; // If times are not configured, don't show remarks conditionally
-    }
-
-    final now = DateTime.now();
-    final currentTime = DateTime(2000, 1, 1, now.hour, now.minute, now.second); // Date part doesn't matter
-
-    if (logType == 'In') {
-      // Show if check-in is after office start time
-      return currentTime.isAfter(_officeStartTime!); // e.g., after 10:00 AM
-    } else if (logType == 'Out') {
-      // Show if check-out is before office end time
-      return currentTime.isBefore(_officeEndTime!); // e.g., before 18:30 PM
-    }
-    return false;
-  }
-
   Future<void> _initiateAttendance(String logType) async {
-    // Validate remarks if visible and mandatory
-    if (_shouldShowRemarks(logType)) {
-      if (!_formKey.currentState!.validate()) {
-        return; // Stop if remarks are mandatory and empty
-      }
-    }
-
     final ImagePicker picker = ImagePicker();
     // Open FRONT Camera
     final XFile? image = await picker.pickImage(
@@ -123,7 +101,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         logType: logType,
         latitude: currentPosition.latitude,
         longitude: currentPosition.longitude,
-        remarks: _remarksController.text,
+        // remarks: _remarksController.text, // Removed remarks parameter
       );
 
       // Step 2: Upload Image and get URL
@@ -139,10 +117,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       );
 
       CustomColor.showSuccessSnackBar(context, 'Attendance marked successfully!');
-      _remarksController.clear();
       if (mounted) {
         setState(() {
-          _lastLogType = logType; // Update the state immediately
+          // After successful punch, re-fetch status to update button state
+          _fetchInitialStatusAndGeofence();
+          _attendanceListKey.currentState?.refreshData(); // Refresh the attendance list
         });
       }
 
@@ -198,117 +177,96 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     return await Geolocator.getCurrentPosition();
   }
 
-  String _getRemarksLabelText() {
-    if (_officeStartTime == null || _officeEndTime == null) {
-      return 'Remarks'; // Default if office times are not configured
-    }
-
-    final now = DateTime.now();
-    final currentTime = DateTime(2000, 1, 1, now.hour, now.minute, now.second);
-
-    // Determine the logType for the *next* action
-    final String nextLogType = (_lastLogType == 'In') ? 'Out' : 'In';
-
-    if (nextLogType == 'In' && currentTime.isAfter(_officeStartTime!)) {
-      return 'Why you are late?';
-    } else if (nextLogType == 'Out' && currentTime.isBefore(_officeEndTime!)) {
-      return 'Why you leaving early?';
-    }
-    return 'Remarks';
-  }
-
   @override
   Widget build(BuildContext context) {
-    final bool isCheckInDisabled = _lastLogType == 'In';
-    final bool isCheckOutDisabled = _lastLogType == null || _lastLogType == 'Out';
-    final bool showRemarksField = _shouldShowRemarks(isCheckInDisabled ? 'Out' : 'In');
+    // No need for isCheckInDisabled and isCheckOutDisabled here anymore
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mark Attendance'),
+        title: Text('Attendance', style: TextStyle(color: Colors.white)),
         backgroundColor: CustomColor.MainColor,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Builder(
+              builder: (context) {
+                String buttonText = '';
+                IconData buttonIcon = Icons.login;
+                Color buttonColor = Colors.green;
+                VoidCallback? onPressedCallback;
+
+                // Case 1: Already Checked Out for today
+                if (_todayAttendanceStatus?.hasCheckedOut ?? false) {
+                  buttonText = 'MARKED';
+                  buttonIcon = Icons.check_circle;
+                  buttonColor = Colors.grey;
+                  onPressedCallback = null; // Disabled
+                }
+                // Case 2: Checked In, but not yet Checked Out
+                else if (_todayAttendanceStatus?.hasCheckedIn ?? false) {
+                  buttonText = 'CHECK OUT';
+                  buttonIcon = Icons.logout;
+                  buttonColor = Colors.red;
+                  onPressedCallback = _isButtonLoading ? null : () => _initiateAttendance('Out');
+                }
+                // Case 3: No punches for today (or only 'Out' which is invalid)
+                else {
+                  buttonText = 'CHECK IN';
+                  buttonIcon = Icons.login;
+                  buttonColor = Colors.green;
+                  onPressedCallback = _isButtonLoading ? null : () => _initiateAttendance('In');
+                }
+
+                return ElevatedButton.icon(
+                  onPressed: onPressedCallback,
+                  icon: Icon(buttonIcon, color: Colors.white),
+                  label: Text(buttonText, style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: buttonColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
       body: Stack(
         children: [
           if (_isScreenLoading)
             const Center(child: CircularProgressIndicator())
           else
-            Form(
-              key: _formKey,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Center(
-                      child: Text(
-                        DateFormat('EEEE, d MMMM yyyy').format(DateTime.now()),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: CustomColor.MainColor,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    Row(
+            RefreshIndicator(
+              onRefresh: () async {
+                await _fetchInitialStatusAndGeofence();
+                _attendanceListKey.currentState?.refreshData();
+              },
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(), // Explicitly set physics
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _isButtonLoading || isCheckInDisabled
-                                ? null
-                                : () => _initiateAttendance('In'),
-                            icon: const Icon(Icons.login),
-                            label: const Text('CHECK IN'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              textStyle: const TextStyle(fontSize: 16),
+                        Center(
+                          child: Text(
+                            DateFormat('EEEE, d MMMM yyyy').format(DateTime.now()),
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: CustomColor.MainColor,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _isButtonLoading || isCheckOutDisabled
-                                ? null
-                                : () => _initiateAttendance('Out'),
-                            icon: const Icon(Icons.logout),
-                            label: const Text('CHECK OUT'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              textStyle: const TextStyle(fontSize: 16),
-                            ),
-                          ),
-                        ),
+                        const SizedBox(height: 32),
+                        AttendanceListWidget(key: _attendanceListKey), // Assign key to AttendanceListWidget
                       ],
                     ),
-                    const SizedBox(height: 32),
-                    Visibility(
-                      visible: showRemarksField,
-                      child: TextFormField(
-                        controller: _remarksController,
-                        decoration: InputDecoration(
-                          labelText: _getRemarksLabelText(),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          prefixIcon: Icon(Icons.notes, color: CustomColor.MainColor),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-                        ),
-                        maxLines: 2,
-                        validator: (value) {
-                          if (showRemarksField && (value == null || value.isEmpty)) {
-                            return 'Remarks are mandatory for this time.';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

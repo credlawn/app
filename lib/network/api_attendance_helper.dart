@@ -5,6 +5,8 @@ import 'package:credlawn/models/user.dart';
 import 'package:credlawn/models/user.dart';
 import 'package:credlawn/models/attendance_model.dart';
 import 'package:credlawn/models/geofence_config.dart';
+import 'package:credlawn/models/attendance_record_model.dart';
+import 'package:credlawn/models/today_attendance_status.dart'; // Added this import
 import 'package:credlawn/network/api_network.dart';
 import 'package:http/http.dart' as http;
 
@@ -13,7 +15,7 @@ class ApiAttendanceHelper {
     required String logType,
     required double latitude,
     required double longitude,
-    required String remarks,
+    // remarks: remarks, // Removed remarks parameter
   }) async {
     final User? user = await SessionManager.getSessionData();
     if (user == null) {
@@ -26,7 +28,7 @@ class ApiAttendanceHelper {
       'log_type': logType,
       'latitude': latitude,
       'longitude': longitude,
-      'remarks': remarks,
+      // 'remarks': remarks, // Removed remarks from body
     };
 
     const String url = '${ApiNetwork.baseUrl}/api/resource/Attendance Records';
@@ -132,7 +134,7 @@ class ApiAttendanceHelper {
     }
   }
 
-  static Future<String?> getLastAttendanceForToday() async {
+  static Future<TodayAttendanceStatus> getLastAttendanceForToday() async {
     final User? user = await SessionManager.getSessionData();
     if (user == null) {
       throw Exception('User not logged in');
@@ -141,46 +143,50 @@ class ApiAttendanceHelper {
     final today = DateTime.now();
     final date = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
 
-    final String filters = '[["user","=","${user.userId}"],["attendance_date","=","$date"]]';
-    final String fields = '["log_type"]';
-
-    final Map<String, dynamic> queryParams = {
-      'fields': fields,
-      'filters': filters,
-      'order_by': 'timestamp desc',
-      'limit_page_length': '1',
-    };
-
-    final Uri uri = Uri.http(
-      Uri.parse(ApiNetwork.baseUrl).host,
-      '/api/resource/Attendance Records',
-      queryParams,
-    );
-
     try {
-      final response = await http.get(
-        uri,
-        headers: {
-          'Cookie': 'sid=${user.sid}',
-        },
-      );
+      // Use the custom API to get today's summary
+      final List<AttendanceRecord> todaySummary = await getAttendanceRecords(fromDate: date, toDate: date);
 
-      if (response.statusCode == 200) {
-        final jsonResponse = json.decode(response.body);
-        if (jsonResponse['data'] != null && jsonResponse['data'].isNotEmpty) {
-          return jsonResponse['data'][0]['log_type'];
+      bool hasCheckedIn = false;
+      bool hasCheckedOut = false;
+      String? lastLogType; // This will be determined by the summary
+
+      if (todaySummary.isNotEmpty) {
+        final record = todaySummary.first; // Should only be one record for today
+        if (record.inTime != 'N/A') {
+          hasCheckedIn = true;
         }
-        return null;
-      } else {
-        throw Exception('Failed to fetch last attendance');
-      }
-        } catch (e) {
-          ApiAttendanceHelper.logErrorToFrappe('Error fetching last attendance: $e', 'Flutter Attendance Error');
-          throw Exception('An error occurred: $e');
+        if (record.outTime != 'N/A') {
+          hasCheckedOut = true;
+        }
+
+        // Determine lastLogType based on presence of in/out times
+        if (hasCheckedIn && hasCheckedOut) {
+          // If both exist, we need to know which was truly last. This requires more info from backend.
+          // For now, if both exist, assume the day is completed.
+          // If only In, then In was last. If only Out, then Out was last (unlikely scenario).
+          // The button logic will primarily rely on hasCheckedIn and hasCheckedOut.
+          lastLogType = 'Out'; // Assuming Out was the last action if both are present
+        } else if (hasCheckedIn) {
+          lastLogType = 'In';
+        } else if (hasCheckedOut) {
+          lastLogType = 'Out';
         }
       }
-    
-      static Future<GeofenceConfig?> fetchActiveGeofence() async {
+
+      return TodayAttendanceStatus(
+        hasCheckedIn: hasCheckedIn,
+        hasCheckedOut: hasCheckedOut,
+        lastLogType: lastLogType,
+      );
+    } catch (e) {
+      ApiAttendanceHelper.logErrorToFrappe('Error fetching today\'s attendance summary: $e', 'Flutter Attendance Error');
+      // Return default status on error
+      return TodayAttendanceStatus();
+    }
+  }
+
+  static Future<GeofenceConfig?> fetchActiveGeofence() async {
         final User? user = await SessionManager.getSessionData();
         if (user == null) {
           throw Exception('User not logged in');
@@ -221,6 +227,57 @@ class ApiAttendanceHelper {
                         throw Exception('An error occurred while fetching geofence: $e');
                       }
                     }
+
+  static Future<List<AttendanceRecord>> getAttendanceRecords({String? fromDate, String? toDate}) async {
+    final User? user = await SessionManager.getSessionData();
+    if (user == null) {
+      throw Exception('User not logged in');
+    }
+
+    final now = DateTime.now();
+    final firstDayOfMonth = DateTime(now.year, now.month, 1);
+    final DateTime toDateObj = DateTime.now();
+
+    final String finalFromDate = fromDate ?? '${firstDayOfMonth.year}-${firstDayOfMonth.month.toString().padLeft(2, '0')}-${firstDayOfMonth.day.toString().padLeft(2, '0')}';
+    final String finalToDate = toDate ?? '${toDateObj.year}-${toDateObj.month.toString().padLeft(2, '0')}-${toDateObj.day.toString().padLeft(2, '0')}';
+
+    final Map<String, dynamic> queryParams = {
+      'user_id': user.userId,
+      'from_date': finalFromDate,
+      'to_date': finalToDate,
+    };
+
+    final Uri uri = Uri.http(
+      Uri.parse(ApiNetwork.baseUrl).host,
+      Uri.parse(ApiNetwork.getDailyAttendanceSummary).path, // Use the path from the new endpoint
+      queryParams,
+    );
+
+    try {
+      final response = await http.get(
+        uri,
+        headers: {
+          'Cookie': 'sid=${user.sid}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        // Expecting 'data' key from custom method response
+        if (jsonResponse['message'] != null && jsonResponse['message'].isNotEmpty) {
+          return (jsonResponse['message'] as List) // <--- Changed to 'message' key
+              .map((e) => AttendanceRecord.fromJson(e))
+              .toList();
+        }
+        return []; // Return empty list if no data
+      } else {
+        throw Exception('Failed to fetch attendance records: ${response.statusCode}');
+      }
+    } catch (e) {
+      ApiAttendanceHelper.logErrorToFrappe('Error fetching attendance records: $e', 'Flutter Attendance Error');
+      throw Exception('An error occurred while fetching records: $e');
+    }
+  }
 
   static Future<void> logErrorToFrappe(String message, String title) async {
     final User? user = await SessionManager.getSessionData();
