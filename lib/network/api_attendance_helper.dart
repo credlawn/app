@@ -1,12 +1,12 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/models/user.dart';
-import 'package:credlawn/models/attendance_model.dart';
 import 'package:credlawn/network/api_network.dart';
 import 'package:http/http.dart' as http;
 
 class ApiAttendanceHelper {
-  static Future<AttendanceResponse> markAttendance({
+  static Future<String> markAttendance({
     required String logType,
     required double latitude,
     required double longitude,
@@ -38,13 +38,91 @@ class ApiAttendanceHelper {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return AttendanceResponse(message: 'Attendance marked successfully');
+        final responseData = jsonDecode(response.body);
+        return responseData['data']['name'];
       } else {
         final errorData = jsonDecode(response.body);
-        throw Exception(errorData['exception'] ?? 'Failed to mark attendance');
+        throw Exception(errorData['exception'] ?? 'Failed to create attendance record');
       }
     } catch (e) {
-      throw Exception('An error occurred: $e');
+      throw Exception('An error occurred while creating record: $e');
+    }
+  }
+
+  static Future<String> uploadImage({
+    required String docname,
+    required String imagePath,
+  }) async {
+    final User? user = await SessionManager.getSessionData();
+    if (user == null) {
+      throw Exception('User not logged in');
+    }
+
+    final random = Random().nextInt(900000) + 100000; // 6-digit number
+    final extension = imagePath.substring(imagePath.lastIndexOf('.'));
+    final newFilename = '$random$extension';
+
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${ApiNetwork.baseUrl}/api/method/upload_file'),
+    );
+
+    request.headers['Cookie'] = 'sid=${user.sid}';
+    request.fields['doctype'] = 'Attendance Records';
+    request.fields['docname'] = docname;
+    request.fields['fieldname'] = 'atn_image';
+    request.fields['is_private'] = '1';
+    request.fields['optimize'] = '1'; // Enable server-side image optimization
+    request.files.add(await http.MultipartFile.fromPath(
+      'file',
+      imagePath,
+      filename: newFilename,
+    ));
+
+    try {
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(responseBody);
+        return responseData['message']['file_url']; // Return the file path
+      } else {
+        final errorData = jsonDecode(responseBody);
+        throw Exception(errorData['exception'] ?? 'Failed to upload image');
+      }
+    } catch (e) {
+      throw Exception('An error occurred while uploading image: $e');
+    }
+  }
+
+  static Future<void> updateImagePath({
+    required String docname,
+    required String filePath,
+  }) async {
+    final User? user = await SessionManager.getSessionData();
+    if (user == null) {
+      throw Exception('User not logged in');
+    }
+
+    final url = '${ApiNetwork.baseUrl}/api/resource/Attendance Records/$docname';
+    final body = {'atn_image': filePath};
+
+    try {
+      final response = await http.put(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': 'sid=${user.sid}',
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode != 200) {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['exception'] ?? 'Failed to update image path');
+      }
+    } catch (e) {
+      throw Exception('An error occurred while updating path: $e');
     }
   }
 
@@ -77,7 +155,7 @@ class ApiAttendanceHelper {
         if (jsonResponse['data'] != null && jsonResponse['data'].isNotEmpty) {
           return jsonResponse['data'][0]['log_type'];
         }
-        return null; // No record found for today
+        return null;
       } else {
         throw Exception('Failed to fetch last attendance');
       }

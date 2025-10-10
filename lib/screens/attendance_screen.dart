@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:credlawn/custom/custom_color.dart';
 import 'package:credlawn/network/api_attendance_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 class AttendanceScreen extends StatefulWidget {
@@ -26,47 +28,87 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Future<void> _fetchInitialStatus() async {
     try {
       final lastLog = await ApiAttendanceHelper.getLastAttendanceForToday();
-      setState(() {
-        _lastLogType = lastLog;
-      });
+      if (mounted) {
+        setState(() {
+          _lastLogType = lastLog;
+        });
+      }
     } catch (e) {
       if (mounted) {
         CustomColor.showErrorSnackBar(context, e.toString().replaceAll('Exception: ', ''));
       }
     } finally {
-      setState(() {
-        _isScreenLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isScreenLoading = false;
+        });
+      }
     }
   }
 
-  Future<void> _markAttendance(String logType) async {
+  Future<void> _initiateAttendance(String logType) async {
+    final ImagePicker picker = ImagePicker();
+    // Open FRONT Camera
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 50,
+      preferredCameraDevice: CameraDevice.front,
+    );
+
+    // If an image is returned by the camera (i.e., user pressed 'OK' in the native camera UI)
+    if (image != null) {
+      await _submitAttendance(logType, image.path);
+    }
+    // If image is null (user cancelled), do nothing.
+  }
+
+  Future<void> _submitAttendance(String logType, String imagePath) async {
     setState(() {
       _isButtonLoading = true;
     });
 
     try {
+      // Get Location
       Position position = await _determinePosition();
 
-      final response = await ApiAttendanceHelper.markAttendance(
+      // Step 1: Create Record and get docname
+      final String docname = await ApiAttendanceHelper.markAttendance(
         logType: logType,
         latitude: position.latitude,
         longitude: position.longitude,
         remarks: _remarksController.text,
       );
 
-      CustomColor.showSuccessSnackBar(context, response.message);
+      // Step 2: Upload Image and get URL
+      final String fileUrl = await ApiAttendanceHelper.uploadImage(
+        docname: docname,
+        imagePath: imagePath,
+      );
+
+      // Step 3: Update the document with the file URL
+      await ApiAttendanceHelper.updateImagePath(
+        docname: docname,
+        filePath: fileUrl,
+      );
+
+      CustomColor.showSuccessSnackBar(context, 'Attendance marked successfully!');
       _remarksController.clear();
-      setState(() {
-        _lastLogType = logType; // Update the state immediately
-      });
+      if (mounted) {
+        setState(() {
+          _lastLogType = logType; // Update the state immediately
+        });
+      }
 
     } catch (e) {
-      CustomColor.showErrorSnackBar(context, e.toString().replaceAll('Exception: ', ''));
+      if (mounted) {
+        CustomColor.showErrorSnackBar(context, e.toString().replaceAll('Exception: ', ''));
+      }
     } finally {
-      setState(() {
-        _isButtonLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isButtonLoading = false;
+        });
+      }
     }
   }
 
@@ -142,7 +184,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         child: ElevatedButton.icon(
                           onPressed: _isButtonLoading || isCheckInDisabled
                               ? null
-                              : () => _markAttendance('In'),
+                              : () => _initiateAttendance('In'),
                           icon: const Icon(Icons.login),
                           label: const Text('CHECK IN'),
                           style: ElevatedButton.styleFrom(
@@ -158,7 +200,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         child: ElevatedButton.icon(
                           onPressed: _isButtonLoading || isCheckOutDisabled
                               ? null
-                              : () => _markAttendance('Out'),
+                              : () => _initiateAttendance('Out'),
                           icon: const Icon(Icons.logout),
                           label: const Text('CHECK OUT'),
                           style: ElevatedButton.styleFrom(
