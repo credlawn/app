@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:credlawn/network/api_attendance_helper.dart';
 import 'package:credlawn/models/attendance_record_model.dart';
 import 'package:credlawn/custom/custom_color.dart';
+import 'package:intl/intl.dart'; // Added intl import
 
 class AttendanceListWidget extends StatefulWidget {
   const AttendanceListWidget({Key? key}) : super(key: key);
@@ -67,67 +68,117 @@ class AttendanceListWidgetState extends State<AttendanceListWidget> {
               itemBuilder: (context, index) {
                 final record = reversedRecords[index];
 
-              Color statusColor;
-              switch (record.status) {
-                case 'Present':
-                  statusColor = Colors.green;
-                  break;
-                case 'Late Come':
-                  statusColor = Colors.orange;
-                  break;
-                case 'Early Left':
-                  statusColor = Colors.deepOrange;
-                  break;
-                case 'Absent':
-                  statusColor = Colors.red;
-                  break;
-                default:
-                  statusColor = Colors.grey;
-              }
+                // Date Formatting
+                final DateTime recordDate = DateTime.parse(record.date);
+                final String formattedDate = DateFormat('dd-MM-yyyy').format(recordDate);
 
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Date: ${record.date}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('In Time: ${record.inTime}'),
-                          Text('Out Time: ${record.outTime}'),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: Text(
-                            'Status: ${record.status}',
-                            style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
+                // Time Formatting and N/A replacement
+                String formatTime(String time) {
+                  if (time == 'N/A') return ''; // Return empty string for N/A
+                  try {
+                    final DateTime parsedTime = DateFormat('HH:mm:ss').parse(time);
+                    return DateFormat('hh:mm a').format(parsedTime);
+                  } catch (e) {
+                    return time; // Return original if parsing fails
+                  }
+                }
+
+                final String formattedInTime = formatTime(record.inTime);
+                final String formattedOutTime = formatTime(record.outTime);
+
+                // Define office times for comparison
+                final TimeOfDay officeInTimeLimit = const TimeOfDay(hour: 10, minute: 16);
+                final TimeOfDay officeOutTimeLimit = const TimeOfDay(hour: 18, minute: 31);
+
+                Color inTimeColor = Colors.black; // Default color
+                Color outTimeColor = Colors.black; // Default color
+
+                // Determine In Time color
+                if (record.inTime != 'N/A') {
+                  try {
+                    final DateTime parsedInTime = DateFormat('HH:mm:ss').parse(record.inTime);
+                    final TimeOfDay actualInTime = TimeOfDay.fromDateTime(parsedInTime);
+                    if (actualInTime.hour < officeInTimeLimit.hour || (actualInTime.hour == officeInTimeLimit.hour && actualInTime.minute <= officeInTimeLimit.minute)) {
+                      inTimeColor = Colors.green;
+                    } else {
+                      inTimeColor = Colors.red;
+                    }
+                  } catch (e) { /* Handle parsing error if necessary */ }
+                }
+
+                // Determine Out Time color
+                if (record.outTime != 'N/A') {
+                  try {
+                    final DateTime parsedOutTime = DateFormat('HH:mm:ss').parse(record.outTime);
+                    final TimeOfDay actualOutTime = TimeOfDay.fromDateTime(parsedOutTime);
+                    if (actualOutTime.hour < officeOutTimeLimit.hour || (actualOutTime.hour == officeOutTimeLimit.hour && actualOutTime.minute < officeOutTimeLimit.minute)) {
+                      outTimeColor = Colors.red;
+                    } else {
+                      outTimeColor = Colors.green;
+                    }
+                  } catch (e) { /* Handle parsing error if necessary */ }
+                }
+
+                Color statusColor;
+                switch (record.status) {
+                  case 'Present':
+                    statusColor = Colors.green;
+                    break;
+                  case 'Late Come':
+                    statusColor = Colors.orange;
+                    break;
+                  case 'Early Left':
+                    statusColor = Colors.deepOrange;
+                    break;
+                  case 'Absent':
+                    statusColor = Colors.red;
+                    break;
+                  default:
+                    statusColor = Colors.grey;
+                }
+
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Text(
+                              record.status,
+                              style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Date: $formattedDate',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            const SizedBox(height: 4),
+                            Text('In: $formattedInTime', style: TextStyle(color: inTimeColor)),
+                            Text('Out: $formattedOutTime', style: TextStyle(color: outTimeColor)),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
-          );
-        }
-      },
+                );
+              },
+            );
+          }
+        },
     );
   }
 }
