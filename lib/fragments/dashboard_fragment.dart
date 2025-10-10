@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../screens/sample_screen.dart'; // Make sure this path is correct
+import '../screens/attendance_screen.dart'; // Import AttendanceScreen
 
 class DashboardFragment extends StatefulWidget {
   const DashboardFragment({super.key});
@@ -14,10 +15,10 @@ class _DashboardFragmentState extends State<DashboardFragment> {
   // Sample data to replace Dashboard.dashboardList for now
   final List<Map<String, dynamic>> mockData = [
     {
-      'icon': Icons.home,
-      'title': 'Home',
-      'count': '5',
-      'color': Colors.blue,
+      'icon': Icons.how_to_reg,
+      'title': 'Attendance',
+      'count': '',
+      'color': Colors.green,
     },
     {
       'icon': Icons.card_travel,
@@ -53,11 +54,16 @@ class _DashboardFragmentState extends State<DashboardFragment> {
         itemBuilder: (context, index) {
           return GestureDetector(
             onTap: () {
-              // Navigate to SampleScreen when any icon box is tapped
+              Widget targetScreen;
+              if (mockData[index]['title'] == 'Attendance') {
+                targetScreen = const AttendanceScreen();
+              } else {
+                targetScreen = SampleScreen();
+              }
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => SampleScreen(),
+                  builder: (context) => targetScreen,
                 ),
               );
             },
