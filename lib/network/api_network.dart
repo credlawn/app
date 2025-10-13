@@ -17,6 +17,9 @@ class ApiNetwork {
 
   static const String fetchAdobeDumpData = '${baseUrl}api/resource/Adobe Database';
   static const String getDailyAttendanceSummary = '${baseUrl}api/method/credlawn.api.attendance.get_daily_attendance_summary';
+  static const String getPreApprovedLeads = '${baseUrl}api/method/credlawn.api.calling_data.get_pre_approved_leads';
+  static const String getInterestedLeads = '${baseUrl}api/method/credlawn.api.calling_data.get_interested_leads';
+  static const String getNormalLeads = '${baseUrl}api/method/credlawn.api.calling_data.get_normal_leads';
 
   
 

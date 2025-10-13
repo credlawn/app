@@ -7,31 +7,29 @@ import 'package:intl/intl.dart';
 
 // Fetch Normal Calling Data
 Future<List<CallingDataModel>> fetchNormalCallingData(String userId, String sid, String? designation) async {
-  String filters;
-  
-  if (designation != null && designation == 'Branch Manager') {
-    filters = '[["data_type", "=", "Normal Leads"], ["lead_status", "=", "New Lead"]]';
-  } else {
-    filters = '[["email", "=", "$userId"], ["data_type", "=", "Normal Leads"], ["lead_status", "=", "New Lead"], ["data_status", "=", "Allocated"]]';
-  }
 
-  final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status", "update_date"]';
-  final orderBy = 'creation asc';
-  final noLimit = '40';
+  final Map<String, dynamic> queryParams = {
+    'user_id': userId,
+    'designation': designation,
+  };
 
-  final url = '${ApiNetwork.fetchCallingData}?order_by=${Uri.encodeQueryComponent(orderBy)}&filters=${Uri.encodeQueryComponent(filters)}&fields=${Uri.encodeQueryComponent(fields)}&limit=${Uri.encodeQueryComponent(noLimit)}';
+  final Uri uri = Uri.http(
+    Uri.parse(ApiNetwork.baseUrl).host,
+    Uri.parse(ApiNetwork.getNormalLeads).path,
+    queryParams,
+  );
 
   try {
     final response = await http.get(
-      Uri.parse(url),
+      uri,
       headers: {'Cookie': 'sid=$sid'},
     );
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> jsonResponse = json.decode(response.body);
 
-      if (jsonResponse['data'] != null && jsonResponse['data'].isNotEmpty) {
-        return (jsonResponse['data'] as List)
+      if (jsonResponse['message'] != null && jsonResponse['message'].isNotEmpty) {
+        return (jsonResponse['message'] as List)
             .map((item) => CallingDataModel.fromJson(item)) 
             .toList();
       }
@@ -44,31 +42,29 @@ Future<List<CallingDataModel>> fetchNormalCallingData(String userId, String sid,
 }
 
 Future<List<CallingDataModel>> fetchInterestedCallingData(String userId, String sid, String? designation) async {
-  String filters;
-  
-  if (designation != null && designation == 'Branch Manager') {
-    filters = '[["data_type", "=", "Interested Leads"], ["lead_status", "=", "New Lead"]]';
-  } else {
-    filters = '[["email", "=", "$userId"], ["data_type", "=", "Interested Leads"], ["lead_status", "=", "New Lead"], ["data_status", "=", "Allocated"]]';
-  }
 
-  final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status", "update_date"]';
-  final orderBy = 'creation asc';
-  final noLimit = '40';
+  final Map<String, dynamic> queryParams = {
+    'user_id': userId,
+    'designation': designation,
+  };
 
-  final url = '${ApiNetwork.fetchCallingData}?order_by=${Uri.encodeQueryComponent(orderBy)}&filters=${Uri.encodeQueryComponent(filters)}&fields=${Uri.encodeQueryComponent(fields)}&limit=${Uri.encodeQueryComponent(noLimit)}';
+  final Uri uri = Uri.http(
+    Uri.parse(ApiNetwork.baseUrl).host,
+    Uri.parse(ApiNetwork.getInterestedLeads).path,
+    queryParams,
+  );
 
   try {
     final response = await http.get(
-      Uri.parse(url),
+      uri,
       headers: {'Cookie': 'sid=$sid'},
     );
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> jsonResponse = json.decode(response.body);
 
-      if (jsonResponse['data'] != null && jsonResponse['data'].isNotEmpty) {
-        return (jsonResponse['data'] as List)
+      if (jsonResponse['message'] != null && jsonResponse['message'].isNotEmpty) {
+        return (jsonResponse['message'] as List)
             .map((item) => CallingDataModel.fromJson(item)) 
             .toList();
       }
@@ -81,31 +77,29 @@ Future<List<CallingDataModel>> fetchInterestedCallingData(String userId, String 
 }
 
 Future<List<CallingDataModel>> fetchPreApprovedCallingData(String userId, String sid, String? designation) async {
-  String filters;
-  
-  if (designation != null && designation == 'Branch Manager') {
-    filters = '[["data_type", "=", "Pre Approved Leads"], ["lead_status", "=", "New Lead"]]';
-  } else {
-    filters = '[["email", "=", "$userId"], ["data_type", "=", "Pre Approved Leads"], ["lead_status", "=", "New Lead"], ["data_status", "=", "Allocated"]]';
-  }
 
-  final fields = '["name", "customer_name", "mobile_no", "data_status", "data_type", "employee_name", "email", "remarks", "lead_status", "update_date"]';
-  final orderBy = 'creation asc';
-  final noLimit = '30';
+  final Map<String, dynamic> queryParams = {
+    'user_id': userId,
+    'designation': designation,
+  };
 
-  final url = '${ApiNetwork.fetchCallingData}?order_by=${Uri.encodeQueryComponent(orderBy)}&filters=${Uri.encodeQueryComponent(filters)}&fields=${Uri.encodeQueryComponent(fields)}&limit=${Uri.encodeQueryComponent(noLimit)}';
+  final Uri uri = Uri.http(
+    Uri.parse(ApiNetwork.baseUrl).host,
+    Uri.parse(ApiNetwork.getPreApprovedLeads).path,
+    queryParams,
+  );
 
   try {
     final response = await http.get(
-      Uri.parse(url),
+      uri,
       headers: {'Cookie': 'sid=$sid'},
     );
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> jsonResponse = json.decode(response.body);
 
-      if (jsonResponse['data'] != null && jsonResponse['data'].isNotEmpty) {
-        return (jsonResponse['data'] as List)
+      if (jsonResponse['message'] != null && jsonResponse['message'].isNotEmpty) {
+        return (jsonResponse['message'] as List)
             .map((item) => CallingDataModel.fromJson(item))
             .toList();
       }
