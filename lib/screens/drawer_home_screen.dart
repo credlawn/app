@@ -66,6 +66,13 @@ class DrawerHomeScreen extends StatelessWidget {
                         fontWeight: FontWeight.bold
                       ),
                     ),
+                    const SizedBox(height: 5),
+                    Text(
+                      user.role ?? '',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                      ),
+                    ),
                     const SizedBox(height: 15),
                   ],
                 ),

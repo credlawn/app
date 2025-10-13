@@ -12,6 +12,7 @@ class ProfileModel {
   final String email;
   final String age;
   final String tenure;
+  final String role;
 
   ProfileModel({
     required this.employeeName,
@@ -25,6 +26,7 @@ class ProfileModel {
     required this.email,
     required this.age,
     required this.tenure,
+    required this.role,
   });
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
@@ -40,6 +42,7 @@ class ProfileModel {
       email: json['email'] ?? '',
       age: json['age'] ?? '',
       tenure: json['tenure'] ?? '',
+      role: json['role'] ?? '',
     );
   }
 
@@ -68,6 +71,7 @@ class ProfileModel {
       'email': email,
       'age': age,
       'tenure': tenure,
+      'role': role,
     };
   }
 }

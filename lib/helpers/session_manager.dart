@@ -20,6 +20,7 @@ class SessionManager {
     required String email,
     required String age,
     required String tenure,
+    required String role,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final user = User(
@@ -38,6 +39,7 @@ class SessionManager {
       email: email,
       age: age,
       tenure: tenure,
+      role: role,
     );
 
     await prefs.setString(_userKey, user.toJson());
@@ -56,7 +58,7 @@ class SessionManager {
 
   static Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_userKey);
+    await prefs.clear();
   }
 
   static Future<void> logout() async {

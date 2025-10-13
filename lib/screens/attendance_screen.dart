@@ -64,23 +64,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 
-  Future<void> _initiateAttendance(String logType) async {
-    final ImagePicker picker = ImagePicker();
-    // Open FRONT Camera
-    final XFile? image = await picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 50,
-      preferredCameraDevice: CameraDevice.front,
-    );
-
-    // If an image is returned by the camera (i.e., user pressed 'OK' in the native camera UI)
-    if (image != null) {
-      await _submitAttendance(logType, image.path);
-    }
-    // If image is null (user cancelled), do nothing.
-  }
-
-  Future<void> _submitAttendance(String logType, String imagePath) async {
+  Future<void> _handleAttendanceRequest(String logType) async {
     setState(() {
       _isButtonLoading = true;
     });
@@ -96,12 +80,43 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         }
       }
 
+      // If inside geofence, open camera
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 50,
+        preferredCameraDevice: CameraDevice.front,
+      );
+
+      // If an image is taken, submit attendance
+      if (image != null) {
+        await _submitAttendance(logType, image.path, currentPosition);
+      } else {
+        // If user cancels camera, stop loading
+        setState(() {
+          _isButtonLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomColor.showErrorSnackBar(context, e.toString().replaceAll('Exception: ', ''));
+      }
+      setState(() {
+        _isButtonLoading = false;
+      });
+    }
+    // No finally block needed here for setting _isButtonLoading to false,
+    // as it's handled in the success path of _submitAttendance or in the catch/cancel paths.
+  }
+
+  Future<void> _submitAttendance(String logType, String imagePath, Position currentPosition) async {
+    // Button loading is already true from _handleAttendanceRequest
+    try {
       // Step 1: Create Record and get docname
       final String docname = await ApiAttendanceHelper.markAttendance(
         logType: logType,
         latitude: currentPosition.latitude,
         longitude: currentPosition.longitude,
-        // remarks: _remarksController.text, // Removed remarks parameter
       );
 
       // Step 2: Upload Image and get URL
@@ -118,13 +133,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
       CustomColor.showSuccessSnackBar(context, 'Attendance marked successfully!');
       if (mounted) {
-        setState(() {
-          // After successful punch, re-fetch status to update button state
-          _fetchInitialStatusAndGeofence();
-          _attendanceListKey.currentState?.refreshData(); // Refresh the attendance list
-        });
+        // After successful punch, re-fetch status and refresh list
+        await _fetchInitialStatusAndGeofence();
+        _attendanceListKey.currentState?.refreshData();
       }
-
     } catch (e) {
       if (mounted) {
         CustomColor.showErrorSnackBar(context, e.toString().replaceAll('Exception: ', ''));
@@ -174,7 +186,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           'Location permissions are permanently denied, we cannot request permissions.');
     }
 
-    return await Geolocator.getCurrentPosition();
+    try {
+      return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best,
+        forceAndroidLocationManager: Platform.isAndroid ? true : false,
+        timeLimit: const Duration(seconds: 10),
+      );
+    } catch (e) {
+      return Future.error('Failed to get fresh location: $e');
+    }
   }
 
   @override
@@ -190,6 +210,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             padding: const EdgeInsets.only(right: 16.0),
             child: Builder(
               builder: (context) {
+                if (_isScreenLoading) {
+                  return ElevatedButton.icon(
+                    onPressed: null, // Disabled
+                    icon: const Icon(Icons.hourglass_empty, color: Colors.white),
+                    label: const Text('Checking...', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                  );
+                }
+
                 String buttonText = '';
                 IconData buttonIcon = Icons.login;
                 Color buttonColor = Colors.green;
@@ -207,14 +241,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   buttonText = 'CHECK OUT';
                   buttonIcon = Icons.logout;
                   buttonColor = Colors.red;
-                  onPressedCallback = _isButtonLoading ? null : () => _initiateAttendance('Out');
+                  onPressedCallback = _isButtonLoading ? null : () => _handleAttendanceRequest('Out');
                 }
                 // Case 3: No punches for today (or only 'Out' which is invalid)
                 else {
                   buttonText = 'CHECK IN';
                   buttonIcon = Icons.login;
                   buttonColor = Colors.green;
-                  onPressedCallback = _isButtonLoading ? null : () => _initiateAttendance('In');
+                  onPressedCallback = _isButtonLoading ? null : () => _handleAttendanceRequest('In');
                 }
 
                 return ElevatedButton.icon(

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:credlawn/helpers/session_manager.dart';
+import 'package:credlawn/models/user.dart';
+import 'package:credlawn/screens/cards.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../screens/sample_screen.dart'; // Make sure this path is correct
@@ -12,58 +15,78 @@ class DashboardFragment extends StatefulWidget {
 }
 
 class _DashboardFragmentState extends State<DashboardFragment> {
-  // Sample data to replace Dashboard.dashboardList for now
-  final List<Map<String, dynamic>> mockData = [
-    {
-      'icon': Icons.how_to_reg,
-      'title': 'Attendance',
-      'count': '',
-      'color': Colors.green,
-    },
-    {
-      'icon': Icons.card_travel,
-      'title': 'Cards',
-      'count': '2',
-      'color': Colors.green,
-    },
-    {
-      'icon': Icons.notifications,
-      'title': 'Notifications',
-      'count': '10',
-      'color': Colors.red,
-    },
-    {
-      'icon': Icons.settings,
-      'title': 'Settings',
-      'count': '8',
-      'color': Colors.orange,
-    },
-    // Add more mock data if needed
-  ];
+  User? _user;
+  List<Map<String, dynamic>> _dashboardItems = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserDataAndBuildDashboard();
+  }
+
+  Future<void> _loadUserDataAndBuildDashboard() async {
+    _user = await SessionManager.getSessionData();
+    _buildDashboardItems();
+    setState(() {});
+  }
+
+  void _buildDashboardItems() {
+    final allItems = [
+      {
+        'icon': Icons.how_to_reg,
+        'title': 'Attendance',
+        'count': '',
+        'color': Colors.green,
+        'screen': const AttendanceScreen(),
+      },
+      {
+        'icon': Icons.card_travel,
+        'title': 'Cards',
+        'count': '2',
+        'color': Colors.green,
+        'screen': const CardsScreen(),
+      },
+      {
+        'icon': Icons.notifications,
+        'title': 'Notifications',
+        'count': '10',
+        'color': Colors.red,
+        'screen': SampleScreen(),
+      },
+      {
+        'icon': Icons.settings,
+        'title': 'Settings',
+        'count': '8',
+        'color': Colors.orange,
+        'screen': SampleScreen(),
+      },
+    ];
+
+    _dashboardItems = allItems.where((item) {
+      if (item['title'] == 'Cards') {
+        return _user?.role == 'Manager';
+      }
+      return true;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,  // Set the background color to white
+      backgroundColor: Colors.white, // Set the background color to white
       body: AlignedGridView.count(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
-        itemCount: mockData.length,
-        crossAxisCount: 3,  // Set this to 3 to display 3 items per row
+        itemCount: _dashboardItems.length,
+        crossAxisCount: 3, // Set this to 3 to display 3 items per row
         mainAxisSpacing: 6,
         crossAxisSpacing: 6,
         itemBuilder: (context, index) {
           return GestureDetector(
             onTap: () {
-              Widget targetScreen;
-              if (mockData[index]['title'] == 'Attendance') {
-                targetScreen = const AttendanceScreen();
-              } else {
-                targetScreen = SampleScreen();
-              }
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => targetScreen,
+                  builder: (context) => _dashboardItems[index]['screen'],
                 ),
               );
             },
@@ -86,29 +109,29 @@ class _DashboardFragmentState extends State<DashboardFragment> {
               child: Column(
                 children: [
                   Icon(
-                    mockData[index]['icon'],
-                    size: 30.0,  // Smaller size for the icons (adjust as needed)
-                    color: mockData[index]['color'],
+                    _dashboardItems[index]['icon'],
+                    size: 30.0, // Smaller size for the icons (adjust as needed)
+                    color: _dashboardItems[index]['color'],
                   ),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         textAlign: TextAlign.center,
-                        mockData[index]['title'],
+                        _dashboardItems[index]['title'],
                         style: GoogleFonts.poppins(
-                          fontSize: 12,  // Slightly smaller font size for the title
+                          fontSize: 12, // Slightly smaller font size for the title
                           color: Colors.black,
                         ),
                       ),
                       const SizedBox(width: 3),
                       Text(
                         textAlign: TextAlign.center,
-                        mockData[index]['count'],
+                        _dashboardItems[index]['count'],
                         style: GoogleFonts.poppins(
-                          fontSize: 12,  // Slightly smaller font size for the count
+                          fontSize: 12, // Slightly smaller font size for the count
                           fontWeight: FontWeight.w700,
-                          color: mockData[index]['color'],
+                          color: _dashboardItems[index]['color'],
                         ),
                       ),
                     ],

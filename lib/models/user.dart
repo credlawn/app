@@ -17,6 +17,7 @@ class User {
   final String? email;
   final String? age;
   final String? tenure;
+  final String? role;
 
   User({
     required this.sid,
@@ -34,6 +35,7 @@ class User {
     this.email,
     this.age,
     this.tenure,
+    this.role,
   });
 
   User copyWith({
@@ -52,6 +54,7 @@ class User {
     String? email,
     String? age,
     String? tenure,
+    String? role,
   }) {
     return User(
       sid: sid ?? this.sid,
@@ -69,6 +72,7 @@ class User {
       email: email ?? this.email,
       age: age ?? this.age,
       tenure: tenure ?? this.tenure,
+      role: role ?? this.role,
     );
   }
 
@@ -89,6 +93,7 @@ class User {
       'email': email ?? '',
       'age': age ?? '',
       'tenure': tenure ?? '',
+      'role': role ?? '',
     };
   }
 
@@ -109,6 +114,7 @@ class User {
       email: map['email'],
       age: map['age'],
       tenure: map['tenure'],
+      role: map['role'],
     );
   }
 

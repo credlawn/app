@@ -25,6 +25,7 @@ Future<User?> apiLoginHelper(Map<String, dynamic> jsonResponse, String? cookies)
     email: profileData.email ?? '',
     age: profileData.age ?? '',
     tenure: profileData.tenure ?? '',
+    role: profileData.role ?? '',
   );
 
   await SessionManager.saveSessionData(
@@ -43,6 +44,7 @@ Future<User?> apiLoginHelper(Map<String, dynamic> jsonResponse, String? cookies)
     email: user.email ?? '',
     age: user.age ?? '',
     tenure: user.tenure ?? '',
+    role: user.role ?? '',
   );
 
   return user;

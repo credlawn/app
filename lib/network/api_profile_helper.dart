@@ -5,7 +5,7 @@ import 'package:credlawn/network/api_network.dart';
 
 Future<ProfileModel> fetchProfileData(String userId, String sid) async {
   final filters = '{"email": "$userId"}';  
-  final fields = '["name", "employee_name", "joining_date", "employee_code", "date_of_birth", "gender", "department", "designation", "mobile_no", "email", "age", "tenure"]';  
+  final fields = '["name", "employee_name", "joining_date", "employee_code", "date_of_birth", "gender", "department", "designation", "mobile_no", "email", "age", "tenure", "role"]';  
 
   final url = '${ApiNetwork.fetchProfile}?filters=${Uri.encodeQueryComponent(filters)}&fields=${Uri.encodeQueryComponent(fields)}';
 
