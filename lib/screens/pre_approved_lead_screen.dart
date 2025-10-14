@@ -136,7 +136,17 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
                           ),
                           IconButton(
                             icon: const Icon(Icons.call, color: Colors.green, size: 22),
-                            onPressed: () => _callNumber(lead),
+                            onPressed: () {
+                              _callNumber(lead); // Initiate the call
+                              Navigator.push( // Navigate to CustomerDetailsScreen
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CustomerDetailsScreen(
+                                    mobileNo: lead.mobileNo,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
