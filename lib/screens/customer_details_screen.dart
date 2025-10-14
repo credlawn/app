@@ -4,6 +4,9 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:credlawn/custom/custom_color.dart';
 import 'package:credlawn/network/api_customer_details_helper.dart';
 import 'package:credlawn/models/customer_details_model.dart';
+import 'package:credlawn/network/api_login_link_helper.dart'; // Import api_login_link_helper
+import 'package:credlawn/models/login_link_model.dart'; // Import LoginLinkModel
+import 'package:url_launcher/url_launcher.dart'; // Import url_launcher
 
 class CustomerDetailsScreen extends StatefulWidget {
   final String mobileNo;
@@ -21,6 +24,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   void initState() {
     super.initState();
     _customerDetails = fetchCustomerDetails(widget.mobileNo);
+  }
+
+  Future<void> _launchUrl(String url) async {
+    if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
+    }
   }
 
   @override
@@ -96,7 +105,62 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       ),
                     ),
                   ),
-                ],
+                  const SizedBox(height: 24), // Spacing before login links section
+                  Text(
+                    'Login Links:',
+                    style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: CustomColor.MainColor),
+                  ),
+                  const SizedBox(height: 8),
+                  FutureBuilder<List<LoginLinkModel>>(
+                    future: fetchLoginLinks(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Center(child: Text('Error: ${snapshot.error}'));
+                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return const Center(child: Text('No login links available.'));
+                      } else {
+                        final links = snapshot.data!;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: links.map((link) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Link for ${link.linkType}',
+                                    style: GoogleFonts.poppins(fontSize: 16),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () async {
+                                      try {
+                                        await _launchUrl(link.link);
+                                      } catch (e) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('$e')),
+                                        );
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: CustomColor.MainColor,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    child: Text(
+                                      'Apply',
+                                      style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      }
+                    },
+                  ),                ],
               ),
             );
           }
