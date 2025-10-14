@@ -20,6 +20,8 @@ class ApiNetwork {
   static const String getPreApprovedLeads = '${baseUrl}api/method/credlawn.api.calling_data.get_pre_approved_leads';
   static const String getInterestedLeads = '${baseUrl}api/method/credlawn.api.calling_data.get_interested_leads';
   static const String getNormalLeads = '${baseUrl}api/method/credlawn.api.calling_data.get_normal_leads';
+  static const String addRawCallLogEntry = '${baseUrl}api/method/credlawn.api.raw_call_log.add_raw_call_log_entry';
+  static const String addSyncRecord = '${baseUrl}api/method/credlawn.api.raw_call_log.add_sync_record';
 
   
 

@@ -8,6 +8,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart'; // Added GoogleFonts import
+import 'package:credlawn/helpers/call_log_sync_manager.dart';
+import 'package:permission_handler/permission_handler.dart'; // Import permission_handler
+import 'package:credlawn/screens/permission_denied_screen.dart'; // Import PermissionDeniedScreen
 
 // Global navigator key for global navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -15,7 +18,24 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   // Ensure Flutter bindings are initialized before calling `runApp()`
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(MyApp());
+  await CallLogSyncManager.initialize(); // Initialize Workmanager
+
+  // Check and request call log permission
+  var status = await Permission.phone.status;
+  if (!status.isGranted) {
+    status = await Permission.phone.request();
+  }
+
+  Widget initialScreen;
+  if (status.isGranted) {
+    initialScreen = MyApp();
+  } else {
+    initialScreen = const MaterialApp(
+      home: PermissionDeniedScreen(),
+    );
+  }
+
+  runApp(initialScreen);
 }
 
 class MyApp extends StatelessWidget {

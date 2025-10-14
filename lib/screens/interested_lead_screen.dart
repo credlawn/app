@@ -22,38 +22,17 @@ class InterestedLeadsScreen extends StatefulWidget {
   _InterestedLeadsScreenState createState() => _InterestedLeadsScreenState();
 }
 
-class _InterestedLeadsScreenState extends State<InterestedLeadsScreen> with WidgetsBindingObserver {
+class _InterestedLeadsScreenState extends State<InterestedLeadsScreen> {
   late Future<List<CallingDataModel>> _interestedLeads;
-  late String _lastCallDuration;
-  bool _isLoading = false;
-  bool _isCallLogFetched = false;
 
   @override
   void initState() {
     super.initState();
     _interestedLeads = fetchInterestedCallingData(widget.user.userId, widget.user.sid, widget.user.designation);
-    _lastCallDuration = '';
-    WidgetsBinding.instance.addObserver(this);
   }
 
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.resumed) {
-      Future.delayed(Duration(seconds: 2), () {
-        _fetchLastCallDuration();
-      });
-    }
-  }
-
-  void _callNumber(String mobileNo) async {
-    await FlutterPhoneDirectCaller.callNumber(mobileNo);
+  void _callNumber(CallingDataModel lead) async {
+    await FlutterPhoneDirectCaller.callNumber(lead.mobileNo);
   }
 
   void _openWhatsApp(String mobileNo) async {
@@ -70,71 +49,6 @@ class _InterestedLeadsScreenState extends State<InterestedLeadsScreen> with Widg
     } catch (e) {
       print("Could not open WhatsApp: $e");
     }
-  }
-
-  Future<void> _fetchLastCallDuration() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    final Iterable<CallLogEntry> logs = await CallLog.query(
-      dateFrom: DateTime.now().subtract(Duration(days: 1)).millisecondsSinceEpoch,
-    );
-
-    final latestCall = logs.firstWhere(
-      (log) => log.duration != null,
-      orElse: () => CallLogEntry(),
-    );
-
-    if (latestCall.duration != null) {
-      final formattedDuration = _formatDuration(latestCall.duration!);
-      setState(() {
-        _lastCallDuration = formattedDuration;
-        _isLoading = false;
-        _isCallLogFetched = true;
-      });
-    }
-  }
-
-  String _formatDuration(int durationInSeconds) {
-    final minutes = (durationInSeconds / 60).floor();
-    final seconds = durationInSeconds % 60;
-    return '$minutes minutes $seconds seconds';
-  }
-
-  void _showCallDurationPopup() {
-    if (_isCallLogFetched) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text("Call Duration"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Duration: $_lastCallDuration'),
-                SizedBox(height: 10),
-                Text('Would you like to submit this call data?'),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  _submitCallData();
-                  Navigator.pop(context);
-                },
-                child: Text("Submit"),
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
-
-  void _submitCallData() {
-    print("Call data submitted: $_lastCallDuration");
   }
 
   Future<void> _refreshLeads() async {
@@ -249,7 +163,7 @@ class _InterestedLeadsScreenState extends State<InterestedLeadsScreen> with Widg
                                     size: 30,
                                     color: Colors.greenAccent.shade700,
                                   ),
-                                  onPressed: () => _callNumber(lead.mobileNo),
+                                  onPressed: () => _callNumber(lead),
                                 ),
                               ],
                             ),
