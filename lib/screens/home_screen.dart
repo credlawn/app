@@ -8,6 +8,7 @@ import 'package:credlawn/fragments/cards_fragment.dart';
 import 'package:credlawn/fragments/dashboard_fragment.dart';
 import 'package:credlawn/models/user.dart';
 import 'drawer_home_screen.dart'; // Import drawer
+import 'package:credlawn/helpers/call_log_sync_manager.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -60,6 +61,35 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         backgroundColor: CustomColor.MainColor,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.sync, color: Colors.white),
+            onPressed: () async {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please Wait...'),
+                  backgroundColor: Colors.blueGrey,
+                ),
+              );
+              try {
+                await CallLogSyncManager.syncCallLogs();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Lead Status synced successfully!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Sync failed: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+          ),
+        ],
       ),
       drawer: DrawerHomeScreen(user: widget.user),
       body: _fragment[_navBar], // Display selected fragment based on navBar index

@@ -43,117 +43,121 @@ class CallLogSyncManager {
   }
 
   static Future<void> syncCallLogs() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final User? user = await SessionManager.getSessionData();
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final User? user = await SessionManager.getSessionData();
 
-    if (user == null) {
-      print("User not logged in, cannot sync call logs.");
-      return;
-    }
-
-    // 1. Check Call Log Permission
-    var status = await Permission.phone.status;
-    if (!status.isGranted) {
-      status = await Permission.phone.request();
-      if (!status.isGranted) {
-        print("Call log permission denied, cannot sync.");
+      if (user == null) {
+        print("User not logged in, cannot sync call logs.");
         return;
       }
-    }
 
-    final List<ConnectivityResult> connectivityResults = await (Connectivity().checkConnectivity());
-    final bool isOnline = connectivityResults.contains(ConnectivityResult.mobile) || connectivityResults.contains(ConnectivityResult.wifi);
-
-    if (!isOnline) {
-      print("Device is offline, skipping sync.");
-      return; // Only sync when online
-    }
-
-    // Determine dateFrom for CallLog.query
-    int dateFromMillis;
-    final int? lastSuccessfulSyncTime = prefs.getInt(_lastSuccessfulSyncTimeKey);
-
-    if (lastSuccessfulSyncTime == null) {
-      // First time sync: fetch all logs from the beginning of today
-      final DateTime startOfToday = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-      dateFromMillis = startOfToday.millisecondsSinceEpoch;
-      print("First time sync: Fetching logs from start of today: ${startOfToday}");
-    } else {
-      // Subsequent sync: fetch logs since last successful sync time
-      dateFromMillis = lastSuccessfulSyncTime;
-      print("Subsequent sync: Fetching logs from last successful sync time: ${DateTime.fromMillisecondsSinceEpoch(lastSuccessfulSyncTime)}");
-    }
-
-    // 2. Fetch new call logs from device
-    final Iterable<CallLogEntry> newCallLogs = await CallLog.query(
-      dateFrom: dateFromMillis,
-    );
-
-    if (newCallLogs.isEmpty) {
-      print("No new call logs to sync.");
-      return;
-    }
-
-    print("Found ${newCallLogs.length} new call logs from device.");
-
-    final List<String> rawLogsList = [];
-    int latestLogTimestamp = 0;
-
-    for (final logEntry in newCallLogs) {
-      // Ensure timestamp is not null before proceeding
-      if (logEntry.timestamp == null) continue;
-
-      // Only add logs that are strictly newer than the last successful sync time
-      // This handles cases where CallLog.query might return logs slightly older than dateFrom
-      if (logEntry.timestamp! <= dateFromMillis) continue;
-
-      final String rawLogJson = jsonEncode({
-        "number": logEntry.number,
-        "duration": logEntry.duration,
-        "timestamp": logEntry.timestamp,
-        "callType": logEntry.callType.toString().split('.').last,
-        "name": logEntry.name,
-        "simDisplayName": logEntry.simDisplayName,
-        "formattedNumber": logEntry.formattedNumber,
-      });
-
-      rawLogsList.add(rawLogJson);
-
-      if (logEntry.timestamp! > latestLogTimestamp) {
-        latestLogTimestamp = logEntry.timestamp!;
+      // 1. Check Call Log Permission
+      var status = await Permission.phone.status;
+      if (!status.isGranted) {
+        status = await Permission.phone.request();
+        if (!status.isGranted) {
+          print("Call log permission denied, cannot sync.");
+          return;
+        }
       }
-    }
 
-    if (rawLogsList.isEmpty) {
-      print("No new logs to send after filtering by timestamp.");
-      return;
-    }
+      final List<ConnectivityResult> connectivityResults = await (Connectivity().checkConnectivity());
+      final bool isOnline = connectivityResults.contains(ConnectivityResult.mobile) || connectivityResults.contains(ConnectivityResult.wifi);
 
-    final String syncDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final String syncTime = DateFormat('HH:mm:ss').format(DateTime.now());
-    final String allRawLogsJson = jsonEncode(rawLogsList);
+      if (!isOnline) {
+        print("Device is offline, skipping sync.");
+        return; // Only sync when online
+      }
 
-    print("Attempting to send ${rawLogsList.length} logs as a single batch to backend.");
-    try {
-      final bool success = await addSyncRecord(
-        syncDate: syncDate,
-        syncTime: syncTime,
-        userEmail: user.userId,
-        allRawLogsJson: allRawLogsJson,
-        sid: user.sid,
+      // Determine dateFrom for CallLog.query
+      int dateFromMillis;
+      final int? lastSuccessfulSyncTime = prefs.getInt(_lastSuccessfulSyncTimeKey);
+
+      if (lastSuccessfulSyncTime == null) {
+        // First time sync: fetch all logs from the beginning of today
+        final DateTime startOfToday = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+        dateFromMillis = startOfToday.millisecondsSinceEpoch;
+        print("First time sync: Fetching logs from start of today: ${startOfToday}");
+      } else {
+        // Subsequent sync: fetch logs since last successful sync time
+        dateFromMillis = lastSuccessfulSyncTime;
+        print("Subsequent sync: Fetching logs from last successful sync time: ${DateTime.fromMillisecondsSinceEpoch(lastSuccessfulSyncTime)}");
+      }
+
+      // 2. Fetch new call logs from device
+      final Iterable<CallLogEntry> newCallLogs = await CallLog.query(
+        dateFrom: dateFromMillis,
       );
 
-      if (success) {
-        print("Successfully synced all ${rawLogsList.length} logs in a single batch.");
-        // Update last successful sync time to the timestamp of the latest log processed
-        await prefs.setInt(_lastSuccessfulSyncTimeKey, latestLogTimestamp);
-      } else {
-        print("Backend reported failure for sync batch. Will retry on next cycle.");
+      if (newCallLogs.isEmpty) {
+        print("No new call logs to sync.");
+        return;
+      }
+
+      print("Found ${newCallLogs.length} new call logs from device.");
+
+      final List<String> rawLogsList = [];
+      int latestLogTimestamp = 0;
+
+      for (final logEntry in newCallLogs) {
+        // Ensure timestamp is not null before proceeding
+        if (logEntry.timestamp == null) continue;
+
+        // Only add logs that are strictly newer than the last successful sync time
+        // This handles cases where CallLog.query might return logs slightly older than dateFrom
+        if (logEntry.timestamp! <= dateFromMillis) continue;
+
+        final String rawLogJson = jsonEncode({
+          "number": logEntry.number,
+          "duration": logEntry.duration,
+          "timestamp": logEntry.timestamp,
+          "callType": logEntry.callType.toString().split('.').last,
+          "name": logEntry.name,
+          "simDisplayName": logEntry.simDisplayName,
+          "formattedNumber": logEntry.formattedNumber,
+        });
+
+        rawLogsList.add(rawLogJson);
+
+        if (logEntry.timestamp! > latestLogTimestamp) {
+          latestLogTimestamp = logEntry.timestamp!;
+        }
+      }
+
+      if (rawLogsList.isEmpty) {
+        print("No new logs to send after filtering by timestamp.");
+        return;
+      }
+
+      final String syncDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final String syncTime = DateFormat('HH:mm:ss').format(DateTime.now());
+      final String allRawLogsJson = jsonEncode(rawLogsList);
+
+      print("Attempting to send ${rawLogsList.length} logs as a single batch to backend.");
+      try {
+        final bool success = await addSyncRecord(
+          syncDate: syncDate,
+          syncTime: syncTime,
+          userEmail: user.userId,
+          allRawLogsJson: allRawLogsJson,
+          sid: user.sid,
+        );
+
+        if (success) {
+          print("Successfully synced all ${rawLogsList.length} logs in a single batch.");
+          // Update last successful sync time to the timestamp of the latest log processed
+          await prefs.setInt(_lastSuccessfulSyncTimeKey, latestLogTimestamp);
+        } else {
+          print("Backend reported failure for sync batch. Will retry on next cycle.");
+          // Do NOT update _lastSuccessfulSyncTimeKey, so these logs are retried.
+        }
+      } catch (e) {
+        print("Failed to sync call logs to backend: $e. Will retry on next cycle.");
         // Do NOT update _lastSuccessfulSyncTimeKey, so these logs are retried.
       }
     } catch (e) {
-      print("Failed to sync call logs to backend: $e. Will retry on next cycle.");
-      // Do NOT update _lastSuccessfulSyncTimeKey, so these logs are retried.
+      print("An error occurred during syncCallLogs: $e");
     }
   }
 }

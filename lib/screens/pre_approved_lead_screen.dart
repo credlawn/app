@@ -67,4 +67,62 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
         backgroundColor: CustomColor.MainColor,
         elevation: 0.5,
       ),
+      body: FutureBuilder<List<CallingDataModel>>(
+        future: _preApprovedLeads,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: SpinKitCircle(color: CustomColor.MainColor));
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('No leads available.'));
+          } else {
+            final leads = snapshot.data!;
+            return RefreshIndicator(
+              onRefresh: _refreshLeads,
+              child: ListView.builder(
+                itemCount: leads.length,
+                itemBuilder: (context, index) {
+                  final lead = leads[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    elevation: 2,
+                    child: ListTile(
+                      title: Text(lead.customerName, style: GoogleFonts.poppins()),
+                      subtitle: Text(lead.mobileNo, style: GoogleFonts.poppins()),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.call, color: Colors.green),
+                            onPressed: () => _callNumber(lead),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.message, color: Colors.blue),
+                            onPressed: () => _openWhatsApp(lead.mobileNo),
+                          ),
+                        ],
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => LeadStatusUpdateScreen(
+                              leadName: lead.name,
+                              customerName: lead.customerName,
+                              mobileNo: lead.mobileNo,
+                            ),
+                          ),
+                        ).then((_) => _refreshLeads());
+                      },
+                    ),
+                  );
+                },
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
 }

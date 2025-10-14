@@ -19,6 +19,7 @@ void main() async {
   // Ensure Flutter bindings are initialized before calling `runApp()`
   WidgetsFlutterBinding.ensureInitialized();
   await CallLogSyncManager.initialize(); // Initialize Workmanager
+  await CallLogSyncManager.syncCallLogs(); // Trigger a sync on app start
 
   // Check and request call log permission
   var status = await Permission.phone.status;
