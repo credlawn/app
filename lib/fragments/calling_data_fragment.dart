@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/user.dart';
-import '../screens/normal_lead_screen.dart';
-import '../screens/interested_lead_screen.dart';
+
 import '../screens/pre_approved_lead_screen.dart';
 import '../screens/new_card_login_screen.dart';
 import '../screens/today_login_list_screen.dart';
@@ -23,16 +22,7 @@ class CallingDataFragment extends StatefulWidget {
 
 class _CallingDataFragmentState extends State<CallingDataFragment> {
   final List<Map<String, dynamic>> mockCallingData = [
-    {
-      'icon': Icons.phone,
-      'title': 'Normal',
-      'color': Colors.blue,
-    },
-    {
-      'icon': Icons.phone_in_talk,
-      'title': 'Interested',
-      'color': Colors.orange,
-    },
+
     {
       'icon': Icons.phone_forwarded,
       'title': 'Pre Approved',
@@ -78,25 +68,11 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
         itemBuilder: (context, index) {
           return GestureDetector(
             onTap: () {
-              if (mockCallingData[index]['title'] == 'Interested') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => InterestedLeadsScreen(user: widget.user),
-                  ),
-                );
-              } else if (mockCallingData[index]['title'] == 'Pre Approved') {
+              if (mockCallingData[index]['title'] == 'Pre Approved') {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => PreApprovedLeadsScreen(user: widget.user),
-                  ),
-                );
-              } else if (mockCallingData[index]['title'] == 'Normal') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => NormalLeadsScreen(user: widget.user),
                   ),
                 );
               } else if (mockCallingData[index]['title'] == 'CNR') {
