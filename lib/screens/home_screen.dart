@@ -9,6 +9,7 @@ import 'package:credlawn/fragments/dashboard_fragment.dart';
 import 'package:credlawn/models/user.dart';
 import 'drawer_home_screen.dart'; // Import drawer
 import 'package:credlawn/helpers/call_log_sync_manager.dart';
+import 'package:credlawn/network/api_error_logger_helper.dart'; // Import api_error_logger_helper
 
 
 class HomeScreen extends StatefulWidget {
@@ -80,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 );
               } catch (e) {
+                logAppError(errorMessage: e.toString(), errorContext: "Home Screen - Manual Sync Button");
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Sync failed: $e'),

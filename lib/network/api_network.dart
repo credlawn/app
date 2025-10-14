@@ -23,6 +23,7 @@ class ApiNetwork {
   static const String addSyncRecord = '${baseUrl}api/method/credlawn.api.raw_call_log.add_sync_record';
   static const String getCustomerDetails = '${baseUrl}api/method/credlawn.api.customer_detail.get_customer_details';
   static const String getLoginLinks = '${baseUrl}api/method/credlawn.api.login_link.get_login_links';
+  static const String logAppError = '${baseUrl}api/method/credlawn.api.log_app_error.log_error_from_app';
 
   
 

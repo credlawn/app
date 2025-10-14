@@ -7,6 +7,7 @@ import 'package:credlawn/models/customer_details_model.dart';
 import 'package:credlawn/network/api_login_link_helper.dart'; // Import api_login_link_helper
 import 'package:credlawn/models/login_link_model.dart'; // Import LoginLinkModel
 import 'package:url_launcher/url_launcher.dart'; // Import url_launcher
+import 'package:credlawn/network/api_error_logger_helper.dart'; // Import api_error_logger_helper
 
 class CustomerDetailsScreen extends StatefulWidget {
   final String mobileNo;
@@ -47,6 +48,16 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: SpinKitCircle(color: CustomColor.MainColor));
           } else if (snapshot.hasError) {
+            String errorMessage = snapshot.error.toString();
+            logAppError(errorMessage: errorMessage, errorContext: "Customer Details Screen - Customer Details FutureBuilder");
+            if (errorMessage.contains("No customer found with this mobile number.")) {
+              return Center(
+                child: Text(
+                  'No Customer found with this Mobile No',
+                  style: GoogleFonts.poppins(color: Colors.red, fontSize: 16),
+                ),
+              );
+            }
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData) {
             return const Center(child: Text('No customer details available.'));
@@ -117,6 +128,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
                       } else if (snapshot.hasError) {
+                        String errorMessage = snapshot.error.toString();
+                        logAppError(errorMessage: errorMessage, errorContext: "Customer Details Screen - Login Links FutureBuilder");
                         return Center(child: Text('Error: ${snapshot.error}'));
                       } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                         return const Center(child: Text('No login links available.'));
@@ -147,6 +160,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                                       try {
                                         await _launchUrl(link.link);
                                       } catch (e) {
+                                        logAppError(errorMessage: e.toString(), errorContext: "Customer Details Screen - Launch URL");
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(content: Text('$e')),
                                         );
