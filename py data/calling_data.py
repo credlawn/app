@@ -1,138 +1,73 @@
 import frappe
 
 @frappe.whitelist(allow_guest=False)
-def get_pre_approved_leads(user_id, designation):
+def get_employee_leads(user_id):
     """
-    Fetches pre-approved leads based on user designation.
-    - Branch Managers get all pre-approved leads.
-    - Other users get leads assigned to them.
+    Fetches leads for a specific employee with prioritization for 'CNR' and 'New Lead' statuses.
     """
     try:
-        if not user_id or not designation:
-            frappe.throw("User ID and Designation are required.")
-
-        filters = {
-            "data_type": "Pre Approved Leads",
-            "lead_status": "New Lead"
-        }
-
-        if designation != 'Branch Manager':
-            filters["email"] = user_id
-            filters["data_status"] = "Allocated"
+        if not user_id:
+            frappe.throw("User ID is required.")
 
         fields = [
-            "name", 
-            "customer_name", 
-            "mobile_no", 
-            "data_status", 
-            "data_type", 
-            "employee_name", 
-            "email", 
-            "remarks", 
-            "lead_status", 
-            "update_date"
+            "customer_name",
+            "mobile_no",
+            "lead_status",
+            "employee_name"
         ]
 
-        leads = frappe.get_all(
-            "Calling Data",
-            filters=filters,
-            fields=fields,
-            order_by="creation asc",
-            limit_page_length=30
-        )
-
-        return leads
-
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Error in get_pre_approved_leads")
-        return []
-
-@frappe.whitelist(allow_guest=False)
-def get_interested_leads(user_id, designation):
-    """
-    Fetches interested leads based on user designation.
-    """
-    try:
-        if not user_id or not designation:
-            frappe.throw("User ID and Designation are required.")
-
-        filters = {
-            "data_type": "Interested Leads",
-            "lead_status": "New Lead"
+        # 1. Fetch 'CNR' leads up to 40
+        cnr_leads_filters = {
+            "email": user_id,
+            "lead_status": "CNR",
+            "data_status": "Allocated"
         }
-
-        if designation != 'Branch Manager':
-            filters["email"] = user_id
-            filters["data_status"] = "Allocated"
-
-        fields = [
-            "name", 
-            "customer_name", 
-            "mobile_no", 
-            "data_status", 
-            "data_type", 
-            "employee_name", 
-            "email", 
-            "remarks", 
-            "lead_status", 
-            "update_date"
-        ]
-
-        leads = frappe.get_all(
+        cnr_leads = frappe.get_all(
             "Calling Data",
-            filters=filters,
+            filters=cnr_leads_filters,
             fields=fields,
             order_by="creation asc",
             limit_page_length=40
         )
 
-        return leads
+        # 2. Fetch 'New Lead' leads if 'CNR' leads are less than 40
+        new_leads = []
+        remaining_limit = 40 - len(cnr_leads)
+        if remaining_limit > 0:
+            new_leads_filters = {
+                "email": user_id,
+                "lead_status": "New Lead",
+                "data_status": "Allocated"
+            }
+            new_leads = frappe.get_all(
+                "Calling Data",
+                filters=new_leads_filters,
+                fields=fields,
+                order_by="creation asc",
+                limit_page_length=remaining_limit
+            )
 
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Error in get_interested_leads")
-        return []
+        # Combine prioritized leads
+        prioritized_leads = cnr_leads + new_leads
 
-@frappe.whitelist(allow_guest=False)
-def get_normal_leads(user_id, designation):
-    """
-    Fetches normal leads based on user designation.
-    """
-    try:
-        if not user_id or not designation:
-            frappe.throw("User ID and Designation are required.")
-
-        filters = {
-            "data_type": "Normal Leads",
-            "lead_status": "New Lead"
+        # 3. Fetch other leads
+        other_leads_filters = {
+            "email": user_id,
+            "lead_status": ["not in", ["New Lead", "CNR"]],
+            "data_status": "Allocated"
         }
-
-        if designation != 'Branch Manager':
-            filters["email"] = user_id
-            filters["data_status"] = "Allocated"
-
-        fields = [
-            "name", 
-            "customer_name", 
-            "mobile_no", 
-            "data_status", 
-            "data_type", 
-            "employee_name", 
-            "email", 
-            "remarks", 
-            "lead_status", 
-            "update_date"
-        ]
-
-        leads = frappe.get_all(
+        other_leads = frappe.get_all(
             "Calling Data",
-            filters=filters,
+            filters=other_leads_filters,
             fields=fields,
-            order_by="creation asc",
-            limit_page_length=40
+            order_by="creation asc"
         )
 
-        return leads
+        # Combine all leads
+        all_leads = prioritized_leads + other_leads
+
+        return all_leads
 
     except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Error in get_normal_leads")
+        frappe.log_error(frappe.get_traceback(), "Error in get_employee_leads")
         return []

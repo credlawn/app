@@ -7,16 +7,15 @@ import 'package:intl/intl.dart';
 
 
 
-Future<List<CallingDataModel>> fetchPreApprovedCallingData(String userId, String sid, String? designation) async {
+Future<List<CallingDataModel>> fetchEmployeeLeads(String userId, String sid) async {
 
   final Map<String, dynamic> queryParams = {
     'user_id': userId,
-    'designation': designation,
   };
 
   final Uri uri = Uri.http(
     Uri.parse(ApiNetwork.baseUrl).host,
-    Uri.parse(ApiNetwork.getPreApprovedLeads).path,
+    Uri.parse(ApiNetwork.getEmployeeLeads).path,
     queryParams,
   );
 
@@ -39,7 +38,7 @@ Future<List<CallingDataModel>> fetchPreApprovedCallingData(String userId, String
     return Future.error('Failed to load data');
   }
 
-  return Future.error('No Pre Approved leads available');
+  return Future.error('No leads available');
 }
 
 // Fetch CNR Calling Data

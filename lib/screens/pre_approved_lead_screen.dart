@@ -13,6 +13,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'lead_status_update_screen.dart'; // Import LeadStatusUpdateScreen
+import 'customer_details_screen.dart'; // Import CustomerDetailsScreen
 
 class PreApprovedLeadsScreen extends StatefulWidget {
   final User user;
@@ -24,12 +25,12 @@ class PreApprovedLeadsScreen extends StatefulWidget {
 }
 
 class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
-  late Future<List<CallingDataModel>> _preApprovedLeads;
+  late Future<List<CallingDataModel>> _employeeLeads;
 
   @override
   void initState() {
     super.initState();
-    _preApprovedLeads = fetchPreApprovedCallingData(widget.user.userId, widget.user.sid, widget.user.designation);
+    _employeeLeads = fetchEmployeeLeads(widget.user.userId, widget.user.sid);
   }
 
   void _callNumber(CallingDataModel lead) async {
@@ -54,8 +55,19 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
 
   Future<void> _refreshLeads() async {
     setState(() {
-      _preApprovedLeads = fetchPreApprovedCallingData(widget.user.userId, widget.user.sid, widget.user.designation);
+      _employeeLeads = fetchEmployeeLeads(widget.user.userId, widget.user.sid);
     });
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'New Lead':
+        return Colors.blue;
+      case 'CNR':
+        return Colors.red;
+      default:
+        return Colors.grey.shade600;
+    }
   }
 
   @override
@@ -68,7 +80,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
         elevation: 0.5,
       ),
       body: FutureBuilder<List<CallingDataModel>>(
-        future: _preApprovedLeads,
+        future: _employeeLeads,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: SpinKitCircle(color: CustomColor.MainColor));
@@ -78,6 +90,15 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
             return const Center(child: Text('No leads available.'));
           } else {
             final leads = snapshot.data!;
+            leads.sort((a, b) {
+              final statusOrder = {
+                'New Lead': 0,
+                'CNR': 1,
+              };
+              final aOrder = statusOrder[a.leadStatus] ?? 2;
+              final bOrder = statusOrder[b.leadStatus] ?? 2;
+              return aOrder.compareTo(bOrder);
+            });
             return RefreshIndicator(
               onRefresh: _refreshLeads,
               child: ListView.builder(
@@ -85,21 +106,37 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
                 itemBuilder: (context, index) {
                   final lead = leads[index];
                   return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    elevation: 2,
+                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    elevation: 1,
                     child: ListTile(
-                      title: Text(lead.customerName, style: GoogleFonts.poppins()),
-                      subtitle: Text(lead.mobileNo, style: GoogleFonts.poppins()),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      title: Text(
+                        lead.customerName,
+                        style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            lead.leadStatus,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: _getStatusColor(lead.leadStatus),
+                            ),
+                          ),
+                        ],
+                      ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.call, color: Colors.green),
-                            onPressed: () => _callNumber(lead),
+                            icon: const Icon(Icons.message, color: Colors.blue, size: 22),
+                            onPressed: () => _openWhatsApp(lead.mobileNo),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.message, color: Colors.blue),
-                            onPressed: () => _openWhatsApp(lead.mobileNo),
+                            icon: const Icon(Icons.call, color: Colors.green, size: 22),
+                            onPressed: () => _callNumber(lead),
                           ),
                         ],
                       ),
@@ -107,13 +144,11 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => LeadStatusUpdateScreen(
-                              leadName: lead.name,
-                              customerName: lead.customerName,
+                            builder: (context) => CustomerDetailsScreen(
                               mobileNo: lead.mobileNo,
                             ),
                           ),
-                        ).then((_) => _refreshLeads());
+                        );
                       },
                     ),
                   );
@@ -122,7 +157,6 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
             );
           }
         },
-      ),
-    );
+      ),    );
   }
 }
