@@ -130,9 +130,17 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    'Link for ${link.linkType}',
-                                    style: GoogleFonts.poppins(fontSize: 16),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Link for ',
+                                        style: GoogleFonts.poppins(fontSize: 12), // Smaller font size for "Link for"
+                                      ),
+                                      Text(
+                                        link.linkType,
+                                        style: GoogleFonts.poppins(fontSize: 16), // Original font size for Link Type
+                                      ),
+                                    ],
                                   ),
                                   ElevatedButton(
                                     onPressed: () async {
@@ -147,10 +155,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: CustomColor.MainColor,
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), // Reduced padding
                                     ),
                                     child: Text(
                                       'Apply',
-                                      style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
+                                      style: GoogleFonts.poppins(fontSize: 14, color: Colors.white), // Increased font size
                                     ),
                                   ),
                                 ],

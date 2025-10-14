@@ -30,6 +30,22 @@ def get_customer_details(mobile_no):
                 customer["product_desc"] = customer["product_desc"].title()
             if customer.get("employer"):
                 customer["employer"] = customer["employer"].title()
+
+            # Apply seg_id transformation
+            if customer.get("seg_id"):
+                original_seg_id = customer["seg_id"].upper() # Case-insensitive check
+                if original_seg_id == "WL" or original_seg_id == "NDB":
+                    customer["seg_id"] = "ETB"
+                elif original_seg_id == "OPM":
+                    customer["seg_id"] = "NTB"
+
+            # Apply checkdefect_desc transformation
+            if customer.get("checkdefect_desc"):
+                original_checkdefect_desc = customer["checkdefect_desc"].lower() # Case-insensitive check
+                if "resi" in original_checkdefect_desc:
+                    customer["checkdefect_desc"] = "Resi Negative"
+                elif "biz" in original_checkdefect_desc:
+                    customer["checkdefect_desc"] = "Biz Negative"
             return customer
         else:
             return {"message": "No customer found with this mobile number.", "status": "not_found"}
