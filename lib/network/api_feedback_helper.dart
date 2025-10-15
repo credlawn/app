@@ -7,18 +7,23 @@ import 'package:credlawn/models/user.dart'; // Import User model
 Future<bool> saveCustomerFeedback({
   required String mobileNo,
   required String remarks,
+  String? status,
+  String? referenceNo,
+  required String userId,
 }) async {
   final User? user = await SessionManager.getSessionData();
   String? sid = user?.sid;
 
   if (sid == null) {
-    print('Error saving feedback: No user session.');
     return false;
   }
 
   final Map<String, dynamic> body = {
     'mobile_no': mobileNo,
     'remarks': remarks,
+    'status': status,
+    'reference_no': referenceNo,
+    'user': userId,
   };
 
   try {

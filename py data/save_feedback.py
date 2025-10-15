@@ -1,7 +1,7 @@
 import frappe
 
 @frappe.whitelist(allow_guest=False)
-def save_customer_feedback(mobile_no, remarks):
+def save_customer_feedback(mobile_no, remarks, status=None, reference_no=None, user=None):
     """
     Saves customer feedback related to a call.
     """
@@ -9,11 +9,12 @@ def save_customer_feedback(mobile_no, remarks):
         if not mobile_no:
             frappe.throw("Mobile number is required.")
 
-        # Assuming a DocType named 'Customer Feedback' exists with fields 'mobile_no' and 'remarks'
-        # If not, you might need to create this DocType in Frappe.
         feedback_doc = frappe.new_doc("Customer Feedback")
         feedback_doc.mobile_no = mobile_no
         feedback_doc.remarks = remarks
+        feedback_doc.status = status
+        feedback_doc.reference_no = reference_no
+        feedback_doc.user = user
         feedback_doc.insert(ignore_permissions=True)
 
         return {"success": True, "message": "Feedback saved successfully."}

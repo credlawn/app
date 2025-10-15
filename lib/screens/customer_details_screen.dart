@@ -28,6 +28,7 @@ class CustomerDetailsScreen extends StatefulWidget {
 class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   late Future<CustomerDetailsModel> _customerDetails;
   final TextEditingController _remarksController = TextEditingController();
+  final TextEditingController _referenceNoController = TextEditingController();
 
   @override
   void initState() {
@@ -38,6 +39,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   @override
   void dispose() {
     _remarksController.dispose();
+    _referenceNoController.dispose();
     super.dispose();
   }
 
@@ -48,76 +50,145 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }
 
   Future<void> _showFeedbackDialog(BuildContext context) async {
+    String? selectedStatus;
+    final List<String> statusOptions = [
+      'IP Approved',
+      'IP Decline',
+      'Customer Denied',
+      'Docs Not Available',
+      'Already Carded',
+      'Recently Applied',
+      'CNR'
+    ];
+
     return showDialog<void>(
       context: context,
       barrierDismissible: false, // User must tap button to close
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text('Provide Feedback', style: GoogleFonts.poppins()),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text('Mobile Number: ${widget.mobileNo}', style: GoogleFonts.poppins()),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _remarksController,
-                  decoration: InputDecoration(
-                    labelText: 'Remarks',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 3,
-                ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Cancel', style: GoogleFonts.poppins(color: Colors.red)),
-              onPressed: () {
-                _remarksController.clear();
-                Navigator.of(dialogContext).pop(); // Dismiss dialog
-              },
-            ),
-            ElevatedButton(
-              child: Text('Submit', style: GoogleFonts.poppins(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: CustomColor.MainColor),
-              onPressed: () async {
-                // Call API to save feedback
-                bool success = await saveCustomerFeedback(
-                  mobileNo: widget.mobileNo,
-                  remarks: _remarksController.text,
-                );
-                if (success) {
-                  AppStateManager.clearPendingFeedbackMobile();
-                  CustomColor.showSuccessSnackBar(context, 'Feedback submitted successfully!');
-                  _remarksController.clear();
-                  Navigator.of(dialogContext).pop(); // Dismiss dialog
-
-                  if (Navigator.canPop(context)) {
-                    Navigator.of(context).pop(true);
-                  } else {
-                    final user = await SessionManager.getSessionData();
-                    if (user != null) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PreApprovedLeadsScreen(user: user),
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Text('Provide Feedback', style: GoogleFonts.poppins()),
+            content: SizedBox(
+              width: MediaQuery.of(context).size.width * 0.9,
+              child: SingleChildScrollView(
+                child: ListBody(
+                  children: <Widget>[
+                    Text('Mobile Number: ${widget.mobileNo}', style: GoogleFonts.poppins()),
+                    const SizedBox(height: 20),
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: 'Select Status',
+                        border: OutlineInputBorder(),
+                      ),
+                      value: selectedStatus,
+                      hint: Text('Select Status'),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          selectedStatus = newValue;
+                          _remarksController.clear();
+                          _referenceNoController.clear();
+                        });
+                      },
+                      items: statusOptions.map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    if (selectedStatus == 'IP Approved')
+                      TextField(
+                        controller: _referenceNoController,
+                        decoration: InputDecoration(
+                          labelText: 'Reference No',
+                          border: OutlineInputBorder(),
                         ),
-                      );
-                    } else {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => LoginScreen()),
-                      );
-                    }
-                  }
-                } else {
-                  CustomColor.showErrorSnackBar(context, 'Failed to submit feedback.');
-                }
-              },
+                      )
+                    else if (selectedStatus != null)
+                      TextField(
+                        controller: _remarksController,
+                        decoration: InputDecoration(
+                          labelText: 'Remarks',
+                          border: OutlineInputBorder(),
+                        ),
+                        maxLines: 3,
+                      ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        );
+            actions: <Widget>[
+              TextButton(
+                child: Text('Cancel', style: GoogleFonts.poppins(color: Colors.red)),
+                onPressed: () {
+                  _remarksController.clear();
+                  _referenceNoController.clear();
+                  Navigator.of(dialogContext).pop(); // Dismiss dialog
+                },
+              ),
+              ElevatedButton(
+                child: Text('Submit', style: GoogleFonts.poppins(color: Colors.white)),
+                style: ElevatedButton.styleFrom(backgroundColor: CustomColor.MainColor),
+                onPressed: () async {
+                  // Validation
+                  if (selectedStatus == null) {
+                    CustomColor.showErrorSnackBar(dialogContext, 'Please select a status.');
+                    return;
+                  }
+                  if (selectedStatus == 'IP Approved' && _referenceNoController.text.isEmpty) {
+                    CustomColor.showErrorSnackBar(dialogContext, 'Please enter a reference number.');
+                    return;
+                  }
+
+                  // Get the current user to pass the ID
+                  final user = await SessionManager.getSessionData();
+                  if (user == null) {
+                    CustomColor.showErrorSnackBar(dialogContext, 'User session not found. Please log in again.');
+                    return;
+                  }
+
+                  // Call API to save feedback
+                  bool success = await saveCustomerFeedback(
+                    mobileNo: widget.mobileNo,
+                    remarks: _remarksController.text,
+                    status: selectedStatus,
+                    referenceNo: _referenceNoController.text,
+                    userId: user.userId, // Pass the user ID
+                  );
+                  if (success) {
+                    AppStateManager.clearPendingFeedbackMobile();
+                    CustomColor.showSuccessSnackBar(context, 'Feedback submitted successfully!');
+                    _remarksController.clear();
+                    _referenceNoController.clear();
+                    Navigator.of(dialogContext).pop(); // Dismiss dialog
+
+                    if (Navigator.canPop(context)) {
+                      Navigator.of(context).pop(true);
+                    } else {
+                      final user = await SessionManager.getSessionData();
+                      if (user != null) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PreApprovedLeadsScreen(user: user),
+                          ),
+                        );
+                      } else {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => LoginScreen()),
+                        );
+                      }
+                    }
+                  } else {
+                    CustomColor.showErrorSnackBar(context, 'Failed to submit feedback.');
+                  }
+                },
+              ),
+            ],
+          );
+        });
       },
     );
   }
