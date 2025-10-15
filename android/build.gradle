@@ -21,11 +21,11 @@ allprojects {
 subprojects {
     if (it.hasProperty("android")) {
         it.android {
-            compileSdkVersion 34
+            compileSdkVersion 36
 
             defaultConfig {
-                minSdkVersion 16
-                targetSdkVersion 34
+                minSdkVersion 21
+                targetSdkVersion 36
             }
 
             compileOptions {

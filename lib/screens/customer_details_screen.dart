@@ -4,16 +4,18 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:credlawn/custom/custom_color.dart';
 import 'package:credlawn/network/api_customer_details_helper.dart';
 import 'package:credlawn/models/customer_details_model.dart';
-import 'package:credlawn/network/api_login_link_helper.dart'; // Import api_login_link_helper
-import 'package:credlawn/models/login_link_model.dart'; // Import LoginLinkModel
-import 'package:url_launcher/url_launcher.dart'; // Import url_launcher
-import 'package:credlawn/network/api_error_logger_helper.dart'; // Import api_error_logger_helper
+import 'package:credlawn/network/api_login_link_helper.dart';
+import 'package:credlawn/models/login_link_model.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:credlawn/network/api_error_logger_helper.dart';
 import 'package:credlawn/helpers/app_state_manager.dart';
-import 'package:credlawn/network/api_feedback_helper.dart'; // Import api_feedback_helper
+import 'package:credlawn/network/api_feedback_helper.dart';
 import 'package:credlawn/models/user.dart';
 import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/screens/pre_approved_lead_screen.dart';
 import 'package:credlawn/screens/login_screen.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
 class CustomerDetailsScreen extends StatefulWidget {
   final String mobileNo;
@@ -43,6 +45,154 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     super.dispose();
   }
 
+  Future<void> _pickImage(ImageSource source, Function(String) onTextRecognized) async {
+    print('[_pickImage] Picking image from $source');
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: source);
+    if (pickedFile != null) {
+      print('[_pickImage] Image picked: ${pickedFile.path}');
+      _performOcr(pickedFile.path, onTextRecognized);
+    } else {
+      print('[_pickImage] No image picked.');
+    }
+  }
+
+void _performOcr(String imagePath, Function(String) onTextRecognized) async {
+  print('[_performOcr] Starting OCR for image: $imagePath');
+
+  final textRecognizer = TextRecognizer();
+  final recognizedText = await textRecognizer.processImage(InputImage.fromFilePath(imagePath));
+  await textRecognizer.close();
+
+  String foundRefNumber = '';
+  
+  bool _isValidArn(String text) {
+    if (text.length != 16) return false;
+    
+    // D25J format (D25J + 8 digits + 4 alphanumeric)
+    if (text.startsWith('D25J')) {
+      String middle = text.substring(4, 12);
+      String last = text.substring(12);
+      bool middleIsDigits = RegExp(r'^[0-9]+$').hasMatch(middle);
+      bool lastIsAlphaNum = RegExp(r'^[A-Z0-9]+$').hasMatch(last);
+      return middleIsDigits && lastIsAlphaNum;
+    }
+    
+    // 25XXX format (25 + 3 alphanumeric + 11 alphanumeric)
+    if (text.startsWith('25')) {
+      return RegExp(r'^25[A-Z0-9]{14}$').hasMatch(text);
+    }
+    
+    return false;
+  }
+
+  String _cleanArn(String text) {
+    text = text.toUpperCase();
+    
+    // Single character replacements
+    text = text.replaceAll(']', 'J');
+    text = text.replaceAll('[', 'I');
+    text = text.replaceAll('|', 'I');
+    text = text.replaceAll('(', 'C');
+    text = text.replaceAll(')', '');
+    
+    // Remove all non-alphanumeric characters
+    text = text.replaceAll(RegExp(r'[^A-Z0-9]'), '');
+    
+    if (text.length != 16) return text;
+    
+    // For D25J format, ensure middle 8 characters are digits
+    if (text.startsWith('D25J')) {
+      String middle = text.substring(4, 12);
+      String last = text.substring(12);
+      
+      // Convert common OCR errors in digits part
+      String fixedMiddle = middle
+          .replaceAll('O', '0')
+          .replaceAll('S', '5')
+          .replaceAll('I', '1')
+          .replaceAll('Z', '2')
+          .replaceAll('B', '8');
+      
+      // Only apply if it makes it more numeric
+      int originalDigits = middle.replaceAll(RegExp(r'[^0-9]'), '').length;
+      int fixedDigits = fixedMiddle.replaceAll(RegExp(r'[^0-9]'), '').length;
+      
+      if (fixedDigits > originalDigits) {
+        text = 'D25J' + fixedMiddle + last;
+      }
+    }
+    
+    return text;
+  }
+
+  final RegExp arnRegExp = RegExp(r'[A-Z0-9\]\[]{16}');
+
+  int refIndex = recognizedText.blocks.indexWhere((block) {
+    final t = block.text.toLowerCase();
+    return t.contains('arn') || t.contains('reference number');
+  });
+
+  void searchFrom(int startIndex) {
+    for (int i = startIndex; i < recognizedText.blocks.length; i++) {
+      final rawText = recognizedText.blocks[i].text;
+      final cleaned = _cleanArn(rawText);
+      
+      print('[_performOcr] Block $i: $rawText');
+      print('[_performOcr] Cleaned: $cleaned');
+      
+      if (cleaned.length == 16 && _isValidArn(cleaned)) {
+        foundRefNumber = cleaned;
+        print('[_performOcr] Found valid ARN: $foundRefNumber');
+        break;
+      }
+      
+      // Also check for pattern in original text
+      final match = arnRegExp.firstMatch(rawText);
+      if (match != null) {
+        final candidate = _cleanArn(match.group(0)!);
+        if (candidate.length == 16 && _isValidArn(candidate)) {
+          foundRefNumber = candidate;
+          print('[_performOcr] Found ARN via regex: $foundRefNumber');
+          break;
+        }
+      }
+    }
+  }
+
+  if (refIndex != -1) {
+    print('[_performOcr] Found keyword near block $refIndex — searching next...');
+    searchFrom(refIndex + 1);
+  }
+
+  if (foundRefNumber.isEmpty) {
+    print('[_performOcr] Fallback: searching all blocks...');
+    searchFrom(0);
+  }
+
+  if (foundRefNumber.isNotEmpty) {
+    print('[_performOcr] Final ARN: $foundRefNumber');
+    onTextRecognized(foundRefNumber);
+  } else {
+    print('[_performOcr] No valid ARN found.');
+    
+    // Last resort: combine all text and search
+    final allText = recognizedText.blocks.map((b) => b.text).join(' ');
+    final matches = arnRegExp.allMatches(allText);
+    
+    for (final match in matches) {
+      final candidate = _cleanArn(match.group(0)!);
+      if (candidate.length == 16 && _isValidArn(candidate)) {
+        foundRefNumber = candidate;
+        print('[_performOcr] Found in combined text: $foundRefNumber');
+        onTextRecognized(foundRefNumber);
+        return;
+      }
+    }
+  }
+}
+
+
   Future<void> _launchUrl(String url) async {
     if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
       throw Exception('Could not launch $url');
@@ -63,8 +213,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
     return showDialog<void>(
       context: context,
-      barrierDismissible: false, // User must tap button to close
-      builder: (BuildContext dialogContext) {
+      barrierDismissible: false,
+      builder: (BuildContext dialog_context) {
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
             title: Text('Provide Feedback', style: GoogleFonts.poppins()),
@@ -103,6 +253,44 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         decoration: InputDecoration(
                           labelText: 'Reference No',
                           border: OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            icon: Icon(Icons.camera_alt),
+                            onPressed: () {
+                              showModalBottomSheet(
+                                context: context,
+                                builder: (context) {
+                                  return Wrap(
+                                    children: <Widget>[
+                                      ListTile(
+                                        leading: Icon(Icons.camera_alt),
+                                        title: Text('Camera'),
+                                        onTap: () {
+                                          Navigator.pop(context);
+                                          _pickImage(ImageSource.camera, (text) {
+                                            setState(() {
+                                              _referenceNoController.text = text;
+                                            });
+                                          });
+                                        },
+                                      ),
+                                      ListTile(
+                                        leading: Icon(Icons.photo_library),
+                                        title: Text('Gallery'),
+                                        onTap: () {
+                                          Navigator.pop(context);
+                                          _pickImage(ImageSource.gallery, (text) {
+                                            setState(() {
+                                              _referenceNoController.text = text;
+                                            });
+                                          });
+                                        },
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                          ),
                         ),
                       )
                     else if (selectedStatus != null)
@@ -124,44 +312,41 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 onPressed: () {
                   _remarksController.clear();
                   _referenceNoController.clear();
-                  Navigator.of(dialogContext).pop(); // Dismiss dialog
+                  Navigator.of(dialog_context).pop();
                 },
               ),
               ElevatedButton(
                 child: Text('Submit', style: GoogleFonts.poppins(color: Colors.white)),
                 style: ElevatedButton.styleFrom(backgroundColor: CustomColor.MainColor),
                 onPressed: () async {
-                  // Validation
                   if (selectedStatus == null) {
-                    CustomColor.showErrorSnackBar(dialogContext, 'Please select a status.');
+                    CustomColor.showErrorSnackBar(dialog_context, 'Please select a status.');
                     return;
                   }
                   if (selectedStatus == 'IP Approved' && _referenceNoController.text.isEmpty) {
-                    CustomColor.showErrorSnackBar(dialogContext, 'Please enter a reference number.');
+                    CustomColor.showErrorSnackBar(dialog_context, 'Please enter a reference number.');
                     return;
                   }
 
-                  // Get the current user to pass the ID
                   final user = await SessionManager.getSessionData();
                   if (user == null) {
-                    CustomColor.showErrorSnackBar(dialogContext, 'User session not found. Please log in again.');
+                    CustomColor.showErrorSnackBar(dialog_context, 'User session not found. Please log in again.');
                     return;
                   }
 
-                  // Call API to save feedback
                   bool success = await saveCustomerFeedback(
                     mobileNo: widget.mobileNo,
                     remarks: _remarksController.text,
                     status: selectedStatus,
                     referenceNo: _referenceNoController.text,
-                    userId: user.userId, // Pass the user ID
+                    userId: user.userId,
                   );
                   if (success) {
                     AppStateManager.clearPendingFeedbackMobile();
                     CustomColor.showSuccessSnackBar(context, 'Feedback submitted successfully!');
                     _remarksController.clear();
                     _referenceNoController.clear();
-                    Navigator.of(dialogContext).pop(); // Dismiss dialog
+                    Navigator.of(dialog_context).pop();
 
                     if (Navigator.canPop(context)) {
                       Navigator.of(context).pop(true);
@@ -243,7 +428,6 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // First Card: Name, Mobile, City, Employer
                     Card(
                       margin: const EdgeInsets.symmetric(vertical: 8.0),
                       elevation: 1,
@@ -268,8 +452,6 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-
-                    // Second Card: Segment, Reason, Product
                     Card(
                       margin: const EdgeInsets.symmetric(vertical: 8.0),
                       elevation: 1,
