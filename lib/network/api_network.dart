@@ -24,6 +24,7 @@ class ApiNetwork {
   static const String getCustomerDetails = '${baseUrl}api/method/credlawn.api.customer_detail.get_customer_details';
   static const String getLoginLinks = '${baseUrl}api/method/credlawn.api.login_link.get_login_links';
   static const String logAppError = '${baseUrl}api/method/credlawn.api.log_app_error.log_error_from_app';
+  static const String saveCustomerFeedback = '${baseUrl}api/method/credlawn.api.save_feedback.save_customer_feedback';
 
   
 

@@ -143,6 +143,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
                                 MaterialPageRoute(
                                   builder: (context) => CustomerDetailsScreen(
                                     mobileNo: lead.mobileNo,
+                                    isAutoOpenedAfterCall: true, // Pass true for auto-opened
                                   ),
                                 ),
                               );
@@ -156,6 +157,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
                           MaterialPageRoute(
                             builder: (context) => CustomerDetailsScreen(
                               mobileNo: lead.mobileNo,
+                              isAutoOpenedAfterCall: false, // Pass false for direct click
                             ),
                           ),
                         );
