@@ -9,6 +9,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart'; // Added GoogleFonts import
 import 'package:credlawn/helpers/call_log_sync_manager.dart';
+import 'package:credlawn/helpers/app_state_manager.dart';
+import 'package:credlawn/screens/customer_details_screen.dart';
 import 'package:permission_handler/permission_handler.dart'; // Import permission_handler
 import 'package:credlawn/screens/permission_denied_screen.dart'; // Import PermissionDeniedScreen
 
@@ -21,6 +23,9 @@ void main() async {
   await CallLogSyncManager.initialize(); // Initialize Workmanager
   await CallLogSyncManager.syncCallLogs(); // Trigger a sync on app start
 
+  // Check for pending feedback
+  final String? pendingFeedbackMobile = await AppStateManager.getPendingFeedbackMobile();
+
   // Check and request call log permission
   var status = await Permission.phone.status;
   if (!status.isGranted) {
@@ -29,7 +34,7 @@ void main() async {
 
   Widget initialScreen;
   if (status.isGranted) {
-    initialScreen = MyApp();
+    initialScreen = MyApp(pendingFeedbackMobile: pendingFeedbackMobile);
   } else {
     initialScreen = const MaterialApp(
       home: PermissionDeniedScreen(),
@@ -40,7 +45,8 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String? pendingFeedbackMobile;
+  const MyApp({super.key, this.pendingFeedbackMobile});
 
   @override
   Widget build(BuildContext context) {
@@ -58,20 +64,22 @@ class MyApp extends StatelessWidget {
         dialogBackgroundColor: Colors.white,
         buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary),
       ),
-      home: FutureBuilder<User?>(
-        future: _checkSession(context),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error loading session'));
-          } else if (snapshot.hasData && snapshot.data != null) {
-            return HomeScreen(user: snapshot.data!);
-          } else {
-            return LoginScreen();
-          }
-        },
-      ),
+      home: pendingFeedbackMobile != null
+          ? CustomerDetailsScreen(mobileNo: pendingFeedbackMobile!, isAutoOpenedAfterCall: true)
+          : FutureBuilder<User?>(
+              future: _checkSession(context),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error loading session'));
+                } else if (snapshot.hasData && snapshot.data != null) {
+                  return HomeScreen(user: snapshot.data!);
+                } else {
+                  return LoginScreen();
+                }
+              },
+            ),
     );
   }
 

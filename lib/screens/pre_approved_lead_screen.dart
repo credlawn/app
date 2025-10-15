@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:call_log/call_log.dart';
 import 'package:credlawn/helpers/call_log_sync_manager.dart';
+import 'package:credlawn/helpers/app_state_manager.dart';
 import 'package:credlawn/custom/custom_color.dart';
 import '../network/api_calling_data_helper.dart';
 import '../models/calling_data_model.dart';
@@ -135,15 +136,16 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
                             onPressed: () => _openWhatsApp(lead.mobileNo),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.call, color: Colors.green, size: 22),
-                            onPressed: () {
-                              _callNumber(lead); // Initiate the call
-                              Navigator.push( // Navigate to CustomerDetailsScreen
+                            icon: const Icon(Icons.call, size: 30, color: Colors.green),
+                            onPressed: () async {
+                              await AppStateManager.setPendingFeedbackMobile(lead.mobileNo);
+                              await FlutterPhoneDirectCaller.callNumber(lead.mobileNo);
+                              Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => CustomerDetailsScreen(
                                     mobileNo: lead.mobileNo,
-                                    isAutoOpenedAfterCall: true, // Pass true for auto-opened
+                                    isAutoOpenedAfterCall: true,
                                   ),
                                 ),
                               );

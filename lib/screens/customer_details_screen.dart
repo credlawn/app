@@ -8,7 +8,12 @@ import 'package:credlawn/network/api_login_link_helper.dart'; // Import api_logi
 import 'package:credlawn/models/login_link_model.dart'; // Import LoginLinkModel
 import 'package:url_launcher/url_launcher.dart'; // Import url_launcher
 import 'package:credlawn/network/api_error_logger_helper.dart'; // Import api_error_logger_helper
+import 'package:credlawn/helpers/app_state_manager.dart';
 import 'package:credlawn/network/api_feedback_helper.dart'; // Import api_feedback_helper
+import 'package:credlawn/models/user.dart';
+import 'package:credlawn/helpers/session_manager.dart';
+import 'package:credlawn/screens/pre_approved_lead_screen.dart';
+import 'package:credlawn/screens/login_screen.dart';
 
 class CustomerDetailsScreen extends StatefulWidget {
   final String mobileNo;
@@ -83,10 +88,29 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   remarks: _remarksController.text,
                 );
                 if (success) {
+                  AppStateManager.clearPendingFeedbackMobile();
                   CustomColor.showSuccessSnackBar(context, 'Feedback submitted successfully!');
                   _remarksController.clear();
                   Navigator.of(dialogContext).pop(); // Dismiss dialog
-                  Navigator.of(context).pop(true); // Allow back navigation from CustomerDetailsScreen
+
+                  if (Navigator.canPop(context)) {
+                    Navigator.of(context).pop(true);
+                  } else {
+                    final user = await SessionManager.getSessionData();
+                    if (user != null) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PreApprovedLeadsScreen(user: user),
+                        ),
+                      );
+                    } else {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => LoginScreen()),
+                      );
+                    }
+                  }
                 } else {
                   CustomColor.showErrorSnackBar(context, 'Failed to submit feedback.');
                 }
