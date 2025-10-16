@@ -30,7 +30,7 @@ class CallingDataModel {
   factory CallingDataModel.fromJson(Map<String, dynamic> json) {
     return CallingDataModel(
       name: json['name'] ?? '',
-      customerName: json['customer_name'] ?? '',
+      customerName: json['full_name'] ?? '',
       mobileNo: json['mobile_no']?.toString() ?? '',
       dataStatus: json['data_status'] ?? '',
       dataType: json['data_type'] ?? '',
