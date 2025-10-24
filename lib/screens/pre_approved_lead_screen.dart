@@ -27,11 +27,37 @@ class PreApprovedLeadsScreen extends StatefulWidget {
 
 class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
   late Future<List<CallingDataModel>> _employeeLeads;
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+  List<CallingDataModel> _allLeads = [];
+  List<CallingDataModel> _filteredLeads = [];
 
   @override
   void initState() {
     super.initState();
     _employeeLeads = fetchEmployeeLeads(widget.user.userId, widget.user.sid);
+    _searchController.addListener(() {
+      _filterLeads();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterLeads() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _searchQuery = query;
+      _filteredLeads = _allLeads.where((lead) {
+        final nameMatches = lead.customerName.toLowerCase().contains(query);
+        final mobileMatches = lead.mobileNo.toLowerCase().contains(query);
+        return nameMatches || mobileMatches;
+      }).toList();
+    });
   }
 
   void _callNumber(CallingDataModel lead) async {
@@ -56,6 +82,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
 
   Future<void> _refreshLeads() async {
     setState(() {
+      _allLeads = [];
       _employeeLeads = fetchEmployeeLeads(widget.user.userId, widget.user.sid);
     });
   }
@@ -71,15 +98,62 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
     }
   }
 
+  AppBar _buildAppBar() {
+    if (_isSearching) {
+      return AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            setState(() {
+              _isSearching = false;
+              _searchController.clear();
+            });
+          },
+        ),
+        title: TextField(
+          controller: _searchController,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Search by name or mobile...',
+            hintStyle: TextStyle(color: Colors.white70),
+            border: InputBorder.none,
+          ),
+          style: const TextStyle(color: Colors.white),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.clear, color: Colors.white),
+            onPressed: () {
+              _searchController.clear();
+            },
+          ),
+        ],
+        backgroundColor: CustomColor.MainColor,
+      );
+    } else {
+      return AppBar(
+        title: Text('Pre Approved Leads', style: GoogleFonts.poppins(color: Colors.white, fontSize: 20)),
+        backgroundColor: CustomColor.MainColor,
+        elevation: 0.5,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search, color: Colors.white),
+            onPressed: () {
+              setState(() {
+                _isSearching = true;
+              });
+            },
+          ),
+        ],
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text('Pre Approved Leads', style: GoogleFonts.poppins(color: Colors.white, fontSize: 20)),
-        backgroundColor: CustomColor.MainColor,
-        elevation: 0.5,
-      ),
+      appBar: _buildAppBar(),
       body: FutureBuilder<List<CallingDataModel>>(
         future: _employeeLeads,
         builder: (context, snapshot) {
@@ -90,22 +164,25 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text('No leads available.'));
           } else {
-            final leads = snapshot.data!;
-            leads.sort((a, b) {
-              final statusOrder = {
-                'New Lead': 0,
-                'CNR': 1,
-              };
-              final aOrder = statusOrder[a.leadStatus] ?? 2;
-              final bOrder = statusOrder[b.leadStatus] ?? 2;
-              return aOrder.compareTo(bOrder);
-            });
+            if (_allLeads.isEmpty) {
+              _allLeads = snapshot.data!;
+              _allLeads.sort((a, b) {
+                final statusOrder = {
+                  'New Lead': 0,
+                  'CNR': 1,
+                };
+                final aOrder = statusOrder[a.leadStatus] ?? 2;
+                final bOrder = statusOrder[b.leadStatus] ?? 2;
+                return aOrder.compareTo(bOrder);
+              });
+              _filteredLeads = _allLeads;
+            }
             return RefreshIndicator(
               onRefresh: _refreshLeads,
               child: ListView.builder(
-                itemCount: leads.length,
+                itemCount: _filteredLeads.length,
                 itemBuilder: (context, index) {
-                  final lead = leads[index];
+                  final lead = _filteredLeads[index];
                   return Card(
                     margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     elevation: 1,
