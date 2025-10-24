@@ -395,11 +395,10 @@ void _performOcr(String imagePath, Function(String) onTextRecognized) async {
           backgroundColor: CustomColor.MainColor,
           elevation: 0.5,
           actions: [
-            if (widget.isAutoOpenedAfterCall)
-              IconButton(
-                icon: const Icon(Icons.feedback, color: Colors.white),
-                onPressed: () => _showFeedbackDialog(context),
-              ),
+            IconButton(
+              icon: const Icon(Icons.feedback, color: Colors.white),
+              onPressed: () => _showFeedbackDialog(context),
+            ),
           ],
         ),
         body: FutureBuilder<CustomerDetailsModel>(
