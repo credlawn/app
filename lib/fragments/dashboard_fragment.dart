@@ -4,6 +4,7 @@ import 'package:credlawn/models/user.dart';
 import 'package:credlawn/screens/cards.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:credlawn/screens/fcm_log_screen.dart';
 import '../screens/sample_screen.dart'; // Make sure this path is correct
 import '../screens/attendance_screen.dart'; // Import AttendanceScreen
 
@@ -49,9 +50,9 @@ class _DashboardFragmentState extends State<DashboardFragment> {
       {
         'icon': Icons.notifications,
         'title': 'Notifications',
-        'count': '10',
+        'count': '',
         'color': Colors.red,
-        'screen': SampleScreen(),
+        'screen': const FcmLogScreen(),
       },
       {
         'icon': Icons.settings,
