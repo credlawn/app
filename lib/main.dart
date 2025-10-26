@@ -47,9 +47,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
+      AndroidInitializationSettings('@mipmap/launcher_icon');
   const InitializationSettings initializationSettings = InitializationSettings(
-    android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    android: AndroidInitializationSettings('@mipmap/launcher_icon'),
   );
   await flutterLocalNotificationsPlugin.initialize(initializationSettings,
     onDidReceiveNotificationResponse: (NotificationResponse response) async {
