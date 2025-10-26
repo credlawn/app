@@ -1,4 +1,4 @@
-package com.example.credlawn
+package com.credlawn.app
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,3 +1,5 @@
+import 'package:credlawn/helpers/device_info_helper.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 // ignore_for_file: library_private_types_in_public_api, unused_field
 
 import 'dart:convert';
@@ -76,6 +78,16 @@ class _LoginScreenState extends State<LoginScreen> {
             User? user = await apiLoginHelper(jsonResponse, cookies);
 
             if (user != null) {
+              String? token = await FirebaseMessaging.instance.getToken();
+              String? deviceId = await getDeviceId();
+              if (token != null && deviceId != null) {
+                await sendFcmTokenToServer(
+                  token: token,
+                  deviceId: deviceId,
+                  userId: user.userId,
+                  sid: user.sid,
+                );
+              }
               CustomColor.showSuccessSnackBar(context, 'Welcome, ${user.fullName}');
               Navigator.pushReplacement(
                 context,

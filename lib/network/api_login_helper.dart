@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:credlawn/models/user.dart';
 import 'package:credlawn/network/api_network.dart';
 import 'package:credlawn/helpers/session_manager.dart';
@@ -55,4 +57,47 @@ String _extractCookieValue(String? cookies, String cookieName) {
   final cookieRegex = RegExp('($cookieName=[^;]+)');
   final match = cookieRegex.firstMatch(cookies);
   return match != null ? match.group(0)!.split('=')[1] : '';
+}
+
+Future<void> sendFcmTokenToServer({
+  required String token,
+  required String deviceId,
+  String? userId,
+  String? sid,
+}) async {
+  var url = Uri.parse(ApiNetwork.saveFcmToken);
+
+  var body = {
+    'fcm_token': token,
+    'device_id': deviceId,
+  };
+
+  if (userId != null) {
+    body['user'] = userId;
+  }
+
+  var headers = {
+    "Content-Type": "application/json",
+  };
+
+  if (sid != null) {
+    headers["Cookie"] = 'sid=$sid';
+  }
+
+  try {
+    var response = await http.post(
+      url,
+      headers: headers,
+      body: json.encode(body),
+    );
+
+    if (response.statusCode == 200) {
+      print('FCM token sent to server successfully.');
+    } else {
+      print('Failed to send FCM token to server. Status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
+  } catch (e) {
+    print('Error sending FCM token to server: $e');
+  }
 }
