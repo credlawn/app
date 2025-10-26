@@ -46,3 +46,6 @@ app.*.map.json
 
 # Firebase
 google-services.json
+
+# Secrets
+py data/site_config.json
