@@ -63,7 +63,6 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
       });
     });
 
-    // Initial filtering
     WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(() {
         if (_tabController.index == 0) {
@@ -134,57 +133,79 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: Colors.grey[100],
-        appBar: _buildAppBar(),
-        body: _buildBody(),
-      ),
+    return Scaffold(
+      backgroundColor: Color(0xFFF8FAFC),
+      appBar: _buildAppBar(),
+      body: _buildBody(),
     );
   }
 
   AppBar _buildAppBar() {
     return AppBar(
       title: _isSearching
-          ? TextField(
-              controller: _searchController,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: 'Search Notifications...',
-                border: InputBorder.none,
-                filled: true,
-                fillColor: Colors.white.withOpacity(0.8),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                prefixIcon: Icon(Icons.search, color: Colors.grey[700]),
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.close, color: Colors.grey[700]),
-                  onPressed: () {
-                    setState(() {
-                      _isSearching = false;
-                      _searchController.clear();
-                    });
-                  },
-                ),
+          ? Container(
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
-              style: GoogleFonts.poppins(color: Colors.black87, fontSize: 16),
+              child: TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Search notifications...',
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  prefixIcon: Icon(Icons.search, color: Colors.grey[600], size: 20),
+                  suffixIcon: IconButton(
+                    icon: Icon(Icons.close, color: Colors.grey[600], size: 18),
+                    onPressed: () {
+                      setState(() {
+                        _isSearching = false;
+                        _searchController.clear();
+                      });
+                    },
+                  ),
+                ),
+                style: GoogleFonts.inter(color: Colors.grey[800], fontSize: 15),
+              ),
             )
-          : Text('Notification History', style: GoogleFonts.poppins(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-      backgroundColor: Colors.blueAccent,
-      elevation: 0.5,
+          : Text(
+              'Notifications',
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+      backgroundColor: CustomColor.MainColor,
+      elevation: 0,
+      centerTitle: false,
       iconTheme: const IconThemeData(color: Colors.white),
       actions: [
-        IconButton(
-          icon: Icon(_isSearching ? Icons.close : Icons.search),
-          onPressed: () {
-            setState(() {
-              _isSearching = !_isSearching;
-              if (!_isSearching) {
-                _searchController.clear();
-              }
-            });
-          },
-        ),
+        if (!_isSearching)
+          IconButton(
+            icon: Container(
+              padding: EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.search, size: 20, color: Colors.white),
+            ),
+            onPressed: () {
+              setState(() {
+                _isSearching = true;
+              });
+            },
+          ),
       ],
     );
   }
@@ -192,32 +213,77 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
   Widget _buildBody() {
     return Column(
       children: [
-        TabBar(
-          onTap: (index) {
-            setState(() {
-              if (index == 0) {
-                _selectedTab = 'Unread';
-              } else {
-                _selectedTab = 'Read';
-              }
-            });
-          },
-          indicatorColor: Colors.blueAccent,
-          labelColor: Colors.blueAccent,
-          unselectedLabelColor: Colors.grey,
-          tabs: [
-            Tab(
-              text: 'Unread ($_unreadCount)',
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TabBar(
+            controller: _tabController,
+            onTap: (index) {
+              setState(() {
+                if (index == 0) {
+                  _selectedTab = 'Unread';
+                } else {
+                  _selectedTab = 'Read';
+                }
+              });
+            },
+            indicator: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [CustomColor.MainColor, CustomColor.MainColor.withOpacity(0.8)],
+              ),
+              borderRadius: BorderRadius.circular(8),
             ),
-            Tab(text: 'Read'),
-          ],
+            indicatorSize: TabBarIndicatorSize.tab,
+            indicatorPadding: EdgeInsets.all(4),
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.grey[600],
+            labelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+            unselectedLabelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+            tabs: [
+              Tab(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Unread'),
+                    if (_unreadCount > 0) ...[
+                      SizedBox(width: 6),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _unreadCount.toString(),
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Tab(text: 'Read'),
+            ],
+          ),
         ),
         Expanded(
           child: RefreshIndicator(
             onRefresh: () async {
               _resetAndFetchLogs();
             },
-            color: Colors.blueAccent,
+            color: CustomColor.MainColor,
             child: _buildContent(),
           ),
         ),
@@ -227,25 +293,53 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
 
   Widget _buildContent() {
     if (_logs.isEmpty && _isLoading) {
-      return Center(child: CircularProgressIndicator(color: Colors.blueAccent));
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: CustomColor.MainColor),
+            SizedBox(height: 16),
+            Text(
+              'Loading notifications...',
+              style: GoogleFonts.inter(
+                color: Colors.grey[600],
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      );
     }
+    
     if (_logs.isEmpty && !_isLoading) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.notifications_off_outlined, size: 80, color: Colors.grey.shade400),
-            const SizedBox(height: 16),
-            Text(
-              'No Notifications Yet',
-              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.grey.shade600),
+            Icon(
+              Icons.notifications_none_rounded,
+              size: 80,
+              color: Colors.grey[300],
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 16),
+            Text(
+              'No notifications',
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
+            ),
+            SizedBox(height: 8),
             Text(
               _searchTerm.isEmpty
-                  ? 'New notifications will appear here.'
-                  : 'No results found for \"$_searchTerm\"',
-              style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey.shade500),
+                  ? 'You\'re all caught up!'
+                  : 'No results for "$_searchTerm"',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -271,67 +365,128 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
       itemCount: filteredLogs.length + (_hasMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == filteredLogs.length) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 32.0),
-            child: Center(child: CircularProgressIndicator()),
+          return Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: CircularProgressIndicator(color: CustomColor.MainColor),
+            ),
           );
         }
 
         final log = filteredLogs[index];
         final isUnread = log.messageStatus == 'Unread';
 
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          color: isUnread ? Colors.blue.shade50 : Colors.white,
-          child: ListTile(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => NotificationDetailScreen(
-                    log: log,
-                    onMarkAsRead: () {
-                      _resetAndFetchLogs();
-                    },
-                  ),
-                ),
-              );
-            },
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            title: Text(
-              log.title,
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.black87, fontSize: 16),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Text(
-                  log.body,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(color: Colors.black54, fontSize: 14),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  DateFormat('MMM d, yyyy hh:mm a').format(log.creation),
-                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-            isThreeLine: true,
-            trailing: isUnread
-                ? Container(
-                    width: 12,
-                    height: 12,
-                    decoration: const BoxDecoration(
-                      color: Colors.blue,
-                      shape: BoxShape.circle,
+        return Container(
+          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => NotificationDetailScreen(
+                      log: log,
+                      onMarkAsRead: () {
+                        _resetAndFetchLogs();
+                      },
                     ),
-                  )
-                : null,
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 12,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                  border: isUnread 
+                    ? Border.all(color: CustomColor.MainColor.withOpacity(0.2), width: 1.5)
+                    : Border.all(color: Colors.grey.withOpacity(0.1), width: 1),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  log.title,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[800],
+                                    height: 1.3,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (isUnread)
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: CustomColor.MainColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            log.body,
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                              height: 1.4,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.access_time,
+                                size: 14,
+                                color: Colors.grey[400],
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                DateFormat('MMM d, yyyy • hh:mm a').format(log.creation),
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.grey[500],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: Colors.grey[400],
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         );
       },
