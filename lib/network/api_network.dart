@@ -29,6 +29,7 @@ class ApiNetwork {
   static const String getFcmLogs = '${baseUrl}api/method/credlawn.api.get_fcm_logs.get_user_fcm_logs';
   static const String getFollowUps = '${baseUrl}api/method/credlawn.api.get_follow_ups.get_follow_ups';
   static const String deleteFollowUp = '${baseUrl}api/method/credlawn.api.delete_follow_up.delete_follow_up';
+  static const String getUpcomingFollowUpsCount = '${baseUrl}api/method/credlawn.api.get_follow_ups.get_upcoming_follow_ups_count';
 
 
   

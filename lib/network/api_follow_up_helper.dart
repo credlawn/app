@@ -74,3 +74,38 @@ Future<bool> deleteFollowUp(String mobileNo) async {
     return false;
   }
 }
+
+Future<int> getUpcomingFollowUpsCount() async {
+  final User? user = await SessionManager.getSessionData();
+  String? sid = user?.sid;
+  String? userId = user?.userId;
+
+  if (sid == null || userId == null) {
+    return 0;
+  }
+
+  try {
+    final response = await http.post(
+      Uri.parse(ApiNetwork.getUpcomingFollowUpsCount),
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': 'sid=$sid',
+      },
+      body: jsonEncode({'user_id': userId}),
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonResponse = json.decode(response.body);
+      if (jsonResponse['message'] != null && jsonResponse['message']['success'] == true) {
+        return jsonResponse['message']['count'] ?? 0;
+      } else {
+        return 0;
+      }
+    } else {
+      return 0;
+    }
+  } catch (e) {
+    print('An error occurred while fetching upcoming follow-ups count: $e');
+    return 0;
+  }
+}

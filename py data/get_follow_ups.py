@@ -34,3 +34,26 @@ def get_follow_ups(user_id):
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Error in get_follow_ups")
         return {"success": False, "error": frappe.get_traceback()}
+
+@frappe.whitelist(allow_guest=False)
+def get_upcoming_follow_ups_count(user_id):
+    try:
+        if not user_id:
+            frappe.throw("User ID is required.")
+
+        now = now_datetime()
+
+        count = frappe.db.count(
+            "Follow Up",
+            filters={
+                "user": user_id,
+                "follow_up_date": (">=", now.date()),
+                "follow_up_time": (">=", now.time()),
+            }
+        )
+
+        return {"success": True, "count": count}
+
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Error in get_upcoming_follow_ups_count")
+        return {"success": False, "error": frappe.get_traceback()}
