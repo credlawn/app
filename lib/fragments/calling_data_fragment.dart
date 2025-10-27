@@ -10,6 +10,7 @@ import '../screens/today_login_list_screen.dart';
 import '../screens/month_login_list_screen.dart';
 import '../screens/cnr_lead_screen.dart';
 import '../screens/manager_cnr_lead_screen.dart';
+import '../screens/fcm_log_screen.dart';
 
 class CallingDataFragment extends StatefulWidget {
   final User user;
@@ -22,49 +23,62 @@ class CallingDataFragment extends StatefulWidget {
 
 class _CallingDataFragmentState extends State<CallingDataFragment> {
   int _followUpCount = 0;
-  final List<Map<String, dynamic>> _dashboardItems = [
+  
+  final List<Map<String, dynamic>> _leadsSection = [
     {
       'icon': Icons.phone_forwarded,
       'title': 'Pre Approved',
       'color': Color(0xFF10B981),
-      'background': Color(0xFFECFDF5),
+      'background': Color(0xFFFFFFFF),
     },
     {
       'icon': Icons.call_missed,
       'title': 'CNR',
       'color': Color(0xFFEF4444),
-      'background': Color(0xFFFEF2F2),
+      'background': Color(0xFFFFFFFF),
     },
     {
       'icon': Icons.calendar_today,
       'title': 'Follow-up',
       'color': Color(0xFF8B5CF6),
-      'background': Color(0xFFF5F3FF),
+      'background': Color(0xFFFFFFFF),
     },
+  ];
+
+  final List<Map<String, dynamic>> _loginSection = [
     {
       'icon': Icons.today,
       'title': 'Today\'s Login',
       'color': Color(0xFF06B6D4),
-      'background': Color(0xFFF0FDFA),
+      'background': Color(0xFFFFFFFF),
     },
     {
       'icon': Icons.calendar_month,
       'title': 'Month Login',
       'color': Color(0xFFF59E0B),
-      'background': Color(0xFFFFFBEB),
+      'background': Color(0xFFFFFFFF),
     },
     {
       'icon': Icons.login,
       'title': 'New Login',
       'color': Color(0xFF3B82F6),
-      'background': Color(0xFFEFF6FF),
+      'background': Color(0xFFFFFFFF),
+    },
+  ];
+
+  final List<Map<String, dynamic>> _systemSection = [
+    {
+      'icon': Icons.notifications,
+      'title': 'Notifications',
+      'color': Color(0xFFEC4899),
+      'background': Color(0xFFFFFFFF),
     },
   ];
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _fetchFollowUpCount();
   }
 
   @override
@@ -73,10 +87,6 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
     if (ModalRoute.of(context)?.isCurrent == true) {
       _fetchFollowUpCount();
     }
-  }
-
-  Future<void> _loadData() async {
-    setState(() {});
   }
 
   Future<void> _fetchFollowUpCount() async {
@@ -96,6 +106,7 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
       'Today\'s Login': TodayLoginListScreen(user: widget.user),
       'Month Login': MonthLoginListScreen(user: widget.user),
       'New Login': const NewCardLoginScreen(),
+      'Notifications': const FcmLogScreen(),
     };
 
     if (screenMap.containsKey(title)) {
@@ -106,23 +117,31 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
     }
   }
 
-  Widget _buildDashboardItem(Map<String, dynamic> item, int index) {
-    final hasNotification = item['title'] == 'Follow-up' && _followUpCount > 0;
-    
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, top: 16, bottom: 12),
+      child: Text(
+        title,
+        style: GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey[700],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDashboardItem(Map<String, dynamic> item, bool hasNotification) {
     return Container(
       decoration: BoxDecoration(
         color: item['background'],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.2),
-          width: 1,
-        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 6,
+            color: Colors.grey.withOpacity(0.15),
+            blurRadius: 8,
             spreadRadius: 1,
-            offset: Offset(0, 2),
+            offset: Offset(0, 3),
           ),
         ],
       ),
@@ -143,7 +162,7 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: item['color'].withOpacity(0.1),
+                        color: item['color'].withOpacity(0.15),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -205,20 +224,46 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
     );
   }
 
+  Widget _buildSection(List<Map<String, dynamic>> items, String sectionTitle) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(sectionTitle),
+        GridView.builder(
+          physics: NeverScrollableScrollPhysics(),
+          shrinkWrap: true,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.0,
+          ),
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final item = items[index];
+            final hasNotification = item['title'] == 'Follow-up' && _followUpCount > 0;
+            return _buildDashboardItem(item, hasNotification);
+          },
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Padding(
+      backgroundColor: Color(0xFFF8FAFC),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: AlignedGridView.count(
-          crossAxisCount: 3,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          itemCount: _dashboardItems.length,
-          itemBuilder: (context, index) {
-            return _buildDashboardItem(_dashboardItems[index], index);
-          },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSection(_leadsSection, "Leads Management"),
+            SizedBox(height: 20),
+            _buildSection(_loginSection, "Login Data"),
+            SizedBox(height: 20),
+            _buildSection(_systemSection, "System"),
+          ],
         ),
       ),
     );

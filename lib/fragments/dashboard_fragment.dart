@@ -48,13 +48,6 @@ class _DashboardFragmentState extends State<DashboardFragment> {
         'screen': const CardsScreen(),
       },
       {
-        'icon': Icons.notifications,
-        'title': 'Notifications',
-        'count': '',
-        'color': Colors.red,
-        'screen': const FcmLogScreen(),
-      },
-      {
         'icon': Icons.settings,
         'title': 'Settings',
         'count': '8',
