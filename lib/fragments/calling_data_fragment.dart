@@ -1,4 +1,4 @@
-import 'package:credlawn/screens/follow_up_lead_screen.dart';
+import 'package:credlawn/screens/follow_up_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -95,7 +95,7 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => FollowUpLeadScreen(user: widget.user),
+                    builder: (context) => FollowUpScreen(),
                   ),
                 );
               } else if (mockCallingData[index]['title'] == 'Today\'s Login') {
