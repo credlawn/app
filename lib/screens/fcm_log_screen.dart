@@ -310,54 +310,99 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
         ),
       );
     }
-    
-    if (_logs.isEmpty && !_isLoading) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.notifications_none_rounded,
-              size: 80,
-              color: Colors.grey[300],
-            ),
-            SizedBox(height: 16),
-            Text(
-              'No notifications',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[600],
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              _searchTerm.isEmpty
-                  ? 'You\'re all caught up!'
-                  : 'No results for "$_searchTerm"',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      );
-    }
 
     List<FcmLogModel> filteredLogs = _logs;
 
     if (_searchTerm.isEmpty) {
       filteredLogs = filteredLogs.where((log) {
-        if (_selectedTab == 'All') {
-          return true;
-        } else if (_selectedTab == 'Unread') {
+        if (_selectedTab == 'Unread') {
           return log.messageStatus == 'Unread';
-        } else {
+        } else if (_selectedTab == 'Read') {
           return log.messageStatus == 'Read';
+        } else {
+          return true;
         }
       }).toList();
+    }
+
+    if (filteredLogs.isEmpty && !_isLoading) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.notifications_none_rounded,
+                size: 60,
+                color: Colors.grey[300],
+              ),
+            ),
+            SizedBox(height: 24),
+            Text(
+              _searchTerm.isEmpty 
+                  ? _selectedTab == 'Unread' 
+                      ? 'No Unread Notifications'
+                      : 'No Read Notifications'
+                  : 'No Results Found',
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+            SizedBox(height: 12),
+            Text(
+              _searchTerm.isEmpty
+                  ? _selectedTab == 'Unread'
+                      ? 'You\'re all caught up! No unread notifications.'
+                      : 'No notifications have been marked as read yet.'
+                  : 'No notifications match "$_searchTerm"',
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                color: Colors.grey[500],
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 32),
+            if (_searchTerm.isEmpty && _selectedTab == 'Unread')
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  color: CustomColor.MainColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: CustomColor.MainColor.withOpacity(0.2),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      color: CustomColor.MainColor,
+                      size: 18,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'All caught up',
+                      style: GoogleFonts.inter(
+                        color: CustomColor.MainColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      );
     }
 
     return ListView.builder(
