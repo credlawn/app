@@ -16,6 +16,7 @@ import 'package:credlawn/screens/pre_approved_lead_screen.dart';
 import 'package:credlawn/screens/login_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:intl/intl.dart';
 
 class CustomerDetailsScreen extends StatefulWidget {
   final String mobileNo;
@@ -201,6 +202,9 @@ void _performOcr(String imagePath, Function(String) onTextRecognized) async {
 
   Future<void> _showFeedbackDialog(BuildContext context) async {
     String? selectedStatus;
+    DateTime? selectedDate;
+    TimeOfDay? selectedTime;
+
     final List<String> statusOptions = [
       'IP Approved',
       'IP Decline',
@@ -208,7 +212,8 @@ void _performOcr(String imagePath, Function(String) onTextRecognized) async {
       'Docs Not Available',
       'Already Carded',
       'Recently Applied',
-      'CNR'
+      'CNR',
+      'Follow up'
     ];
 
     return showDialog<void>(
@@ -293,6 +298,47 @@ void _performOcr(String imagePath, Function(String) onTextRecognized) async {
                           ),
                         ),
                       )
+                    else if (selectedStatus == 'Follow up')
+                      Column(
+                        children: [
+                          ListTile(
+                            title: Text(selectedDate == null
+                                ? 'Select Date'
+                                : 'Date: ${DateFormat('yyyy-MM-dd').format(selectedDate!)}'),
+                            trailing: Icon(Icons.calendar_today),
+                            onTap: () async {
+                              final DateTime? picked = await showDatePicker(
+                                context: context,
+                                initialDate: selectedDate ?? DateTime.now(),
+                                firstDate: DateTime.now(),
+                                lastDate: DateTime(2101),
+                              );
+                              if (picked != null && picked != selectedDate) {
+                                setState(() {
+                                  selectedDate = picked;
+                                });
+                              }
+                            },
+                          ),
+                          ListTile(
+                            title: Text(selectedTime == null
+                                ? 'Select Time'
+                                : 'Time: ${selectedTime!.format(context)}'),
+                            trailing: Icon(Icons.access_time),
+                            onTap: () async {
+                              final TimeOfDay? picked = await showTimePicker(
+                                context: context,
+                                initialTime: selectedTime ?? TimeOfDay.now(),
+                              );
+                              if (picked != null && picked != selectedTime) {
+                                setState(() {
+                                  selectedTime = picked;
+                                });
+                              }
+                            },
+                          ),
+                        ],
+                      )
                     else if (selectedStatus != null)
                       TextField(
                         controller: _remarksController,
@@ -325,6 +371,37 @@ void _performOcr(String imagePath, Function(String) onTextRecognized) async {
                   }
                   if (selectedStatus == 'IP Approved' && _referenceNoController.text.isEmpty) {
                     CustomColor.showErrorSnackBar(dialog_context, 'Please enter a reference number.');
+                    return;
+                  }
+
+                  if (selectedStatus == 'Follow up') {
+                    if (selectedDate == null || selectedTime == null) {
+                      CustomColor.showErrorSnackBar(dialog_context, 'Please select a date and time.');
+                      return;
+                    }
+
+                    final user = await SessionManager.getSessionData();
+                    if (user == null) {
+                      CustomColor.showErrorSnackBar(dialog_context, 'User session not found. Please log in again.');
+                      return;
+                    }
+
+                    bool success = await saveCustomerFeedback(
+                      mobileNo: widget.mobileNo,
+                      remarks: _remarksController.text,
+                      status: selectedStatus,
+                      referenceNo: _referenceNoController.text,
+                      userId: user.userId,
+                      followUpDate: DateFormat('yyyy-MM-dd').format(selectedDate!),
+                      followUpTime: selectedTime!.format(context),
+                    );
+
+                    if (success) {
+                      CustomColor.showSuccessSnackBar(context, 'Follow-up scheduled successfully!');
+                      Navigator.of(dialog_context).pop();
+                    } else {
+                      CustomColor.showErrorSnackBar(context, 'Failed to schedule follow-up.');
+                    }
                     return;
                   }
 

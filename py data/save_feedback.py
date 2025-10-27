@@ -1,7 +1,7 @@
 import frappe
 
 @frappe.whitelist(allow_guest=False)
-def save_customer_feedback(mobile_no, remarks, status=None, reference_no=None, user=None):
+def save_customer_feedback(mobile_no, remarks, status=None, reference_no=None, user=None, follow_up_date=None, follow_up_time=None):
     """
     Saves customer feedback related to a call.
     """
@@ -15,6 +15,10 @@ def save_customer_feedback(mobile_no, remarks, status=None, reference_no=None, u
         feedback_doc.status = status
         feedback_doc.reference_no = reference_no
         feedback_doc.user = user
+        if follow_up_date:
+            feedback_doc.follow_up_date = follow_up_date
+        if follow_up_time:
+            feedback_doc.follow_up_time = follow_up_time
         feedback_doc.insert(ignore_permissions=True)
 
         return {"success": True, "message": "Feedback saved successfully."}

@@ -10,6 +10,8 @@ Future<bool> saveCustomerFeedback({
   String? status,
   String? referenceNo,
   required String userId,
+  String? followUpDate,
+  String? followUpTime,
 }) async {
   final User? user = await SessionManager.getSessionData();
   String? sid = user?.sid;
@@ -25,6 +27,14 @@ Future<bool> saveCustomerFeedback({
     'reference_no': referenceNo,
     'user': userId,
   };
+
+  if (followUpDate != null) {
+    body['follow_up_date'] = followUpDate;
+  }
+
+  if (followUpTime != null) {
+    body['follow_up_time'] = followUpTime;
+  }
 
   try {
     final response = await http.post(
