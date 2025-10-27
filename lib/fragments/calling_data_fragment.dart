@@ -1,3 +1,4 @@
+import 'package:credlawn/network/api_fcm_log_helper.dart';
 import 'package:credlawn/screens/follow_up_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -23,6 +24,7 @@ class CallingDataFragment extends StatefulWidget {
 
 class _CallingDataFragmentState extends State<CallingDataFragment> {
   int _followUpCount = 0;
+  int _unreadNotificationCount = 0;
   
   final List<Map<String, dynamic>> _leadsSection = [
     {
@@ -79,6 +81,7 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
   void initState() {
     super.initState();
     _fetchFollowUpCount();
+    _fetchUnreadNotificationCount();
   }
 
   @override
@@ -86,6 +89,7 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
     super.didChangeDependencies();
     if (ModalRoute.of(context)?.isCurrent == true) {
       _fetchFollowUpCount();
+      _fetchUnreadNotificationCount();
     }
   }
 
@@ -93,6 +97,13 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
     final count = await getUpcomingFollowUpsCount();
     setState(() {
       _followUpCount = count;
+    });
+  }
+
+  Future<void> _fetchUnreadNotificationCount() async {
+    final count = await getUnreadFcmLogsCount();
+    setState(() {
+      _unreadNotificationCount = count;
     });
   }
 
@@ -131,7 +142,7 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
     );
   }
 
-  Widget _buildDashboardItem(Map<String, dynamic> item, bool hasNotification) {
+  Widget _buildDashboardItem(Map<String, dynamic> item, int notificationCount) {
     return Container(
       decoration: BoxDecoration(
         color: item['background'],
@@ -185,7 +196,7 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
                   ],
                 ),
               ),
-              if (hasNotification)
+              if (notificationCount > 0)
                 Positioned(
                   top: 6,
                   right: 6,
@@ -207,7 +218,7 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
                       minHeight: 18,
                     ),
                     child: Text(
-                      _followUpCount > 99 ? '99+' : _followUpCount.toString(),
+                      notificationCount > 99 ? '99+' : notificationCount.toString(),
                       style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontSize: 10,
@@ -241,8 +252,13 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
           itemCount: items.length,
           itemBuilder: (context, index) {
             final item = items[index];
-            final hasNotification = item['title'] == 'Follow-up' && _followUpCount >= 0;
-            return _buildDashboardItem(item, hasNotification);
+            int notificationCount = 0;
+            if (item['title'] == 'Follow-up') {
+              notificationCount = _followUpCount;
+            } else if (item['title'] == 'Notifications') {
+              notificationCount = _unreadNotificationCount;
+            }
+            return _buildDashboardItem(item, notificationCount);
           },
         ),
       ],
