@@ -398,7 +398,28 @@ void _performOcr(String imagePath, Function(String) onTextRecognized) async {
 
                     if (success) {
                       CustomColor.showSuccessSnackBar(context, 'Follow-up scheduled successfully!');
+                      _remarksController.clear();
+                      _referenceNoController.clear();
                       Navigator.of(dialog_context).pop();
+
+                      if (Navigator.canPop(context)) {
+                        Navigator.of(context).pop(true);
+                      } else {
+                        final user = await SessionManager.getSessionData();
+                        if (user != null) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PreApprovedLeadsScreen(user: user),
+                            ),
+                          );
+                        } else {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => LoginScreen()),
+                          );
+                        }
+                      }
                     } else {
                       CustomColor.showErrorSnackBar(context, 'Failed to schedule follow-up.');
                     }

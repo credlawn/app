@@ -40,3 +40,37 @@ Future<List<FollowUp>> getFollowUps() async {
     return [];
   }
 }
+
+Future<bool> deleteFollowUp(String mobileNo) async {
+  final User? user = await SessionManager.getSessionData();
+  String? sid = user?.sid;
+
+  if (sid == null) {
+    return false;
+  }
+
+  try {
+    final response = await http.post(
+      Uri.parse(ApiNetwork.deleteFollowUp),
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': 'sid=$sid',
+      },
+      body: jsonEncode({'mobile_no': mobileNo}),
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonResponse = json.decode(response.body);
+      if (jsonResponse['message'] != null && jsonResponse['message']['success'] == true) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  } catch (e) {
+    print('An error occurred while deleting follow-up: $e');
+    return false;
+  }
+}

@@ -109,8 +109,16 @@ class _FollowUpScreenState extends State<FollowUpScreen> {
     );
   }
 
-  void _markAsDone(String mobileNo) {
-    print('Mark as done for mobileNo: $mobileNo');
+  void _markAsDone(String mobileNo) async {
+    bool success = await deleteFollowUp(mobileNo);
+    if (success) {
+      CustomColor.showSuccessSnackBar(context, 'Updated Successfully.');
+      setState(() {
+        _followUps = getFollowUps(); // Refresh the list
+      });
+    } else {
+      CustomColor.showErrorSnackBar(context, 'Failed to update.');
+    }
   }
 
   Widget _buildCustomerCard(FollowUp followUp, String header) {
@@ -420,13 +428,38 @@ class _FollowUpScreenState extends State<FollowUpScreen> {
               followUpWidgets.add(const SizedBox(height: 4));
             });
 
-            return ListView(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              children: followUpWidgets,
-            );
-          }
-        },
-      ),
-    );
-  }
-}
+                        return RefreshIndicator(
+
+                          onRefresh: () async {
+
+                            setState(() {
+
+                              _followUps = getFollowUps();
+
+                            });
+
+                          },
+
+                          child: ListView(
+
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+
+                            children: followUpWidgets,
+
+                          ),
+
+                        );
+
+                      }
+
+                    },
+
+                  ),
+
+                );
+
+              }
+
+            }
+
+            
