@@ -241,7 +241,7 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
           itemCount: items.length,
           itemBuilder: (context, index) {
             final item = items[index];
-            final hasNotification = item['title'] == 'Follow-up' && _followUpCount > 0;
+            final hasNotification = item['title'] == 'Follow-up' && _followUpCount >= 0;
             return _buildDashboardItem(item, hasNotification);
           },
         ),

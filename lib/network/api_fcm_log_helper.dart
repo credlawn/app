@@ -20,8 +20,6 @@ Future<List<FcmLogModel>> fetchFcmLogs({required int page, String? searchTerm}) 
     queryParams['search_term'] = searchTerm;
   }
 
-  // Note: Frappe endpoints don't use uri.http constructor well with https
-  // Building the URL manually is more reliable.
   String queryString = Uri(queryParameters: queryParams).query;
   final Uri uri = Uri.parse('${ApiNetwork.getFcmLogs}?$queryString');
 
@@ -44,5 +42,58 @@ Future<List<FcmLogModel>> fetchFcmLogs({required int page, String? searchTerm}) 
     }
   } catch (e) {
     throw Exception('An error occurred while fetching FCM logs: $e');
+  }
+}
+
+Future<void> updateFcmLogStatus({required String logId}) async {
+  final User? user = await SessionManager.getSessionData();
+  if (user == null) {
+    throw Exception('User not logged in.');
+  }
+  final String sid = user.sid;
+
+  final Uri uri = Uri.parse(ApiNetwork.updateFcmLogStatus);
+
+  try {
+    final response = await http.post(
+      uri,
+      headers: {
+        'Cookie': 'sid=$sid',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({'log_id': logId}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update FCM log status: ${response.statusCode}');
+    }
+  } catch (e) {
+    throw Exception('An error occurred while updating FCM log status: $e');
+  }
+}
+
+Future<int> getUnreadFcmLogsCount() async {
+  final User? user = await SessionManager.getSessionData();
+  if (user == null) {
+    throw Exception('User not logged in.');
+  }
+  final String sid = user.sid;
+
+  final Uri uri = Uri.parse(ApiNetwork.getUnreadFcmLogsCount);
+
+  try {
+    final response = await http.get(
+      uri,
+      headers: {'Cookie': 'sid=$sid'},
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonResponse = json.decode(response.body);
+      return jsonResponse['message']['unread_count'] ?? 0;
+    } else {
+      throw Exception('Failed to get unread FCM logs count: ${response.statusCode}');
+    }
+  } catch (e) {
+    throw Exception('An error occurred while getting unread FCM logs count: $e');
   }
 }

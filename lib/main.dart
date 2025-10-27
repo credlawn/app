@@ -19,6 +19,7 @@ import 'package:credlawn/screens/notification_detail_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:credlawn/models/fcm_log_model.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -59,8 +60,13 @@ void main() async {
           navigatorKey.currentState?.push(
             MaterialPageRoute(
               builder: (context) => NotificationDetailScreen(
-                title: data['title'] ?? 'Notification',
-                body: data['body'] ?? '',
+                log: FcmLogModel(
+                  name: '', // Placeholder
+                  title: data['title'] ?? 'Notification',
+                  body: data['body'] ?? '',
+                  messageStatus: 'Unread', // Placeholder
+                  creation: DateTime.now(), // Placeholder
+                ),
               ),
             ),
           );
@@ -105,8 +111,13 @@ void main() async {
       navigatorKey.currentState?.push(
         MaterialPageRoute(
           builder: (context) => NotificationDetailScreen(
-            title: title,
-            body: displayBody,
+            log: FcmLogModel(
+              name: '', // Placeholder
+              title: title,
+              body: displayBody,
+              messageStatus: 'Unread', // Placeholder
+              creation: DateTime.now(), // Placeholder
+            ),
           ),
         ),
       );
@@ -169,8 +180,13 @@ class _MyAppState extends State<MyApp> {
             buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary),
           ),
           home: NotificationDetailScreen(
-            title: title,
-            body: body,
+            log: FcmLogModel(
+              name: '', // Placeholder
+              title: title,
+              body: body,
+              messageStatus: 'Unread', // Placeholder
+              creation: DateTime.now(), // Placeholder
+            ),
           ),
         );
       } catch (_) {}

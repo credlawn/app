@@ -21,8 +21,8 @@ class _FcmLogScreenState extends State<FcmLogScreen> {
   bool _isLoading = false;
   bool _hasMore = true;
   String _searchTerm = '';
+  int _unreadCount = 0;
 
-  // Search related
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
   bool _isSearching = false;
@@ -31,9 +31,9 @@ class _FcmLogScreenState extends State<FcmLogScreen> {
   void initState() {
     super.initState();
     _fetchLogs();
+    _fetchUnreadCount();
 
     _scrollController.addListener(() {
-      // If scrolled to the bottom and not currently loading, load more
       if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent && !_isLoading) {
         _fetchLogs();
       }
@@ -50,6 +50,17 @@ class _FcmLogScreenState extends State<FcmLogScreen> {
     });
   }
 
+  Future<void> _fetchUnreadCount() async {
+    try {
+      final count = await getUnreadFcmLogsCount();
+      if (mounted) {
+        setState(() {
+          _unreadCount = count;
+        });
+      }
+    } catch (e) {}
+  }
+
   Future<void> _fetchLogs() async {
     if (!_hasMore || _isLoading) return;
 
@@ -63,7 +74,6 @@ class _FcmLogScreenState extends State<FcmLogScreen> {
         _page++;
         _logs.addAll(newLogs);
         _isLoading = false;
-        // If we receive fewer logs than the page size, we've reached the end
         if (newLogs.length < 30) {
           _hasMore = false;
         }
@@ -73,9 +83,7 @@ class _FcmLogScreenState extends State<FcmLogScreen> {
         _isLoading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error fetching logs: ${e.toString()}')),
-        );
+        CustomColor.showErrorSnackBar(context, 'Error fetching logs: ${e.toString()}');
       }
     }
   }
@@ -87,6 +95,7 @@ class _FcmLogScreenState extends State<FcmLogScreen> {
       _hasMore = true;
     });
     _fetchLogs();
+    _fetchUnreadCount();
   }
 
   @override
@@ -114,11 +123,28 @@ class _FcmLogScreenState extends State<FcmLogScreen> {
               autofocus: true,
               decoration: const InputDecoration(
                 hintText: 'Search Notifications...',
-                border: InputBorder.none, // This removes the underline
+                border: InputBorder.none,
               ),
               style: GoogleFonts.poppins(color: Colors.white, fontSize: 18),
             )
-          : Text('Notification History', style: GoogleFonts.poppins(color: Colors.white, fontSize: 20)),
+          : Row(
+              children: [
+                Text('Notification History', style: GoogleFonts.poppins(color: Colors.white, fontSize: 20)),
+                const SizedBox(width: 8),
+                if (_unreadCount > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      _unreadCount.toString(),
+                      style: GoogleFonts.poppins(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+              ],
+            ),
       backgroundColor: CustomColor.MainColor,
       elevation: 0.5,
       iconTheme: const IconThemeData(color: Colors.white),
@@ -129,7 +155,6 @@ class _FcmLogScreenState extends State<FcmLogScreen> {
             setState(() {
               _isSearching = !_isSearching;
               if (!_isSearching) {
-                // If search was cancelled, clear search and reload all logs
                 _searchController.clear();
               }
             });
@@ -188,18 +213,23 @@ class _FcmLogScreenState extends State<FcmLogScreen> {
         }
 
         final log = _logs[index];
+        final isUnread = log.messageStatus == 'Unread';
+
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           elevation: 1,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          color: isUnread ? Colors.blue.shade50 : Colors.white,
           child: ListTile(
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => NotificationDetailScreen(
-                    title: log.title,
-                    body: log.body,
+                    log: log,
+                    onMarkAsRead: () {
+                      _resetAndFetchLogs();
+                    },
                   ),
                 ),
               );
@@ -227,6 +257,16 @@ class _FcmLogScreenState extends State<FcmLogScreen> {
               ],
             ),
             isThreeLine: true,
+            trailing: isUnread
+                ? Container(
+                    width: 12,
+                    height: 12,
+                    decoration: const BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                    ),
+                  )
+                : null,
           ),
         );
       },

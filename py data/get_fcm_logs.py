@@ -1,13 +1,8 @@
 import frappe
+import json
 
 @frappe.whitelist(allow_guest=False)
 def get_user_fcm_logs(page=1, search_term=None):
-    """
-    Fetches paginated and searchable FCM Log entries for the currently logged-in user.
-
-    :param page: The page number to fetch (1-indexed).
-    :param search_term: An optional term to search for in the title and body.
-    """
     try:
         user_id = frappe.session.user
         if not user_id:
@@ -24,7 +19,7 @@ def get_user_fcm_logs(page=1, search_term=None):
             params.extend([f"%{search_term}%", f"%{search_term}%"])
 
         query = f"""
-            SELECT title, body, status, creation
+            SELECT name, title, body, message_status, creation
             FROM `tabFCM Log`
             {conditions}
             ORDER BY creation DESC
@@ -39,5 +34,46 @@ def get_user_fcm_logs(page=1, search_term=None):
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Error in get_user_fcm_logs")
+        frappe.local.response.http_status_code = 500
+        return {"error": str(e), "status": "error"}
+
+@frappe.whitelist()
+def update_fcm_log_status():
+    try:
+        data = json.loads(frappe.request.data)
+        log_id = data.get("log_id")
+
+        if not log_id:
+            frappe.response["message"] = "Log ID is required."
+            frappe.response.http_status_code = 400
+            return
+
+        doc = frappe.get_doc("FCM Log", log_id)
+        doc.message_status = "Read"
+        doc.save(ignore_permissions=True)
+        frappe.db.commit()
+
+        frappe.response["message"] = "FCM log status updated successfully."
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Error in update_fcm_log_status")
+        frappe.response["message"] = str(e)
+        frappe.response.http_status_code = 500
+
+@frappe.whitelist(allow_guest=False)
+def get_unread_fcm_logs_count():
+    try:
+        user_id = frappe.session.user
+        if not user_id:
+            frappe.throw("User not logged in.")
+
+        count = frappe.db.count("FCM Log", {
+            "user": user_id,
+            "message_status": "Unread"
+        })
+
+        return {"unread_count": count}
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Error in get_unread_fcm_logs_count")
         frappe.local.response.http_status_code = 500
         return {"error": str(e), "status": "error"}
