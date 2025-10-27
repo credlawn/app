@@ -34,7 +34,8 @@ Future<String?> _getInitialNotificationPayload() async {
   if (initialFCMMessage != null) {
     String? title = initialFCMMessage.notification?.title;
     String? body = initialFCMMessage.notification?.body ?? initialFCMMessage.data['body'];
-    return json.encode({'title': title, 'body': body});
+    String logId = initialFCMMessage.data['name'] ?? '';
+    return json.encode({'title': title, 'body': body, 'name': logId});
   }
   final NotificationAppLaunchDetails? notificationAppLaunchDetails =
       await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
@@ -61,7 +62,7 @@ void main() async {
             MaterialPageRoute(
               builder: (context) => NotificationDetailScreen(
                 log: FcmLogModel(
-                  name: '', // Placeholder
+                  name: data['name'] ?? '', // Pass logId
                   title: data['title'] ?? 'Notification',
                   body: data['body'] ?? '',
                   messageStatus: 'Unread', // Placeholder
@@ -81,6 +82,8 @@ void main() async {
     String? body = message.notification?.body;
     String? fullMessage = message.data['body'];
     String displayBody = (fullMessage ?? body) ?? '';
+    String logId = message.data['name'] ?? ''; // Extract logId
+
     if (title != null && displayBody.isNotEmpty) {
       int id = DateTime.now().millisecondsSinceEpoch.remainder(100000);
       flutterLocalNotificationsPlugin.show(
@@ -97,7 +100,7 @@ void main() async {
             styleInformation: BigTextStyleInformation(displayBody),
           ),
         ),
-        payload: json.encode({'title': title, 'body': displayBody}),
+        payload: json.encode({'title': title, 'body': displayBody, 'name': logId}), // Include logId in payload
       );
     }
   });
@@ -106,13 +109,14 @@ void main() async {
     String? body = message.notification?.body;
     String? fullMessage = message.data['body'];
     String displayBody = (fullMessage ?? body) ?? '';
+    String logId = message.data['name'] ?? ''; // Extract logId
 
     if (title != null && displayBody.isNotEmpty) {
       navigatorKey.currentState?.push(
         MaterialPageRoute(
           builder: (context) => NotificationDetailScreen(
             log: FcmLogModel(
-              name: '', // Placeholder
+              name: logId, // Pass logId
               title: title,
               body: displayBody,
               messageStatus: 'Unread', // Placeholder
@@ -168,6 +172,7 @@ class _MyAppState extends State<MyApp> {
         final data = json.decode(widget.initialNotificationPayload!);
         final String title = data['title'] ?? 'Notification';
         final String body = data['body'] ?? '';
+        final String logId = data['name'] ?? '';
         return MaterialApp(
           navigatorKey: navigatorKey,
           title: 'Credlawn',
@@ -181,7 +186,7 @@ class _MyAppState extends State<MyApp> {
           ),
           home: NotificationDetailScreen(
             log: FcmLogModel(
-              name: '', // Placeholder
+              name: logId, // Pass logId
               title: title,
               body: body,
               messageStatus: 'Unread', // Placeholder
