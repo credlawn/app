@@ -19,6 +19,7 @@ class FollowUpScreen extends StatefulWidget {
 
 class _FollowUpScreenState extends State<FollowUpScreen> {
   late Future<List<FollowUp>> _followUps;
+  final Map<String, bool> _isExpanded = {};
 
   @override
   void initState() {
@@ -231,6 +232,7 @@ class _FollowUpScreenState extends State<FollowUpScreen> {
   Widget _buildSectionHeader(String header, int count) {
     Color headerColor;
     Color backgroundColor;
+    bool isCollapsible = header != 'Missed' && header != 'Today';
 
     if (header == 'Missed') {
       headerColor = Colors.red;
@@ -246,49 +248,68 @@ class _FollowUpScreenState extends State<FollowUpScreen> {
       backgroundColor = CustomColor.MainColor.withOpacity(0.1);
     }
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 20,
-            decoration: BoxDecoration(
-              color: headerColor,
-              borderRadius: BorderRadius.circular(2),
+    return GestureDetector(
+      onTap: isCollapsible
+          ? () {
+              setState(() {
+                _isExpanded[header] = !(_isExpanded[header] ?? false);
+              });
+            }
+          : null,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 4,
+              height: 20,
+              decoration: BoxDecoration(
+                color: headerColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            header,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: headerColor,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: headerColor.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              count.toString(),
+            const SizedBox(width: 12),
+            Text(
+              header,
               style: GoogleFonts.inter(
-                fontSize: 12,
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: headerColor,
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: headerColor.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                count.toString(),
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: headerColor,
+                ),
+              ),
+            ),
+            if (isCollapsible)
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Icon(
+                    (_isExpanded[header] ?? false) ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    color: headerColor,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -422,8 +443,10 @@ class _FollowUpScreenState extends State<FollowUpScreen> {
 
             groupedFollowUps.forEach((header, followUps) {
               followUpWidgets.add(_buildSectionHeader(header, followUps.length));
-              for (var followUp in followUps) {
-                followUpWidgets.add(_buildCustomerCard(followUp, header));
+              if (header == 'Missed' || header == 'Today' || (_isExpanded[header] ?? false)) {
+                for (var followUp in followUps) {
+                  followUpWidgets.add(_buildCustomerCard(followUp, header));
+                }
               }
               followUpWidgets.add(const SizedBox(height: 4));
             });
