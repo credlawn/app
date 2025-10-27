@@ -14,7 +14,7 @@ class FcmLogScreen extends StatefulWidget {
   State<FcmLogScreen> createState() => _FcmLogScreenState();
 }
 
-class _FcmLogScreenState extends State<FcmLogScreen> {
+class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderStateMixin {
   final List<FcmLogModel> _logs = [];
   final _scrollController = ScrollController();
   int _page = 1;
@@ -26,10 +26,24 @@ class _FcmLogScreenState extends State<FcmLogScreen> {
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
   bool _isSearching = false;
+  String _selectedTab = 'All';
+
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      setState(() {
+        if (_tabController.index == 0) {
+          _selectedTab = 'Unread';
+        } else {
+          _selectedTab = 'Read';
+        }
+      });
+    });
+
     _fetchLogs();
     _fetchUnreadCount();
 
@@ -45,6 +59,17 @@ class _FcmLogScreenState extends State<FcmLogScreen> {
         if (_searchTerm != _searchController.text) {
           _searchTerm = _searchController.text;
           _resetAndFetchLogs();
+        }
+      });
+    });
+
+    // Initial filtering
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        if (_tabController.index == 0) {
+          _selectedTab = 'Unread';
+        } else {
+          _selectedTab = 'Read';
         }
       });
     });
@@ -103,15 +128,19 @@ class _FcmLogScreenState extends State<FcmLogScreen> {
     _scrollController.dispose();
     _searchController.dispose();
     _debounce?.cancel();
+    _tabController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: _buildAppBar(),
-      body: _buildBody(),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: Colors.grey[100],
+        appBar: _buildAppBar(),
+        body: _buildBody(),
+      ),
     );
   }
 
@@ -121,31 +150,27 @@ class _FcmLogScreenState extends State<FcmLogScreen> {
           ? TextField(
               controller: _searchController,
               autofocus: true,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Search Notifications...',
                 border: InputBorder.none,
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.8),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                prefixIcon: Icon(Icons.search, color: Colors.grey[700]),
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.close, color: Colors.grey[700]),
+                  onPressed: () {
+                    setState(() {
+                      _isSearching = false;
+                      _searchController.clear();
+                    });
+                  },
+                ),
               ),
-              style: GoogleFonts.poppins(color: Colors.white, fontSize: 18),
+              style: GoogleFonts.poppins(color: Colors.black87, fontSize: 16),
             )
-          : Row(
-              children: [
-                Text('Notification History', style: GoogleFonts.poppins(color: Colors.white, fontSize: 20)),
-                const SizedBox(width: 8),
-                if (_unreadCount > 0)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      _unreadCount.toString(),
-                      style: GoogleFonts.poppins(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-              ],
-            ),
-      backgroundColor: CustomColor.MainColor,
+          : Text('Notification History', style: GoogleFonts.poppins(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+      backgroundColor: Colors.blueAccent,
       elevation: 0.5,
       iconTheme: const IconThemeData(color: Colors.white),
       actions: [
@@ -165,18 +190,44 @@ class _FcmLogScreenState extends State<FcmLogScreen> {
   }
 
   Widget _buildBody() {
-    return RefreshIndicator(
-      onRefresh: () async {
-        _resetAndFetchLogs();
-      },
-      color: CustomColor.MainColor,
-      child: _buildContent(),
+    return Column(
+      children: [
+        TabBar(
+          onTap: (index) {
+            setState(() {
+              if (index == 0) {
+                _selectedTab = 'Unread';
+              } else {
+                _selectedTab = 'Read';
+              }
+            });
+          },
+          indicatorColor: Colors.blueAccent,
+          labelColor: Colors.blueAccent,
+          unselectedLabelColor: Colors.grey,
+          tabs: [
+            Tab(
+              text: 'Unread ($_unreadCount)',
+            ),
+            Tab(text: 'Read'),
+          ],
+        ),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              _resetAndFetchLogs();
+            },
+            color: Colors.blueAccent,
+            child: _buildContent(),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildContent() {
     if (_logs.isEmpty && _isLoading) {
-      return Center(child: CircularProgressIndicator(color: CustomColor.MainColor));
+      return Center(child: CircularProgressIndicator(color: Colors.blueAccent));
     }
     if (_logs.isEmpty && !_isLoading) {
       return Center(
@@ -201,24 +252,38 @@ class _FcmLogScreenState extends State<FcmLogScreen> {
       );
     }
 
+    List<FcmLogModel> filteredLogs = _logs;
+
+    if (_searchTerm.isEmpty) {
+      filteredLogs = filteredLogs.where((log) {
+        if (_selectedTab == 'All') {
+          return true;
+        } else if (_selectedTab == 'Unread') {
+          return log.messageStatus == 'Unread';
+        } else {
+          return log.messageStatus == 'Read';
+        }
+      }).toList();
+    }
+
     return ListView.builder(
       controller: _scrollController,
-      itemCount: _logs.length + (_hasMore ? 1 : 0),
+      itemCount: filteredLogs.length + (_hasMore ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index == _logs.length) {
+        if (index == filteredLogs.length) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 32.0),
             child: Center(child: CircularProgressIndicator()),
           );
         }
 
-        final log = _logs[index];
+        final log = filteredLogs[index];
         final isUnread = log.messageStatus == 'Unread';
 
         return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          elevation: 1,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           color: isUnread ? Colors.blue.shade50 : Colors.white,
           child: ListTile(
             onTap: () {
@@ -234,10 +299,10 @@ class _FcmLogScreenState extends State<FcmLogScreen> {
                 ),
               );
             },
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             title: Text(
               log.title,
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.black87),
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.black87, fontSize: 16),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
