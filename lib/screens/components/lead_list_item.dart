@@ -232,6 +232,141 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
     }
   }
 
+  Widget _buildHeader() {
+    return InkWell(
+      onTap: widget.onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Opacity(
+              opacity: _iconFadeAnimation.value,
+              child: SizedBox(
+                width: _iconFadeAnimation.value * 32, // Animate width
+                child: _getStatusIcon(widget.leadWithInfo.lead.leadStatus),
+              ),
+            ),
+            SizedBox(width: _namePaddingAnimation.value),
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      _toTitleCase(widget.leadWithInfo.lead.customerName),
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w500,
+                        fontSize: _nameSizeAnimation.value,
+                        color: Colors.black87,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  _buildStatusBadge(),
+                ],
+              ),
+            ),
+            Text(
+              _formatTime(widget.leadWithInfo.lead.updateDate),
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpandedSection() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: Text(
+              'Mobile: ${widget.leadWithInfo.lead.mobileNo}',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 24.0, bottom: 8.0), // Gap above the row
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center, // Center the row of icons
+              children: [
+                _buildSmallActionButton(
+                  icon: Icons.call,
+                  backgroundColor: Colors.green,
+                  iconColor: Colors.white,
+                  onPressed: () => _callNumber(widget.leadWithInfo.lead.mobileNo),
+                ),
+                const SizedBox(width: 32), // Increased gap
+                _buildSmallActionButton(
+                  icon: FontAwesomeIcons.whatsapp,
+                  backgroundColor: Colors.green,
+                  iconColor: Colors.white,
+                  onPressed: () => _openWhatsApp(widget.leadWithInfo.lead.mobileNo),
+                ),
+                const SizedBox(width: 32), // Increased gap
+                _buildSmallActionButton(
+                  icon: Icons.info_outline,
+                  backgroundColor: Colors.purple.withOpacity(0.1),
+                  iconColor: Colors.purple,
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => CustomerDetailsScreen(
+                          mobileNo: widget.leadWithInfo.lead.mobileNo,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 32), // Increased gap
+                _buildSmallActionButton(
+                  icon: Icons.feedback,
+                  backgroundColor: Colors.orange.withOpacity(0.1),
+                  iconColor: Colors.orange,
+                  onPressed: () {
+                    showDialog<bool>(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (BuildContext dialogContext) {
+                        return FeedbackDialog(mobileNo: widget.leadWithInfo.lead.mobileNo);
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(width: 32), // Increased gap
+                _buildSmallActionButton(
+                  icon: Icons.history,
+                  backgroundColor: Colors.grey.shade600.withOpacity(0.1),
+                  iconColor: Colors.grey.shade600,
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => CallHistoryScreen(
+                          customerName: widget.leadWithInfo.lead.customerName,
+                          mobileNo: widget.leadWithInfo.lead.mobileNo,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -239,140 +374,15 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
       builder: (context, child) {
         return Column(
           children: [
-            InkWell(
-              onTap: widget.onTap,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),                child: Row(
-                  children: [
-                    Opacity(
-                      opacity: _iconFadeAnimation.value,
-                                            child: SizedBox(
-                                              width: _iconFadeAnimation.value * 32, // Animate width
-                                              child: _getStatusIcon(widget.leadWithInfo.lead.leadStatus),
-                                            ),
-                                          ),
-                                          SizedBox(width: _namePaddingAnimation.value),
-                                          Expanded(
-                                            child: Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                              children: [
-                                                Flexible(
-                                                  child: Text(
-                                                    _toTitleCase(widget.leadWithInfo.lead.customerName),
-                                                    style: GoogleFonts.poppins(
-                                                      fontWeight: FontWeight.w500,
-                                                      fontSize: _nameSizeAnimation.value,
-                                                      color: Colors.black87,
-                                                    ),
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                                _buildStatusBadge(),
-                                              ],
-                                            ),
-                                          ),
-                                          Text(
-                                            _formatTime(widget.leadWithInfo.lead.updateDate),
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 12,
-                                              color: Colors.grey.shade600,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  AnimatedSize(
-                                    duration: const Duration(milliseconds: 200),
-                                    curve: Curves.easeInOut,
-                                    child: widget.isExpanded
-                                        ? Container(
-                                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Padding(
-                                                  padding: const EdgeInsets.only(bottom: 8.0),
-                                                  child: Text(
-                                                    'Mobile: ${widget.leadWithInfo.lead.mobileNo}',
-                                                    style: GoogleFonts.poppins(
-                                                      fontSize: 14,
-                                                      color: Colors.grey.shade700,
-                                                    ),
-                                                  ),
-                                                ),
-                                                Padding(
-                                                  padding: const EdgeInsets.only(top: 24.0, bottom: 8.0), // Gap above the row
-                                                  child: Row(
-                                                    mainAxisAlignment: MainAxisAlignment.center, // Center the row of icons
-                                                    children: [
-                                                      _buildSmallActionButton(
-                                                        icon: Icons.call,
-                                                        backgroundColor: Colors.green,
-                                                        iconColor: Colors.white,
-                                                        onPressed: () => _callNumber(widget.leadWithInfo.lead.mobileNo),
-                                                      ),
-                                                      const SizedBox(width: 32), // Increased gap
-                                                      _buildSmallActionButton(
-                                                        icon: FontAwesomeIcons.whatsapp,
-                                                        backgroundColor: Colors.green,
-                                                        iconColor: Colors.white,
-                                                        onPressed: () => _openWhatsApp(widget.leadWithInfo.lead.mobileNo),
-                                                      ),
-                                                      const SizedBox(width: 32), // Increased gap
-                                                      _buildSmallActionButton(
-                                                        icon: Icons.info_outline,
-                                                        backgroundColor: Colors.purple.withOpacity(0.1),
-                                                        iconColor: Colors.purple,
-                                                        onPressed: () {
-                                                          Navigator.of(context).push(
-                                                            MaterialPageRoute(
-                                                              builder: (context) => CustomerDetailsScreen(
-                                                                mobileNo: widget.leadWithInfo.lead.mobileNo,
-                                                              ),
-                                                            ),
-                                                          );
-                                                        },
-                                                      ),
-                                                      const SizedBox(width: 32), // Increased gap
-                                                      _buildSmallActionButton(
-                                                        icon: Icons.feedback,
-                                                        backgroundColor: Colors.orange.withOpacity(0.1),
-                                                        iconColor: Colors.orange,
-                                                        onPressed: () {
-                                                          showDialog<bool>(
-                                                            context: context,
-                                                            barrierDismissible: false,
-                                                            builder: (BuildContext dialogContext) {
-                                                              return FeedbackDialog(mobileNo: widget.leadWithInfo.lead.mobileNo);
-                                                            },
-                                                          );
-                                                        },
-                                                      ),
-                                                      const SizedBox(width: 32), // Increased gap
-                                                      _buildSmallActionButton(
-                                                        icon: Icons.history,
-                                                        backgroundColor: Colors.grey.shade600.withOpacity(0.1),
-                                                        iconColor: Colors.grey.shade600,
-                                                        onPressed: () {
-                                                          Navigator.of(context).push(
-                                                            MaterialPageRoute(
-                                                              builder: (context) => CallHistoryScreen(
-                                                                customerName: widget.leadWithInfo.lead.customerName,
-                                                                mobileNo: widget.leadWithInfo.lead.mobileNo,
-                                                              ),
-                                                            ),
-                                                          );
-                                                        },
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                                                        )
-                                                                      : const SizedBox.shrink(),
-                                                                ),            Container(
+            _buildHeader(),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              child: widget.isExpanded
+                  ? _buildExpandedSection()
+                  : const SizedBox.shrink(),
+            ),
+            Container(
               margin: const EdgeInsets.only(left: 44),
               height: 0.5,
               color: Colors.grey.shade300,

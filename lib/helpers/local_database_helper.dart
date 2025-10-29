@@ -4,6 +4,8 @@ import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:call_log/call_log.dart';
 import 'package:credlawn/models/call_log_model.dart';
+import 'package:credlawn/helpers/session_manager.dart';
+import 'package:credlawn/models/user.dart';
 
 class LocalDatabaseHelper {
   static final LocalDatabaseHelper instance = LocalDatabaseHelper._init();
@@ -13,7 +15,7 @@ class LocalDatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('local_calls.db');
+    _database = await _initDB('credlawn.db');
     return _database!;
   }
 
@@ -21,7 +23,7 @@ class LocalDatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+    return await openDatabase(path, version: 2, onCreate: _createDB, onUpgrade: _onUpgrade);
   }
 
   Future _createDB(Database db, int version) async {
@@ -36,11 +38,18 @@ CREATE TABLE call_history (
   normalized_number $textType,
   duration $intType,
   call_type $textType,
-  timestamp $intType
+  timestamp $intType,
+  user $textType
 )
 ''');
 
     await db.execute('CREATE INDEX idx_normalized_number ON call_history (normalized_number)');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE call_history ADD COLUMN user TEXT NOT NULL DEFAULT ""');
+    }
   }
 
   static String normalizeNumber(String number) {
@@ -66,6 +75,9 @@ CREATE TABLE call_history (
       dateFrom: lastTimestamp,
     );
 
+    final User? currentUser = await SessionManager.getSessionData();
+    final String currentUserId = currentUser?.userId ?? '';
+
     final batch = db.batch();
     for (final entry in entries) {
       if (entry.number == null || entry.number!.isEmpty) continue;
@@ -75,6 +87,7 @@ CREATE TABLE call_history (
         'duration': entry.duration ?? 0,
         'call_type': entry.callType?.toString().split('.').last ?? 'UNKNOWN',
         'timestamp': entry.timestamp ?? 0,
+        'user': currentUserId,
       });
     }
     await batch.commit(noResult: true);
