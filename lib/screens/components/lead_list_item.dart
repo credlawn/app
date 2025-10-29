@@ -1,20 +1,21 @@
 
+import 'package:flutter/material.dart';
+import 'package:credlawn/helpers/lead_data_helper.dart';
 import 'package:credlawn/models/calling_data_model.dart';
 import 'package:credlawn/screens/customer_details_screen.dart';
-import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 
 class LeadListItem extends StatefulWidget {
-  final CallingDataModel lead;
+  final LeadWithCallInfo leadWithInfo;
   final bool isExpanded;
   final VoidCallback onTap;
 
   const LeadListItem({
     super.key,
-    required this.lead,
+    required this.leadWithInfo,
     required this.isExpanded,
     required this.onTap,
   });
@@ -149,84 +150,106 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                   children: [
                     Opacity(
                       opacity: _iconFadeAnimation.value,
-                      child: SizedBox(
-                        width: _iconFadeAnimation.value * 32, // Animate width
-                        child: _getStatusIcon(widget.lead.leadStatus),
-                      ),
-                    ),
-                    SizedBox(width: _namePaddingAnimation.value),
-                    Expanded(
-                      child: Text(
-                        _toTitleCase(widget.lead.customerName),
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w500,
-                          fontSize: _nameSizeAnimation.value,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      _formatTime(widget.lead.updateDate),
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              child: widget.isExpanded
-                                ? Container(
-                                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Text(
-                              'Mobile: ${widget.lead.mobileNo}',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              _buildSmallActionButton(
-                                icon: Icons.call,
-                                color: Colors.green,
-                                onPressed: () => _callNumber(widget.lead.mobileNo),
-                              ),
-                              _buildSmallActionButton(
-                                icon: Icons.chat,
-                                color: Colors.blue,
-                                onPressed: () => _openWhatsApp(widget.lead.mobileNo),
-                              ),
-                              _buildSmallActionButton(
-                                icon: Icons.info_outline,
-                                color: Colors.grey.shade600,
-                                onPressed: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => CustomerDetailsScreen(
-                                        mobileNo: widget.lead.mobileNo,
+                                            child: SizedBox(
+                                              width: _iconFadeAnimation.value * 32, // Animate width
+                                              child: _getStatusIcon(widget.leadWithInfo.lead.leadStatus),
+                                            ),
+                                          ),
+                                          SizedBox(width: _namePaddingAnimation.value),
+                                          Expanded(
+                                            child: Row(
+                                              children: [
+                                                Flexible(
+                                                  child: Text(
+                                                    _toTitleCase(widget.leadWithInfo.lead.customerName),
+                                                    style: GoogleFonts.poppins(
+                                                      fontWeight: FontWeight.w500,
+                                                      fontSize: _nameSizeAnimation.value,
+                                                      color: Colors.black87,
+                                                    ),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                if (widget.leadWithInfo.callCount > 0)
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(left: 8.0),
+                                                    child: Chip(
+                                                      label: Text('${widget.leadWithInfo.callCount}'),
+                                                      visualDensity: VisualDensity.compact,
+                                                      padding: EdgeInsets.zero,
+                                                      labelPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                                      backgroundColor: Colors.blueGrey.withOpacity(0.2),
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius: BorderRadius.circular(8),
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                          Text(
+                                            _formatTime(widget.leadWithInfo.lead.updateDate),
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
+                                  ),
+                                  AnimatedSize(
+                                    duration: const Duration(milliseconds: 200),
+                                    curve: Curves.easeInOut,
+                                    child: widget.isExpanded
+                                        ? Container(
+                                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Padding(
+                                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                                  child: Text(
+                                                    'Mobile: ${widget.leadWithInfo.lead.mobileNo}',
+                                                    style: GoogleFonts.poppins(
+                                                      fontSize: 14,
+                                                      color: Colors.grey.shade700,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    _buildSmallActionButton(
+                                                      icon: Icons.call,
+                                                      color: Colors.green,
+                                                      onPressed: () => _callNumber(widget.leadWithInfo.lead.mobileNo),
+                                                    ),
+                                                    _buildSmallActionButton(
+                                                      icon: Icons.chat,
+                                                      color: Colors.blue,
+                                                      onPressed: () => _openWhatsApp(widget.leadWithInfo.lead.mobileNo),
+                                                    ),
+                                                    _buildSmallActionButton(
+                                                      icon: Icons.info_outline,
+                                                      color: Colors.grey.shade600,
+                                                      onPressed: () {
+                                                        Navigator.of(context).push(
+                                                          MaterialPageRoute(
+                                                            builder: (context) => CustomerDetailsScreen(
+                                                              mobileNo: widget.leadWithInfo.lead.mobileNo,
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          )
+                                        : const SizedBox.shrink(),
+                                  ),
             Container(
               margin: const EdgeInsets.only(left: 44),
               height: 0.5,

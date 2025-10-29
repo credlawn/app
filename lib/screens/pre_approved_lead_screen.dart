@@ -7,6 +7,7 @@ import 'package:call_log/call_log.dart';
 import 'package:credlawn/helpers/call_log_sync_manager.dart';
 import 'package:credlawn/helpers/app_state_manager.dart';
 import 'package:credlawn/custom/custom_color.dart';
+import 'package:credlawn/helpers/lead_data_helper.dart';
 import '../network/api_calling_data_helper.dart';
 import '../models/calling_data_model.dart';
 import '../models/user.dart';
@@ -28,13 +29,21 @@ class PreApprovedLeadsScreen extends StatefulWidget {
 }
 
 class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
-  late Future<List<CallingDataModel>> _employeeLeads;
+  late Future<List<LeadWithCallInfo>> _leadsFuture;
   String? _expandedLeadId;
   bool _isSearching = false;
-  String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
-  List<CallingDataModel> _allLeads = [];
-  List<CallingDataModel> _filteredLeads = [];
+  List<LeadWithCallInfo> _allLeads = [];
+  List<LeadWithCallInfo> _filteredLeads = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _leadsFuture = getLeadsWithCallCounts(widget.user.userId, widget.user.sid);
+    _searchController.addListener(() {
+      _filterLeads();
+    });
+  }
 
   void _expandItem(String mobileNo) {
     setState(() {
@@ -47,15 +56,6 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    _employeeLeads = fetchEmployeeLeads(widget.user.userId, widget.user.sid);
-    _searchController.addListener(() {
-      _filterLeads();
-    });
-  }
-
-  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
@@ -64,10 +64,9 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
   void _filterLeads() {
     final query = _searchController.text.toLowerCase();
     setState(() {
-      _searchQuery = query;
-      _filteredLeads = _allLeads.where((lead) {
-        final nameMatches = lead.customerName.toLowerCase().contains(query);
-        final mobileMatches = lead.mobileNo.toLowerCase().contains(query);
+      _filteredLeads = _allLeads.where((leadWithInfo) {
+        final nameMatches = leadWithInfo.lead.customerName.toLowerCase().contains(query);
+        final mobileMatches = leadWithInfo.lead.mobileNo.toLowerCase().contains(query);
         return nameMatches || mobileMatches;
       }).toList();
     });
@@ -96,7 +95,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
   Future<void> _refreshLeads() async {
     setState(() {
       _allLeads = [];
-      _employeeLeads = fetchEmployeeLeads(widget.user.userId, widget.user.sid);
+      _leadsFuture = getLeadsWithCallCounts(widget.user.userId, widget.user.sid);
     });
   }
 
@@ -167,8 +166,8 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _buildAppBar(),
-      body: FutureBuilder<List<CallingDataModel>>(
-        future: _employeeLeads,
+      body: FutureBuilder<List<LeadWithCallInfo>>(
+        future: _leadsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: SpinKitCircle(color: CustomColor.MainColor));
@@ -184,8 +183,8 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
                   'New Lead': 0,
                   'CNR': 1,
                 };
-                final aOrder = statusOrder[a.leadStatus] ?? 2;
-                final bOrder = statusOrder[b.leadStatus] ?? 2;
+                final aOrder = statusOrder[a.lead.leadStatus] ?? 2;
+                final bOrder = statusOrder[b.lead.leadStatus] ?? 2;
                 return aOrder.compareTo(bOrder);
               });
               _filteredLeads = _allLeads;
@@ -195,11 +194,11 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
               child: ListView.builder(
                 itemCount: _filteredLeads.length,
                 itemBuilder: (context, index) {
-                  final lead = _filteredLeads[index];
+                  final leadWithInfo = _filteredLeads[index];
                   return LeadListItem(
-                    lead: lead,
-                    isExpanded: _expandedLeadId == lead.mobileNo,
-                    onTap: () => _expandItem(lead.mobileNo),
+                    leadWithInfo: leadWithInfo,
+                    isExpanded: _expandedLeadId == leadWithInfo.lead.mobileNo,
+                    onTap: () => _expandItem(leadWithInfo.lead.mobileNo),
                   );
                 },
               ),
