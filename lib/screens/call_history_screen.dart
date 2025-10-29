@@ -16,13 +16,38 @@ class CallHistoryScreen extends StatefulWidget {
   State<CallHistoryScreen> createState() => _CallHistoryScreenState();
 }
 
-class _CallHistoryScreenState extends State<CallHistoryScreen> {
+class _CallHistoryScreenState extends State<CallHistoryScreen> with WidgetsBindingObserver {
   late Future<List<CallLogModel>> _historyFuture;
 
   @override
   void initState() {
     super.initState();
-    _historyFuture = LocalDatabaseHelper.instance.getLogsForNumber(widget.mobileNo);
+    WidgetsBinding.instance.addObserver(this);
+    _historyFuture = _syncAndFetchLogs();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshLogs();
+    }
+  }
+
+  void _refreshLogs() {
+    setState(() {
+      _historyFuture = _syncAndFetchLogs();
+    });
+  }
+
+  Future<List<CallLogModel>> _syncAndFetchLogs() async {
+    await LocalDatabaseHelper.instance.syncPhoneCallLogs();
+    return LocalDatabaseHelper.instance.getLogsForNumber(widget.mobileNo);
   }
 
   String _formatDuration(int seconds) {

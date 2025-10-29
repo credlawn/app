@@ -60,7 +60,7 @@ CREATE TABLE call_history (
 
     final db = await instance.database;
     final lastTimestampResult = await db.rawQuery('SELECT MAX(timestamp) as max_time FROM call_history');
-    final lastTimestamp = (lastTimestampResult.first['max_time'] as int? ?? 0) * 1000;
+    final lastTimestamp = lastTimestampResult.first['max_time'] as int? ?? 0;
 
     final Iterable<CallLogEntry> entries = await CallLog.query(
       dateFrom: lastTimestamp,
