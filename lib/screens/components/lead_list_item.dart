@@ -240,13 +240,6 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            Opacity(
-              opacity: _iconFadeAnimation.value,
-              child: SizedBox(
-                width: _iconFadeAnimation.value * 32, // Animate width
-                child: _getStatusIcon(widget.leadWithInfo.lead.leadStatus),
-              ),
-            ),
             SizedBox(width: _namePaddingAnimation.value),
             Expanded(
               child: Row(
