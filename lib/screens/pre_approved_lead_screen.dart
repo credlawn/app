@@ -28,7 +28,7 @@ class PreApprovedLeadsScreen extends StatefulWidget {
   _PreApprovedLeadsScreenState createState() => _PreApprovedLeadsScreenState();
 }
 
-class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
+class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with WidgetsBindingObserver {
   late Future<List<LeadWithCallInfo>> _leadsFuture;
   String? _expandedLeadId;
   bool _isSearching = false;
@@ -39,6 +39,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _leadsFuture = getLeadsWithCallCounts(widget.user.userId, widget.user.sid);
     _searchController.addListener(() {
       _filterLeads();
@@ -57,8 +58,16 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshLeads();
+    }
   }
 
   void _filterLeads() {
