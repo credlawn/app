@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
+import 'package:credlawn/screens/components/feedback_dialog.dart';
 
 class LeadListItem extends StatefulWidget {
   final LeadWithCallInfo leadWithInfo;
@@ -129,11 +130,18 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
     required Color color,
     required VoidCallback onPressed,
   }) {
-    return IconButton(
-      onPressed: onPressed,
-      icon: Icon(icon, color: color, size: 20),
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(icon, color: color, size: 22),
+        padding: EdgeInsets.zero,
+      ),
     );
   }
 
@@ -291,37 +299,70 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                                                     ),
                                                   ),
                                                 ),
-                                                Row(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                  children: [
-                                                    _buildSmallActionButton(
-                                                      icon: Icons.call,
-                                                      color: Colors.green,
-                                                      onPressed: () => _callNumber(widget.leadWithInfo.lead.mobileNo),
-                                                    ),
-                                                    _buildSmallActionButton(
-                                                      icon: Icons.chat,
-                                                      color: Colors.blue,
-                                                      onPressed: () => _openWhatsApp(widget.leadWithInfo.lead.mobileNo),
-                                                    ),
-                                                                                  _buildSmallActionButton(
-                                                                                    icon: Icons.history,
-                                                                                    color: Colors.grey.shade600,
-                                                                                    onPressed: () {
-                                                                                      Navigator.of(context).push(
-                                                                                        MaterialPageRoute(
-                                                                                          builder: (context) => CallHistoryScreen(
-                                                                                            customerName: widget.leadWithInfo.lead.customerName,
-                                                                                            mobileNo: widget.leadWithInfo.lead.mobileNo,
-                                                                                          ),
-                                                                                        ),
-                                                                                      );
-                                                                                    },
-                                                                                  ),
-                                                                                ],
-                                                                              ),
-                                                                            ],
-                                                                          ),
+                                                Padding(
+                                                  padding: const EdgeInsets.only(top: 24.0, bottom: 8.0), // Gap above the row
+                                                  child: Row(
+                                                    mainAxisAlignment: MainAxisAlignment.center, // Center the row of icons
+                                                    children: [
+                                                      _buildSmallActionButton(
+                                                        icon: Icons.call,
+                                                        color: Colors.green,
+                                                        onPressed: () => _callNumber(widget.leadWithInfo.lead.mobileNo),
+                                                      ),
+                                                      const SizedBox(width: 32), // Increased gap
+                                                      _buildSmallActionButton(
+                                                        icon: Icons.chat,
+                                                        color: Colors.blue,
+                                                        onPressed: () => _openWhatsApp(widget.leadWithInfo.lead.mobileNo),
+                                                      ),
+                                                      const SizedBox(width: 32), // Increased gap
+                                                      _buildSmallActionButton(
+                                                        icon: Icons.info_outline,
+                                                        color: Colors.purple,
+                                                        onPressed: () {
+                                                          Navigator.of(context).push(
+                                                            MaterialPageRoute(
+                                                              builder: (context) => CustomerDetailsScreen(
+                                                                mobileNo: widget.leadWithInfo.lead.mobileNo,
+                                                              ),
+                                                            ),
+                                                          );
+                                                        },
+                                                      ),
+                                                      const SizedBox(width: 32), // Increased gap
+                                                      _buildSmallActionButton(
+                                                        icon: Icons.feedback,
+                                                        color: Colors.orange,
+                                                        onPressed: () {
+                                                          showDialog<bool>(
+                                                            context: context,
+                                                            barrierDismissible: false,
+                                                            builder: (BuildContext dialogContext) {
+                                                              return FeedbackDialog(mobileNo: widget.leadWithInfo.lead.mobileNo);
+                                                            },
+                                                          );
+                                                        },
+                                                      ),
+                                                      const SizedBox(width: 32), // Increased gap
+                                                      _buildSmallActionButton(
+                                                        icon: Icons.history,
+                                                        color: Colors.grey.shade600,
+                                                        onPressed: () {
+                                                          Navigator.of(context).push(
+                                                            MaterialPageRoute(
+                                                              builder: (context) => CallHistoryScreen(
+                                                                customerName: widget.leadWithInfo.lead.customerName,
+                                                                mobileNo: widget.leadWithInfo.lead.mobileNo,
+                                                              ),
+                                                            ),
+                                                          );
+                                                        },
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                                                         )
                                                                       : const SizedBox.shrink(),
                                                                 ),            Container(
