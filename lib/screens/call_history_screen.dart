@@ -44,16 +44,21 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
     Color color;
     String typeText;
 
-    switch (callType) {
+    switch (callType.toUpperCase()) {
       case 'INCOMING':
         icon = Icons.call_received;
-        color = Colors.blue;
+        color = Colors.green;
         typeText = 'Incoming';
         break;
       case 'OUTGOING':
         icon = Icons.call_made;
-        color = Colors.green;
-        typeText = 'Outgoing';
+        if (duration > 0) {
+          color = Colors.grey.shade600;
+          typeText = 'Outgoing';
+        } else {
+          color = Colors.orange;
+          typeText = 'CNR';
+        }
         break;
       case 'MISSED':
         icon = Icons.call_missed;
@@ -68,10 +73,10 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
 
     return Row(
       children: [
-        Icon(icon, color: color, size: 20),
+        Icon(icon, color: color, size: 16),
         const SizedBox(width: 8),
         Text(
-          duration > 0 ? '$typeText, ${_formatDuration(duration)}' : typeText,
+          duration > 0 && typeText != 'CNR' ? '$typeText, ${_formatDuration(duration)}' : typeText,
           style: GoogleFonts.poppins(color: color, fontSize: 14),
         ),
       ],
