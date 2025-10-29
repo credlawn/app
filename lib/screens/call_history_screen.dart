@@ -90,6 +90,11 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> with WidgetsBindi
         color = Colors.red;
         typeText = 'Missed';
         break;
+      case 'REJECTED':
+        icon = Icons.block;
+        color = Colors.red;
+        typeText = 'Rejected';
+        break;
       default:
         icon = Icons.call;
         color = Colors.grey;
@@ -131,7 +136,13 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> with WidgetsBindi
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.customerName, style: GoogleFonts.poppins()),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.customerName, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+            Text(widget.mobileNo, style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey.shade600)),
+          ],
+        ),
         backgroundColor: Colors.white,
         elevation: 1,
         foregroundColor: Colors.black,

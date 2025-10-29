@@ -93,6 +93,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
         icon = Icons.call_missed;
         color = Colors.red;
         break;
+
       default:
         icon = Icons.call;
         color = Colors.grey;
