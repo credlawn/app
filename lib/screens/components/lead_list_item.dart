@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:credlawn/helpers/lead_data_helper.dart';
 import 'package:credlawn/models/calling_data_model.dart';
 import 'package:credlawn/screens/customer_details_screen.dart';
+import 'package:credlawn/screens/call_history_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -230,27 +231,27 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                                                       color: Colors.blue,
                                                       onPressed: () => _openWhatsApp(widget.leadWithInfo.lead.mobileNo),
                                                     ),
-                                                    _buildSmallActionButton(
-                                                      icon: Icons.info_outline,
-                                                      color: Colors.grey.shade600,
-                                                      onPressed: () {
-                                                        Navigator.of(context).push(
-                                                          MaterialPageRoute(
-                                                            builder: (context) => CustomerDetailsScreen(
-                                                              mobileNo: widget.leadWithInfo.lead.mobileNo,
-                                                            ),
-                                                          ),
-                                                        );
-                                                      },
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                          )
-                                        : const SizedBox.shrink(),
-                                  ),
-            Container(
+                                                                                  _buildSmallActionButton(
+                                                                                    icon: Icons.history,
+                                                                                    color: Colors.grey.shade600,
+                                                                                    onPressed: () {
+                                                                                      Navigator.of(context).push(
+                                                                                        MaterialPageRoute(
+                                                                                          builder: (context) => CallHistoryScreen(
+                                                                                            customerName: widget.leadWithInfo.lead.customerName,
+                                                                                            mobileNo: widget.leadWithInfo.lead.mobileNo,
+                                                                                          ),
+                                                                                        ),
+                                                                                      );
+                                                                                    },
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                            ],
+                                                                          ),
+                                                                        )
+                                                                      : const SizedBox.shrink(),
+                                                                ),            Container(
               margin: const EdgeInsets.only(left: 44),
               height: 0.5,
               color: Colors.grey.shade300,

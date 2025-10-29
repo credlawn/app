@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:call_log/call_log.dart';
+import 'package:credlawn/models/call_log_model.dart';
 
 class LocalDatabaseHelper {
   static final LocalDatabaseHelper instance = LocalDatabaseHelper._init();
@@ -97,6 +98,21 @@ CREATE TABLE call_history (
       where: 'normalized_number = ?',
       whereArgs: [normalizedNumber],
     );
+  }
+
+  Future<List<CallLogModel>> getLogsForNumber(String mobileNo) async {
+    final db = await instance.database;
+    final normalizedNumber = normalizeNumber(mobileNo);
+    final maps = await db.query(
+      'call_history',
+      where: 'normalized_number = ?',
+      whereArgs: [normalizedNumber],
+      orderBy: 'timestamp DESC',
+    );
+
+    return List.generate(maps.length, (i) {
+      return CallLogModel.fromMap(maps[i]);
+    });
   }
 
   Future close() async {
