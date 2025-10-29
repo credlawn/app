@@ -16,6 +16,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'lead_status_update_screen.dart'; // Import LeadStatusUpdateScreen
 import 'customer_details_screen.dart'; // Import CustomerDetailsScreen
 
+import 'package:credlawn/screens/components/lead_list_item.dart';
+
 class PreApprovedLeadsScreen extends StatefulWidget {
   final User user;
 
@@ -27,11 +29,22 @@ class PreApprovedLeadsScreen extends StatefulWidget {
 
 class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
   late Future<List<CallingDataModel>> _employeeLeads;
+  String? _expandedLeadId;
   bool _isSearching = false;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   List<CallingDataModel> _allLeads = [];
   List<CallingDataModel> _filteredLeads = [];
+
+  void _expandItem(String mobileNo) {
+    setState(() {
+      if (_expandedLeadId == mobileNo) {
+        _expandedLeadId = null;
+      } else {
+        _expandedLeadId = mobileNo;
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -183,65 +196,10 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> {
                 itemCount: _filteredLeads.length,
                 itemBuilder: (context, index) {
                   final lead = _filteredLeads[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    elevation: 1,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      title: Text(
-                        lead.customerName,
-                        style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            lead.leadStatus,
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: _getStatusColor(lead.leadStatus),
-                            ),
-                          ),
-                        ],
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.message, color: Colors.blue, size: 22),
-                            onPressed: () => _openWhatsApp(lead.mobileNo),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.call, size: 30, color: Colors.green),
-                            onPressed: () async {
-                              await AppStateManager.setPendingFeedbackMobile(lead.mobileNo);
-                              await FlutterPhoneDirectCaller.callNumber(lead.mobileNo);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CustomerDetailsScreen(
-                                    mobileNo: lead.mobileNo,
-                                    isAutoOpenedAfterCall: true,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CustomerDetailsScreen(
-                              mobileNo: lead.mobileNo,
-                              isAutoOpenedAfterCall: false, // Pass false for direct click
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                  return LeadListItem(
+                    lead: lead,
+                    isExpanded: _expandedLeadId == lead.mobileNo,
+                    onTap: () => _expandItem(lead.mobileNo),
                   );
                 },
               ),
