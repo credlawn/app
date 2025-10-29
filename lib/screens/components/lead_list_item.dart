@@ -9,6 +9,7 @@ import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import 'package:credlawn/screens/components/feedback_dialog.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LeadListItem extends StatefulWidget {
   final LeadWithCallInfo leadWithInfo;
@@ -127,19 +128,20 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
 
   Widget _buildSmallActionButton({
     required IconData icon,
-    required Color color,
+    required Color backgroundColor,
+    required Color iconColor,
     required VoidCallback onPressed,
   }) {
     return Container(
       width: 42,
       height: 42,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: backgroundColor,
         shape: BoxShape.circle,
       ),
       child: IconButton(
         onPressed: onPressed,
-        icon: Icon(icon, color: color, size: 22),
+        icon: Icon(icon, color: iconColor, size: 22),
         padding: EdgeInsets.zero,
       ),
     );
@@ -306,19 +308,22 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                                                     children: [
                                                       _buildSmallActionButton(
                                                         icon: Icons.call,
-                                                        color: Colors.green,
+                                                        backgroundColor: Colors.green,
+                                                        iconColor: Colors.white,
                                                         onPressed: () => _callNumber(widget.leadWithInfo.lead.mobileNo),
                                                       ),
                                                       const SizedBox(width: 32), // Increased gap
                                                       _buildSmallActionButton(
-                                                        icon: Icons.chat,
-                                                        color: Colors.blue,
+                                                        icon: FontAwesomeIcons.whatsapp,
+                                                        backgroundColor: Colors.green,
+                                                        iconColor: Colors.white,
                                                         onPressed: () => _openWhatsApp(widget.leadWithInfo.lead.mobileNo),
                                                       ),
                                                       const SizedBox(width: 32), // Increased gap
                                                       _buildSmallActionButton(
                                                         icon: Icons.info_outline,
-                                                        color: Colors.purple,
+                                                        backgroundColor: Colors.purple.withOpacity(0.1),
+                                                        iconColor: Colors.purple,
                                                         onPressed: () {
                                                           Navigator.of(context).push(
                                                             MaterialPageRoute(
@@ -332,7 +337,8 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                                                       const SizedBox(width: 32), // Increased gap
                                                       _buildSmallActionButton(
                                                         icon: Icons.feedback,
-                                                        color: Colors.orange,
+                                                        backgroundColor: Colors.orange.withOpacity(0.1),
+                                                        iconColor: Colors.orange,
                                                         onPressed: () {
                                                           showDialog<bool>(
                                                             context: context,
@@ -346,7 +352,8 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                                                       const SizedBox(width: 32), // Increased gap
                                                       _buildSmallActionButton(
                                                         icon: Icons.history,
-                                                        color: Colors.grey.shade600,
+                                                        backgroundColor: Colors.grey.shade600.withOpacity(0.1),
+                                                        iconColor: Colors.grey.shade600,
                                                         onPressed: () {
                                                           Navigator.of(context).push(
                                                             MaterialPageRoute(
