@@ -7,8 +7,9 @@ import 'package:credlawn/network/api_calling_data_helper.dart';
 class LeadWithCallInfo {
   final CallingDataModel lead;
   final int callCount;
+  final int? lastCallDuration;
 
-  LeadWithCallInfo({required this.lead, required this.callCount});
+  LeadWithCallInfo({required this.lead, required this.callCount, this.lastCallDuration});
 }
 
 Future<List<LeadWithCallInfo>> getLeadsWithCallCounts(String userId, String sid) async {
@@ -18,11 +19,16 @@ Future<List<LeadWithCallInfo>> getLeadsWithCallCounts(String userId, String sid)
   // Then, fetch the leads from the API
   final leads = await fetchEmployeeLeads(userId, sid);
 
-  // Now, for each lead, get the call count from our local DB
+  // Now, for each lead, get the call count and last call duration from our local DB
   final List<LeadWithCallInfo> leadsWithCallInfo = [];
   for (var lead in leads) {
     final callCount = await LocalDatabaseHelper.instance.getCallCount(lead.mobileNo);
-    leadsWithCallInfo.add(LeadWithCallInfo(lead: lead, callCount: callCount));
+    final lastCallDuration = await LocalDatabaseHelper.instance.getLastCallDuration(lead.mobileNo);
+    leadsWithCallInfo.add(LeadWithCallInfo(
+      lead: lead,
+      callCount: callCount,
+      lastCallDuration: lastCallDuration,
+    ));
   }
   return leadsWithCallInfo;
 }

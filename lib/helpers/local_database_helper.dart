@@ -90,6 +90,23 @@ CREATE TABLE call_history (
     return (result.first['count'] as int?) ?? 0;
   }
 
+  Future<int?> getLastCallDuration(String mobileNo) async {
+    final db = await instance.database;
+    final normalizedNumber = LocalDatabaseHelper.normalizeNumber(mobileNo);
+    final result = await db.query(
+      'call_history',
+      columns: ['duration'],
+      where: 'normalized_number = ?',
+      whereArgs: [normalizedNumber],
+      orderBy: 'timestamp DESC',
+      limit: 1,
+    );
+    if (result.isNotEmpty) {
+      return result.first['duration'] as int?;
+    }
+    return null;
+  }
+
   Future<void> deleteLogsForNumber(String mobileNo) async {
     final db = await instance.database;
     final normalizedNumber = LocalDatabaseHelper.normalizeNumber(mobileNo);

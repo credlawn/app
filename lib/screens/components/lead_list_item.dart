@@ -137,6 +137,91 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
     );
   }
 
+  Widget _buildStatusBadge() {
+    if (widget.leadWithInfo.callCount == 0) {
+      return Padding(
+        padding: const EdgeInsets.only(left: 8.0),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: Colors.green,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            'New',
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+    } else if (widget.leadWithInfo.lastCallDuration == 0) {
+      return Padding(
+        padding: const EdgeInsets.only(left: 8.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade100,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                widget.leadWithInfo.callCount > 99 ? '99+' : '${widget.leadWithInfo.callCount}',
+                style: GoogleFonts.poppins(
+                  color: Colors.blue,
+
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16), 
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                'CNR',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      return Padding(
+        padding: const EdgeInsets.only(left: 8.0),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade100,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            widget.leadWithInfo.callCount > 99 ? '99+' : '${widget.leadWithInfo.callCount}',
+            style: GoogleFonts.poppins(
+              color: Colors.blue,
+
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -159,6 +244,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                                           SizedBox(width: _namePaddingAnimation.value),
                                           Expanded(
                                             child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                               children: [
                                                 Flexible(
                                                   child: Text(
@@ -171,20 +257,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                                                     overflow: TextOverflow.ellipsis,
                                                   ),
                                                 ),
-                                                if (widget.leadWithInfo.callCount > 0)
-                                                  Padding(
-                                                    padding: const EdgeInsets.only(left: 8.0),
-                                                    child: Chip(
-                                                      label: Text('${widget.leadWithInfo.callCount}'),
-                                                      visualDensity: VisualDensity.compact,
-                                                      padding: EdgeInsets.zero,
-                                                      labelPadding: const EdgeInsets.symmetric(horizontal: 4.0),
-                                                      backgroundColor: Colors.blueGrey.withOpacity(0.2),
-                                                      shape: RoundedRectangleBorder(
-                                                        borderRadius: BorderRadius.circular(8),
-                                                      ),
-                                                    ),
-                                                  ),
+                                                _buildStatusBadge(),
                                               ],
                                             ),
                                           ),
