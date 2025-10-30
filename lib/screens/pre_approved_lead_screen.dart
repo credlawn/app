@@ -1,4 +1,4 @@
-// ignore_for_file: library_private_types_in_public_api, unused_field
+
 
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -8,14 +8,16 @@ import 'package:credlawn/helpers/call_log_sync_manager.dart';
 import 'package:credlawn/helpers/app_state_manager.dart';
 import 'package:credlawn/custom/custom_color.dart';
 import 'package:credlawn/helpers/lead_data_helper.dart';
-import '../network/api_calling_data_helper.dart';
-import '../models/calling_data_model.dart';
-import '../models/user.dart';
+import 'package:credlawn/models/leads_model.dart'; // Use LeadsModel
+import 'package:credlawn/helpers/database_service.dart'; // Use DatabaseService
+import 'package:credlawn/network/api_leads_helper.dart'; // Use new API helper
+import 'package:credlawn/models/user.dart'; // For SessionManager
+import 'package:credlawn/helpers/session_manager.dart'; // For SessionManager
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'lead_status_update_screen.dart'; // Import LeadStatusUpdateScreen
-import 'customer_details_screen.dart'; // Import CustomerDetailsScreen
+import 'lead_status_update_screen.dart';
+import 'customer_details_screen.dart';
 
 import 'package:credlawn/screens/components/lead_list_item.dart';
 
@@ -40,10 +42,19 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _leadsFuture = getLeadsWithCallCounts(widget.user.userId, widget.user.sid);
+    _leadsFuture = _fetchAndSyncLeads();
     _searchController.addListener(() {
       _filterLeads();
     });
+
+    AppStateManager.dirtyLeadNotifier.addListener(_onDirtyLeadNotification);
+  }
+
+  void _onDirtyLeadNotification() {
+    if (AppStateManager.dirtyLeadNotifier.value) {
+      _refreshLeads();
+      AppStateManager.dirtyLeadNotifier.value = false;
+    }
   }
 
   void _expandItem(String mobileNo) {
@@ -60,6 +71,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
+    AppStateManager.dirtyLeadNotifier.removeListener(_onDirtyLeadNotification);
     super.dispose();
   }
 
@@ -67,7 +79,15 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _refreshLeads();
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      _closeExpandedItem();
     }
+  }
+
+  void _closeExpandedItem() {
+    setState(() {
+      _expandedLeadId = null;
+    });
   }
 
   void _filterLeads() {
@@ -81,12 +101,12 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
     });
   }
 
-  void _callNumber(CallingDataModel lead) async {
+  void _callNumber(LeadsModel lead) async {
     await FlutterPhoneDirectCaller.callNumber(lead.mobileNo);
   }
 
-  void _openWhatsApp(String mobileNo) async {
-    final mobileWithCode = '+91$mobileNo';
+  void _openWhatsApp(LeadsModel lead) async {
+    final mobileWithCode = '+91${lead.mobileNo}';
     final String androidUrl = "whatsapp://send?phone=$mobileWithCode&text=https://cipl.me/tata";
     final String iosUrl = "https://wa.me/$mobileWithCode?text=${Uri.parse('https://cipl.me/tata')}";
 
@@ -97,14 +117,80 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
         await launchUrl(Uri.parse(androidUrl));
       }
     } catch (e) {
-      print("Could not open WhatsApp: $e");
+
+    }
+  }
+
+  Future<List<LeadWithCallInfo>> _fetchAndSyncLeads() async {
+    final User? currentUser = await SessionManager.getSessionData();
+    if (currentUser == null) {
+      return Future.error('User not logged in');
+    }
+
+    try {
+
+
+      final dirtyLeads = await DatabaseService.instance.leadsRepository.getAllLeads();
+      for (final lead in dirtyLeads.where((l) => l.isDirty == 1)) {
+        try {
+          final bool success = await syncLeadUpdateToServer(lead, currentUser.sid);
+          if (success) {
+            await DatabaseService.instance.leadsRepository.updateLeadLocalFields(
+              lead.frappeId,
+              isDirty: 0,
+              lastSyncedAt: DateTime.now().millisecondsSinceEpoch,
+            );
+
+          } else {
+
+          }
+        } catch (e) {
+
+        }
+      }
+
+
+
+
+      final apiLeads = await fetchEmployeeLeadsFromApi(currentUser.userId, currentUser.sid);
+
+
+
+      final localActiveFrappeIds = await DatabaseService.instance.leadsRepository.getFrappeIdsOfActiveLeads();
+
+      final Set<String> apiFrappeIds = apiLeads.map((lead) => lead.frappeId).toSet();
+
+
+      for (final apiLead in apiLeads) {
+        await DatabaseService.instance.leadsRepository.upsertLeadFromApi(apiLead);
+      }
+
+
+
+      for (final localFrappeId in localActiveFrappeIds) {
+        if (!apiFrappeIds.contains(localFrappeId)) {
+          await DatabaseService.instance.leadsRepository.markLeadAsInactive(localFrappeId);
+
+        }
+      }
+
+
+      final leadsForDisplay = await getLeadsWithCallCounts();
+
+      return leadsForDisplay;
+    } catch (e) {
+
+
+      final leadsForDisplay = await getLeadsWithCallCounts();
+
+      return leadsForDisplay;
     }
   }
 
   Future<void> _refreshLeads() async {
     setState(() {
       _allLeads = [];
-      _leadsFuture = getLeadsWithCallCounts(widget.user.userId, widget.user.sid);
+      _leadsFuture = _fetchAndSyncLeads();
     });
   }
 
@@ -185,19 +271,18 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text('No leads available.'));
           } else {
-            if (_allLeads.isEmpty) {
-              _allLeads = snapshot.data!;
-              _allLeads.sort((a, b) {
-                final statusOrder = {
-                  'New Lead': 0,
-                  'CNR': 1,
-                };
-                final aOrder = statusOrder[a.lead.leadStatus] ?? 2;
-                final bOrder = statusOrder[b.lead.leadStatus] ?? 2;
-                return aOrder.compareTo(bOrder);
-              });
-              _filteredLeads = _allLeads;
-            }
+            _allLeads = snapshot.data!;
+            _allLeads.sort((a, b) {
+              final statusOrder = {
+                'New Lead': 0,
+                'CNR': 1,
+              };
+              final aOrder = statusOrder[a.lead.leadStatus] ?? 2;
+              final bOrder = statusOrder[b.lead.leadStatus] ?? 2;
+              return aOrder.compareTo(bOrder);
+            });
+            _filteredLeads = _allLeads;
+
             return RefreshIndicator(
               onRefresh: _refreshLeads,
               child: ListView.builder(
@@ -208,6 +293,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
                     leadWithInfo: leadWithInfo,
                     isExpanded: _expandedLeadId == leadWithInfo.lead.mobileNo,
                     onTap: () => _expandItem(leadWithInfo.lead.mobileNo),
+                    onNavigate: _closeExpandedItem,
                   );
                 },
               ),

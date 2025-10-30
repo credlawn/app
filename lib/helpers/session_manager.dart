@@ -21,6 +21,7 @@ class SessionManager {
     required String age,
     required String tenure,
     required String role,
+    String? csrfToken,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final user = User(
@@ -40,6 +41,7 @@ class SessionManager {
       age: age,
       tenure: tenure,
       role: role,
+      csrfToken: csrfToken,
     );
 
     await prefs.setString(_userKey, user.toJson());

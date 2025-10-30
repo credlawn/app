@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:credlawn/models/call_log_model.dart';
-import 'package:credlawn/helpers/local_database_helper.dart';
+import 'package:credlawn/helpers/database_service.dart';
 import 'package:intl/intl.dart';
 import 'package:collection/collection.dart';
 
@@ -46,8 +46,8 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> with WidgetsBindi
   }
 
   Future<List<CallLogModel>> _syncAndFetchLogs() async {
-    await LocalDatabaseHelper.instance.syncPhoneCallLogs();
-    return LocalDatabaseHelper.instance.getLogsForNumber(widget.mobileNo);
+    await DatabaseService.instance.callHistoryRepository.syncPhoneCallLogs();
+    return DatabaseService.instance.callHistoryRepository.getLogsForNumber(widget.mobileNo);
   }
 
   String _formatDuration(int seconds) {

@@ -4,13 +4,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:credlawn/custom/custom_color.dart';
 import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/models/user.dart';
-import 'package:credlawn/network/api_feedback_helper.dart';
 import 'package:credlawn/screens/login_screen.dart';
 import 'package:credlawn/screens/pre_approved_lead_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:credlawn/helpers/ocr_helper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:credlawn/helpers/app_state_manager.dart';
+import 'package:credlawn/helpers/database_service.dart';
 
 class FeedbackDialog extends StatefulWidget {
   final String mobileNo;
@@ -206,55 +206,34 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                 CustomColor.showErrorSnackBar(context, 'Please select a date and time.');
                 return;
               }
+            }
 
-              final user = await SessionManager.getSessionData();
-              if (user == null) {
-                CustomColor.showErrorSnackBar(context, 'User session not found. Please log in again.');
-                return;
-              }
+            final lead = await DatabaseService.instance.leadsRepository.getLeadByMobileNo(widget.mobileNo);
 
-              bool success = await saveCustomerFeedback(
-                mobileNo: widget.mobileNo,
-                remarks: _remarksController.text,
-                status: selectedStatus,
-                referenceNo: _referenceNoController.text,
-                userId: user.userId,
-                followUpDate: DateFormat('yyyy-MM-dd').format(selectedDate!),
-                followUpTime: selectedTime!.format(context),
-              );
-
-              if (success) {
-                CustomColor.showSuccessSnackBar(context, 'Follow-up scheduled successfully!');
-                _remarksController.clear();
-                _referenceNoController.clear();
-                Navigator.of(context).pop(true); // Return true on success
-              } else {
-                CustomColor.showErrorSnackBar(context, 'Failed to schedule follow-up.');
-              }
+            if (lead == null) {
+              CustomColor.showErrorSnackBar(context, 'Lead not found in local database.');
               return;
             }
 
-            final user = await SessionManager.getSessionData();
-            if (user == null) {
-              CustomColor.showErrorSnackBar(context, 'User session not found. Please log in again.');
-              return;
-            }
-
-            bool success = await saveCustomerFeedback(
-              mobileNo: widget.mobileNo,
+            final int rowsAffected = await DatabaseService.instance.leadsRepository.updateLeadLocalFields(
+              lead.frappeId,
+              leadStatus: selectedStatus,
               remarks: _remarksController.text,
-              status: selectedStatus,
-              referenceNo: _referenceNoController.text,
-              userId: user.userId,
+              arnNo: selectedStatus == 'IP Approved' ? _referenceNoController.text : null,
+              followUpDate: selectedStatus == 'Follow up' ? DateFormat('yyyy-MM-dd').format(selectedDate!) : null,
+              followUpTime: selectedStatus == 'Follow up' ? selectedTime!.format(context) : null,
+              isDirty: 1,
             );
-            if (success) {
+
+            if (rowsAffected > 0) {
               AppStateManager.clearPendingFeedbackMobile();
+              AppStateManager.notifyLeadDirty();
               CustomColor.showSuccessSnackBar(context, 'Feedback submitted successfully!');
               _remarksController.clear();
               _referenceNoController.clear();
-              Navigator.of(context).pop(true); // Return true on success
+              Navigator.of(context).pop(true);
             } else {
-              CustomColor.showErrorSnackBar(context, 'Failed to submit feedback.');
+              CustomColor.showErrorSnackBar(context, 'Failed to submit feedback to local database.');
             }
           },
         ),

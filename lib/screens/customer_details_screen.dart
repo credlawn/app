@@ -20,6 +20,8 @@ import 'package:credlawn/screens/components/feedback_dialog.dart';
 
 import 'package:credlawn/screens/components/customer_info_cards.dart';
 import 'package:credlawn/screens/components/login_links_section.dart';
+import 'package:credlawn/helpers/database_service.dart';
+import 'package:credlawn/models/leads_model.dart';
 
 class CustomerDetailsScreen extends StatefulWidget {
   final String mobileNo;
@@ -39,7 +41,24 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    _customerDetails = fetchCustomerDetails(widget.mobileNo);
+    _customerDetails = _fetchCustomerDetailsFromLocalDB(widget.mobileNo);
+  }
+
+  Future<CustomerDetailsModel> _fetchCustomerDetailsFromLocalDB(String mobileNo) async {
+    final LeadsModel? lead = await DatabaseService.instance.leadsRepository.getLeadByMobileNo(mobileNo);
+
+    if (lead != null) {
+      return CustomerDetailsModel(
+        fullName: lead.customerName,
+        segId: lead.segment,
+        city: lead.city,
+        productDesc: lead.product,
+        checkdefectDesc: lead.declineReason,
+        employer: lead.employer,
+      );
+    } else {
+      throw Exception('No customer found with this mobile number in local DB.');
+    }
   }
 
   @override
@@ -111,10 +130,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             } else if (snapshot.hasError) {
               String errorMessage = snapshot.error.toString();
               logAppError(errorMessage: errorMessage, errorContext: "Customer Details Screen - Customer Details FutureBuilder");
-              if (errorMessage.contains("No customer found with this mobile number.")) {
+              if (errorMessage.contains("No customer found with this mobile number in local DB.")) {
                 return Center(
                   child: Text(
-                    'No Customer found with this Mobile No',
+                    'No Customer found with this Mobile No in local database',
                     style: GoogleFonts.poppins(color: Colors.red, fontSize: 16),
                   ),
                 );

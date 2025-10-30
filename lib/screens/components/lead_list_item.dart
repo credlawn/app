@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:credlawn/helpers/lead_data_helper.dart';
-import 'package:credlawn/models/calling_data_model.dart';
+import 'package:credlawn/models/leads_model.dart';
 import 'package:credlawn/screens/customer_details_screen.dart';
 import 'package:credlawn/screens/call_history_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,12 +15,14 @@ class LeadListItem extends StatefulWidget {
   final LeadWithCallInfo leadWithInfo;
   final bool isExpanded;
   final VoidCallback onTap;
+  final VoidCallback onNavigate;
 
   const LeadListItem({
     super.key,
     required this.leadWithInfo,
     required this.isExpanded,
     required this.onTap,
+    required this.onNavigate,
   });
 
   @override
@@ -58,7 +60,8 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
     if (widget.isExpanded != oldWidget.isExpanded) {
       if (widget.isExpanded) {
         _controller.forward();
-      } else {
+      }
+      else {
         _controller.reverse();
       }
     }
@@ -70,12 +73,12 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
     super.dispose();
   }
 
-  void _callNumber(String mobileNo) async {
-    await FlutterPhoneDirectCaller.callNumber(mobileNo);
+  void _callNumber(LeadsModel lead) async {
+    await FlutterPhoneDirectCaller.callNumber(lead.mobileNo);
   }
 
-  void _openWhatsApp(String mobileNo) async {
-    final url = "https://wa.me/91$mobileNo";
+  void _openWhatsApp(LeadsModel lead) async {
+    final url = "https://wa.me/91${lead.mobileNo}";
     if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
       throw Exception('Could not launch $url');
     }
@@ -93,7 +96,6 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
         icon = Icons.call_missed;
         color = Colors.red;
         break;
-
       default:
         icon = Icons.call;
         color = Colors.grey;
@@ -114,7 +116,8 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
     try {
       final dateTime = DateTime.parse(dateString);
       return DateFormat('h:mm a').format(dateTime);
-    } catch (e) {
+    }
+    catch (e) {
       return '';
     }
   }
@@ -169,7 +172,8 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
           ),
         ),
       );
-    } else if (widget.leadWithInfo.lastCallDuration == 0) {
+    }
+    else if (widget.leadWithInfo.lastCallDuration == 0) {
       return Padding(
         padding: const EdgeInsets.only(left: 8.0),
         child: Row(
@@ -210,7 +214,8 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
           ],
         ),
       );
-    } else {
+    }
+    else {
       return Padding(
         padding: const EdgeInsets.only(left: 8.0),
         child: Container(
@@ -261,7 +266,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
               ),
             ),
             Text(
-              _formatTime(widget.leadWithInfo.lead.updateDate),
+              _formatTime(widget.leadWithInfo.lead.allocationDate),
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 color: Colors.grey.shade600,
@@ -298,14 +303,14 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                   icon: Icons.call,
                   backgroundColor: Colors.green,
                   iconColor: Colors.white,
-                  onPressed: () => _callNumber(widget.leadWithInfo.lead.mobileNo),
+                  onPressed: () => _callNumber(widget.leadWithInfo.lead),
                 ),
                 const SizedBox(width: 32), // Increased gap
                 _buildSmallActionButton(
                   icon: FontAwesomeIcons.whatsapp,
                   backgroundColor: Colors.green,
                   iconColor: Colors.white,
-                  onPressed: () => _openWhatsApp(widget.leadWithInfo.lead.mobileNo),
+                  onPressed: () => _openWhatsApp(widget.leadWithInfo.lead),
                 ),
                 const SizedBox(width: 32), // Increased gap
                 _buildSmallActionButton(
@@ -313,6 +318,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                   backgroundColor: Colors.purple.withOpacity(0.1),
                   iconColor: Colors.purple,
                   onPressed: () {
+                    widget.onNavigate();
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => CustomerDetailsScreen(
@@ -328,6 +334,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                   backgroundColor: Colors.orange.withOpacity(0.1),
                   iconColor: Colors.orange,
                   onPressed: () {
+                    widget.onNavigate();
                     showDialog<bool>(
                       context: context,
                       barrierDismissible: false,
@@ -343,6 +350,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                   backgroundColor: Colors.grey.shade600.withOpacity(0.1),
                   iconColor: Colors.grey.shade600,
                   onPressed: () {
+                    widget.onNavigate();
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => CallHistoryScreen(

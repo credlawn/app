@@ -4,19 +4,19 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 
 class OcrHelper {
   static Future<void> pickImage(ImageSource source, Function(String) onTextRecognized) async {
-    print('[_pickImage] Picking image from $source');
+    
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: source);
     if (pickedFile != null) {
-      print('[_pickImage] Image picked: ${pickedFile.path}');
+      
       _performOcr(pickedFile.path, onTextRecognized);
     } else {
-      print('[_pickImage] No image picked.');
+      
     }
   }
 
   static void _performOcr(String imagePath, Function(String) onTextRecognized) async {
-    print('[_performOcr] Starting OCR for image: $imagePath');
+    
 
     final textRecognizer = TextRecognizer();
     final recognizedText = await textRecognizer.processImage(InputImage.fromFilePath(imagePath));
@@ -95,21 +95,13 @@ class OcrHelper {
 
     for (final match in matches) {
       final potentialArn = match.group(0)!;
-      print('[_performOcr] Potential ARN found: $potentialArn');
-      
       final cleanedArn = _cleanArn(potentialArn);
-      print('[_performOcr] Cleaned ARN: $cleanedArn');
 
       if (_isValidArn(cleanedArn)) {
         foundRefNumber = cleanedArn;
-        print('[_performOcr] Valid ARN found after cleaning: $foundRefNumber');
         onTextRecognized(foundRefNumber);
         return; 
       }
-    }
-
-    if (foundRefNumber.isEmpty) {
-      print('[_performOcr] No valid ARN found after checking all potential matches.');
     }
   }
 }

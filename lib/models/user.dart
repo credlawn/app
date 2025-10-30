@@ -18,6 +18,7 @@ class User {
   final String? age;
   final String? tenure;
   final String? role;
+  final String? csrfToken;
 
   User({
     required this.sid,
@@ -36,6 +37,7 @@ class User {
     this.age,
     this.tenure,
     this.role,
+    this.csrfToken,
   });
 
   User copyWith({
@@ -55,6 +57,7 @@ class User {
     String? age,
     String? tenure,
     String? role,
+    String? csrfToken,
   }) {
     return User(
       sid: sid ?? this.sid,
@@ -73,6 +76,7 @@ class User {
       age: age ?? this.age,
       tenure: tenure ?? this.tenure,
       role: role ?? this.role,
+      csrfToken: csrfToken ?? this.csrfToken,
     );
   }
 
@@ -94,6 +98,7 @@ class User {
       'age': age ?? '',
       'tenure': tenure ?? '',
       'role': role ?? '',
+      'csrf_token': csrfToken ?? '',
     };
   }
 
@@ -115,6 +120,7 @@ class User {
       age: map['age'],
       tenure: map['tenure'],
       role: map['role'],
+      csrfToken: map['csrf_token'],
     );
   }
 
