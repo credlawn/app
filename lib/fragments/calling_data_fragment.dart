@@ -6,6 +6,7 @@ import '../models/user.dart';
 import '../network/api_follow_up_helper.dart';
 import '../screens/pre_approved_lead_screen.dart';
 import '../screens/new_card_login_screen.dart';
+import '../screens/my_login_screen.dart';
 
 import '../screens/fcm_log_screen.dart';
 
@@ -45,14 +46,8 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
 
   final List<Map<String, dynamic>> _loginSection = [
     {
-      'icon': Icons.today,
-      'title': 'Today\'s Login',
-      'color': Color(0xFF06B6D4),
-      'background': Color(0xFFFFFFFF),
-    },
-    {
       'icon': Icons.calendar_month,
-      'title': 'Month Login',
+      'title': 'My Login',
       'color': Color(0xFFF59E0B),
       'background': Color(0xFFFFFFFF),
     },
@@ -107,6 +102,7 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
     final Map<String, Widget> screenMap = {
       'Pre Approved': PreApprovedLeadsScreen(user: widget.user),
       'Follow-up': FollowUpScreen(),
+      'My Login': const MyLoginScreen(), // Added My Login screen
       'New Login': const NewCardLoginScreen(),
       'Notifications': const FcmLogScreen(),
     };
