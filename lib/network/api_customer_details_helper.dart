@@ -16,7 +16,7 @@ Future<CustomerDetailsModel> fetchCustomerDetails(String mobileNo) async {
     'mobile_no': mobileNo,
   };
 
-  final Uri uri = Uri.http(
+  final Uri uri = Uri.https(
     Uri.parse(ApiNetwork.baseUrl).host,
     Uri.parse(ApiNetwork.getCustomerDetails).path,
     queryParams,

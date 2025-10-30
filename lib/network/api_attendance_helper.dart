@@ -198,7 +198,7 @@ class ApiAttendanceHelper {
           'filters': filters,
         };
 
-        final Uri uri = Uri.http(
+        final Uri uri = Uri.https(
           Uri.parse(ApiNetwork.baseUrl).host,
           '/api/resource/Attendance Geofence',
           queryParams,
@@ -245,7 +245,7 @@ class ApiAttendanceHelper {
       'to_date': finalToDate,
     };
 
-    final Uri uri = Uri.http(
+    final Uri uri = Uri.https(
       Uri.parse(ApiNetwork.baseUrl).host,
       Uri.parse(ApiNetwork.getDailyAttendanceSummary).path, // Use the path from the new endpoint
       queryParams,

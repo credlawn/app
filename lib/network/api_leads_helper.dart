@@ -10,13 +10,13 @@ Future<List<LeadsModel>> fetchEmployeeLeadsFromApi(String userId, String sid) as
     'user_id': userId,
   };
 
-  final Uri uri = Uri.http(
+  final Uri uri = Uri.https(
     Uri.parse(ApiNetwork.baseUrl).host,
     'api/method/credlawn.mobile.api.leads.get_employee_leads',
     queryParams,
   );
 
-
+  
 
 
   try {
@@ -60,10 +60,12 @@ Future<bool> syncLeadUpdateToServer(LeadsModel lead, String sid) async {
     return false;
   }
 
-  final Uri uri = Uri.http(
+  final Uri uri = Uri.https(
     Uri.parse(ApiNetwork.baseUrl).host,
     'api/method/credlawn.mobile.api.leads.update_lead_status_and_details',
   );
+
+  
 
   try {
     final response = await http.post(
@@ -111,10 +113,12 @@ Future<bool> markLeadInactiveOnServer(String frappeId, String sid) async {
     return false;
   }
 
-  final Uri uri = Uri.http(
+  final Uri uri = Uri.https(
     Uri.parse(ApiNetwork.baseUrl).host,
     'api/method/credlawn.api.leads.mark_lead_inactive_on_server',
   );
+
+  
 
   try {
     final response = await http.post(

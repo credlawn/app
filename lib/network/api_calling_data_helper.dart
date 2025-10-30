@@ -13,7 +13,7 @@ Future<List<CallingDataModel>> fetchEmployeeLeads(String userId, String sid) asy
     'user_id': userId,
   };
 
-  final Uri uri = Uri.http(
+  final Uri uri = Uri.https(
     Uri.parse(ApiNetwork.baseUrl).host,
     Uri.parse(ApiNetwork.getEmployeeLeads).path,
     queryParams,
