@@ -11,7 +11,7 @@ import 'package:credlawn/network/api_profile_helper.dart';
 import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/models/user.dart';
 import 'package:credlawn/models/profile_model.dart';
-import 'today_login_list_screen.dart';
+
 
 class NewCardLoginScreen extends StatefulWidget {
   const NewCardLoginScreen({super.key});
@@ -203,12 +203,7 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
       if (response.statusCode == 200) {
         CustomColor.showSuccessSnackBar(context, 'Data Submitted Successfully');
 
-        Future.delayed(Duration(milliseconds: 300), () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => TodayLoginListScreen(user: user)),
-          );
-        });
+        // Navigation to TodayLoginListScreen removed as it's no longer required.
       } else {
         CustomColor.showErrorSnackBar(context, 'Please log out & log in again');
         return;

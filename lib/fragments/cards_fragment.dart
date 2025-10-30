@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../screens/vkyc_expiry_today_screen.dart';
-import '../screens/vkyc_total_pending_screen.dart';
+
 import '../models/user.dart';
 
 class CardsFragment extends StatefulWidget {
@@ -41,21 +40,7 @@ class _CardsFragmentState extends State<CardsFragment> {
           return GestureDetector(
             onTap: () {
               // Navigate based on the title of the card
-              if (mockCardData[index]['title'] == 'Vkyc Expire Today') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => VkycExpiryTodayScreen(user: widget.user),
-                  ),
-                );
-              } else if (mockCardData[index]['title'] == 'Total VKYC Pending') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => VkycTotalPendingScreen(user: widget.user),
-                  ),
-                );
-              }
+              // No action for removed screens
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 20.0),

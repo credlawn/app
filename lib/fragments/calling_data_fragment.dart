@@ -6,10 +6,7 @@ import '../models/user.dart';
 import '../network/api_follow_up_helper.dart';
 import '../screens/pre_approved_lead_screen.dart';
 import '../screens/new_card_login_screen.dart';
-import '../screens/today_login_list_screen.dart';
-import '../screens/month_login_list_screen.dart';
-import '../screens/cnr_lead_screen.dart';
-import '../screens/manager_cnr_lead_screen.dart';
+
 import '../screens/fcm_log_screen.dart';
 
 class CallingDataFragment extends StatefulWidget {
@@ -109,12 +106,7 @@ class _CallingDataFragmentState extends State<CallingDataFragment> {
   void _navigateToScreen(String title) {
     final Map<String, Widget> screenMap = {
       'Pre Approved': PreApprovedLeadsScreen(user: widget.user),
-      'CNR': widget.user.designation != null && widget.user.designation == 'Branch Manager' 
-          ? ManagerCnrLeadScreen(user: widget.user)
-          : CnrLeadScreen(user: widget.user),
       'Follow-up': FollowUpScreen(),
-      'Today\'s Login': TodayLoginListScreen(user: widget.user),
-      'Month Login': MonthLoginListScreen(user: widget.user),
       'New Login': const NewCardLoginScreen(),
       'Notifications': const FcmLogScreen(),
     };

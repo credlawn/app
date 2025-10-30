@@ -18,7 +18,7 @@ class AppDatabase {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 3, onCreate: _createDB, onUpgrade: _onUpgrade);
+    return await openDatabase(path, version: 4, onCreate: _createDB, onUpgrade: _onUpgrade);
   }
 
   Future _createDB(Database db, int version) async {
@@ -104,6 +104,22 @@ CREATE TABLE leads (
   sync_error $textType DEFAULT '',
   follow_up_date $textType DEFAULT '',
   follow_up_time $textType DEFAULT ''
+)
+''');
+    }
+    if (oldVersion < 4) {
+      const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
+      const textType = 'TEXT NOT NULL';
+      await db.execute('''
+CREATE TABLE case_login (
+  id $idType,
+  frappe_id $textType UNIQUE,
+  customer_name $textType,
+  mobile_no $textType,
+  login_date $textType,
+  ip_status $textType,
+  arn_no $textType,
+  remarks $textType
 )
 ''');
     }
