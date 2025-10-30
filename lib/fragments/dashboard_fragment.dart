@@ -5,8 +5,8 @@ import 'package:credlawn/screens/cards.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:credlawn/screens/fcm_log_screen.dart';
-import '../screens/sample_screen.dart'; // Make sure this path is correct
-import '../screens/attendance_screen.dart'; // Import AttendanceScreen
+import '../screens/sample_screen.dart'; 
+import '../screens/attendance_screen.dart'; 
 
 class DashboardFragment extends StatefulWidget {
   const DashboardFragment({super.key});
@@ -47,13 +47,7 @@ class _DashboardFragmentState extends State<DashboardFragment> {
         'color': Colors.green,
         'screen': const CardsScreen(),
       },
-      {
-        'icon': Icons.settings,
-        'title': 'Settings',
-        'count': '8',
-        'color': Colors.orange,
-        'screen': SampleScreen(),
-      },
+      
     ];
 
     _dashboardItems = allItems.where((item) {
@@ -67,11 +61,11 @@ class _DashboardFragmentState extends State<DashboardFragment> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Set the background color to white
+      backgroundColor: Colors.white, 
       body: AlignedGridView.count(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
         itemCount: _dashboardItems.length,
-        crossAxisCount: 3, // Set this to 3 to display 3 items per row
+        crossAxisCount: 3,
         mainAxisSpacing: 6,
         crossAxisSpacing: 6,
         itemBuilder: (context, index) {
@@ -104,7 +98,7 @@ class _DashboardFragmentState extends State<DashboardFragment> {
                 children: [
                   Icon(
                     _dashboardItems[index]['icon'],
-                    size: 30.0, // Smaller size for the icons (adjust as needed)
+                    size: 30.0, 
                     color: _dashboardItems[index]['color'],
                   ),
                   Row(
@@ -114,7 +108,7 @@ class _DashboardFragmentState extends State<DashboardFragment> {
                         textAlign: TextAlign.center,
                         _dashboardItems[index]['title'],
                         style: GoogleFonts.poppins(
-                          fontSize: 12, // Slightly smaller font size for the title
+                          fontSize: 12, 
                           color: Colors.black,
                         ),
                       ),
@@ -123,7 +117,7 @@ class _DashboardFragmentState extends State<DashboardFragment> {
                         textAlign: TextAlign.center,
                         _dashboardItems[index]['count'],
                         style: GoogleFonts.poppins(
-                          fontSize: 12, // Slightly smaller font size for the count
+                          fontSize: 12, 
                           fontWeight: FontWeight.w700,
                           color: _dashboardItems[index]['color'],
                         ),

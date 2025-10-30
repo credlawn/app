@@ -26,13 +26,13 @@ class _HomeScreenState extends State<HomeScreen> {
   late int _navBar;
   late List<Widget> _fragment; // Declare fragments as a late list
 
-  String title = 'Dashboard';
+  String title = 'HR';
 
   @override
   void initState() {
     super.initState();
     _navBar = widget.selectedTab;
-    title = _navBar == 0 ? 'Dashboard' : (_navBar == 1 ? 'Cards' : 'Calling Data');
+    title = _navBar == 0 ? 'HR' : (_navBar == 1 ? 'Cards' : 'Dashboard');
   }
 
   @override
@@ -104,9 +104,9 @@ class _HomeScreenState extends State<HomeScreen> {
         items: [
           BottomNavigationBarItem(
             icon: _navBar == 0
-                ? const Icon(Icons.home)
-                : const Icon(Icons.home),
-            label: 'Dashboard',
+                ? const Icon(Icons.business)
+                : const Icon(Icons.business),
+            label: 'HR',
           ),
           BottomNavigationBarItem(
             icon: _navBar == 1
@@ -116,9 +116,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           BottomNavigationBarItem(
             icon: _navBar == 2
-                ? const Icon(Icons.phone)
-                : const Icon(Icons.phone),
-            label: 'Calling Data',
+                ? const Icon(Icons.home)
+                : const Icon(Icons.home),
+            label: 'Dashboard',
           ),
         ],
         currentIndex: _navBar,
@@ -126,10 +126,10 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             _navBar = value;
             title = _navBar == 0
-                ? 'Dashboard'
+                ? 'HR'
                 : _navBar == 1
                     ? 'Cards'
-                    : 'Calling Data';
+                    : 'Dashboard';
           });
         },
       ),
