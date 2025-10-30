@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/models/user.dart';
-import 'package:credlawn/models/user.dart';
-import 'package:credlawn/models/attendance_model.dart';
 import 'package:credlawn/models/geofence_config.dart';
 import 'package:credlawn/models/attendance_record_model.dart';
 import 'package:credlawn/models/today_attendance_status.dart'; // Added this import

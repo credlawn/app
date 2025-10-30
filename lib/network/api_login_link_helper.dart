@@ -30,7 +30,7 @@ Future<List<LoginLinkModel>> fetchLoginLinks() async {
         return (jsonResponse as List)
             .map((item) => LoginLinkModel.fromJson(item))
             .toList();
-      } else if (jsonResponse is Map<String, dynamic> && jsonResponse['message'] is List) { // Fallback for wrapped response
+      } else if (jsonResponse['message'] is List) { // Fallback for wrapped response
         return (jsonResponse['message'] as List)
             .map((item) => LoginLinkModel.fromJson(item))
             .toList();

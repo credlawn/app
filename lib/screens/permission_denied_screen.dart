@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class PermissionDeniedScreen extends StatelessWidget {
-  const PermissionDeniedScreen({Key? key}) : super(key: key);
+  const PermissionDeniedScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

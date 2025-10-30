@@ -3,8 +3,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
-import 'package:call_log/call_log.dart';
-import 'package:credlawn/helpers/call_log_sync_manager.dart';
 import 'package:credlawn/helpers/app_state_manager.dart';
 import 'package:credlawn/custom/custom_color.dart';
 import 'package:credlawn/helpers/lead_data_helper.dart';
@@ -16,8 +14,6 @@ import 'package:credlawn/helpers/session_manager.dart'; // For SessionManager
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'lead_status_update_screen.dart';
-import 'customer_details_screen.dart';
 
 import 'package:credlawn/screens/components/lead_list_item.dart';
 

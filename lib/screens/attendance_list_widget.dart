@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:credlawn/network/api_attendance_helper.dart';
 import 'package:credlawn/models/attendance_record_model.dart';
-import 'package:credlawn/custom/custom_color.dart';
 import 'package:intl/intl.dart'; // Added intl import
 
 class AttendanceListWidget extends StatefulWidget {
-  const AttendanceListWidget({Key? key}) : super(key: key);
+  const AttendanceListWidget({super.key});
 
   @override
   State<AttendanceListWidget> createState() => AttendanceListWidgetState();

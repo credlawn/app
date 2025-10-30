@@ -1,7 +1,6 @@
 import 'package:credlawn/network/api_fcm_log_helper.dart';
 import 'package:credlawn/screens/follow_up_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/user.dart';
 import '../network/api_follow_up_helper.dart';

@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 class CustomerDetailsModel {
   final String fullName;

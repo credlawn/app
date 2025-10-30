@@ -1,4 +1,3 @@
-import 'package:sqflite/sqflite.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:call_log/call_log.dart';
 import 'package:credlawn/models/call_log_model.dart';

@@ -30,7 +30,7 @@ class _LeadStatusUpdateScreenState extends State<LeadStatusUpdateScreen> {
   bool _isEditingCustomerName = false;
   String _editableCustomerName = '';
   TextEditingController _customerNameController = TextEditingController();
-  TextEditingController _referenceNoController = TextEditingController();
+  final TextEditingController _referenceNoController = TextEditingController();
 
   // Selected values for dropdowns
   String? selectedLeadStatus;

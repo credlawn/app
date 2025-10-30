@@ -25,7 +25,7 @@ class VkycTotalPendingScreen extends StatefulWidget {
 class _VkycTotalPendingScreenState extends State<VkycTotalPendingScreen>
     with WidgetsBindingObserver {
   late Future<List<AdobeDatabaseModel>> _vkycTotalPending;
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   @override
   void initState() {

@@ -25,7 +25,7 @@ class VkycExpiryTodayScreen extends StatefulWidget {
 class _VkycExpiryTodayScreenState extends State<VkycExpiryTodayScreen>
     with WidgetsBindingObserver {
   late Future<List<AdobeDatabaseModel>> _vkycExpireToday;
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   @override
   void initState() {

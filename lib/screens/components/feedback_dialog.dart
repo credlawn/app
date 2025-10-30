@@ -2,10 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:credlawn/custom/custom_color.dart';
-import 'package:credlawn/helpers/session_manager.dart';
-import 'package:credlawn/models/user.dart';
-import 'package:credlawn/screens/login_screen.dart';
-import 'package:credlawn/screens/pre_approved_lead_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:credlawn/helpers/ocr_helper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -62,7 +58,7 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                   labelText: 'Select Status',
                   border: OutlineInputBorder(),
                 ),
-                value: selectedStatus,
+                initialValue: selectedStatus,
                 hint: const Text('Select Status'),
                 onChanged: (String? newValue) {
                   setState(() {
@@ -189,7 +185,6 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
           },
         ),
         ElevatedButton(
-          child: Text('Submit', style: GoogleFonts.poppins(color: Colors.white)),
           style: ElevatedButton.styleFrom(backgroundColor: CustomColor.MainColor),
           onPressed: () async {
             if (selectedStatus == null) {
@@ -236,6 +231,7 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
               CustomColor.showErrorSnackBar(context, 'Failed to submit feedback to local database.');
             }
           },
+          child: Text('Submit', style: GoogleFonts.poppins(color: Colors.white)),
         ),
       ],
     );

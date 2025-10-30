@@ -91,13 +91,6 @@ Future<void> sendFcmTokenToServer({
       body: json.encode(body),
     );
 
-    if (response.statusCode == 200) {
-      print('FCM token sent to server successfully.');
-    } else {
-      print('Failed to send FCM token to server. Status code: ${response.statusCode}');
-      print('Response body: ${response.body}');
-    }
   } catch (e) {
-    print('Error sending FCM token to server: $e');
   }
 }

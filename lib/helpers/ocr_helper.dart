@@ -24,7 +24,7 @@ class OcrHelper {
 
     String foundRefNumber = '';
 
-    String _cleanArn(String text) {
+    String cleanArn(String text) {
       text = text.toUpperCase();
       text = text.replaceAll(']', 'J');
       text = text.replaceAll('[', 'I');
@@ -36,15 +36,15 @@ class OcrHelper {
       if (text.length != 16) return text;
 
       if (text.startsWith('D')) {
-        String part1_digits = text.substring(1, 3);
-        String part2_alpha = text.substring(3, 4);
-        String part3_digits = text.substring(4, 12);
-        String part4_alpha = text.substring(12, 13);
-        String part5_digit = text.substring(13, 14);
-        String part6_alpha = text.substring(14, 15);
-        String part7_last = text.substring(15, 16);
+        String part1Digits = text.substring(1, 3);
+        String part2Alpha = text.substring(3, 4);
+        String part3Digits = text.substring(4, 12);
+        String part4Alpha = text.substring(12, 13);
+        String part5Digit = text.substring(13, 14);
+        String part6Alpha = text.substring(14, 15);
+        String part7Last = text.substring(15, 16);
 
-        String _fixDigits(String s) {
+        String fixDigits(String s) {
           return s
               .replaceAll('O', '0')
               .replaceAll('S', '5')
@@ -53,7 +53,7 @@ class OcrHelper {
               .replaceAll('B', '8');
         }
 
-        String _fixAlpha(String s) {
+        String fixAlpha(String s) {
           return s
               .replaceAll('5', 'S')
               .replaceAll('0', 'O')
@@ -62,29 +62,29 @@ class OcrHelper {
               .replaceAll('8', 'B');
         }
 
-        String fixed_part1 = _fixDigits(part1_digits);
-        String fixed_part2 = _fixAlpha(part2_alpha);
-        String fixed_part3 = _fixDigits(part3_digits);
-        String fixed_part4 = _fixAlpha(part4_alpha);
-        String fixed_part5 = _fixDigits(part5_digit);
-        String fixed_part6 = _fixAlpha(part6_alpha);
+        String fixedPart1 = fixDigits(part1Digits);
+        String fixedPart2 = fixAlpha(part2Alpha);
+        String fixedPart3 = fixDigits(part3Digits);
+        String fixedPart4 = fixAlpha(part4Alpha);
+        String fixedPart5 = fixDigits(part5Digit);
+        String fixedPart6 = fixAlpha(part6Alpha);
 
-        text = 'D' + fixed_part1 + fixed_part2 + fixed_part3 + fixed_part4 + fixed_part5 + fixed_part6 + part7_last;
+        text = 'D$fixedPart1$fixedPart2$fixedPart3$fixedPart4$fixedPart5$fixedPart6$part7Last';
       }
       return text;
     }
 
-    bool _isValidArn(String text) {
+    bool isValidArn(String text) {
       if (text.length != 16) return false;
 
       if (text.startsWith('D')) {
-        bool part1_isDigits = RegExp(r'^[0-9]{2}$').hasMatch(text.substring(1, 3));
-        bool part2_isAlpha = RegExp(r'^[A-Z]$').hasMatch(text.substring(3, 4));
-        bool part3_isDigits = RegExp(r'^[0-9]{8}$').hasMatch(text.substring(4, 12));
-        bool part4_isAlpha = RegExp(r'^[A-Z]$').hasMatch(text.substring(12, 13));
-        bool part5_isDigit = RegExp(r'^[0-9]{1}$').hasMatch(text.substring(13, 14));
-        bool part6_isAlpha = RegExp(r'^[A-Z]$').hasMatch(text.substring(14, 15));
-        return part1_isDigits && part2_isAlpha && part3_isDigits && part4_isAlpha && part5_isDigit && part6_isAlpha;
+        bool part1Isdigits = RegExp(r'^[0-9]{2}$').hasMatch(text.substring(1, 3));
+        bool part2Isalpha = RegExp(r'^[A-Z]$').hasMatch(text.substring(3, 4));
+        bool part3Isdigits = RegExp(r'^[0-9]{8}$').hasMatch(text.substring(4, 12));
+        bool part4Isalpha = RegExp(r'^[A-Z]$').hasMatch(text.substring(12, 13));
+        bool part5Isdigit = RegExp(r'^[0-9]{1}$').hasMatch(text.substring(13, 14));
+        bool part6Isalpha = RegExp(r'^[A-Z]$').hasMatch(text.substring(14, 15));
+        return part1Isdigits && part2Isalpha && part3Isdigits && part4Isalpha && part5Isdigit && part6Isalpha;
       }
       return false;
     }
@@ -95,9 +95,9 @@ class OcrHelper {
 
     for (final match in matches) {
       final potentialArn = match.group(0)!;
-      final cleanedArn = _cleanArn(potentialArn);
+      final cleanedArn = cleanArn(potentialArn);
 
-      if (_isValidArn(cleanedArn)) {
+      if (isValidArn(cleanedArn)) {
         foundRefNumber = cleanedArn;
         onTextRecognized(foundRefNumber);
         return; 

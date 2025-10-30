@@ -7,12 +7,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:credlawn/models/geofence_config.dart';
 import 'package:credlawn/screens/attendance_list_widget.dart'; // Added this import
-import 'package:google_fonts/google_fonts.dart'; // Added GoogleFonts import
+// Added GoogleFonts import
 import 'package:credlawn/models/today_attendance_status.dart'; // Added this import
 
 
 class AttendanceScreen extends StatefulWidget {
-  const AttendanceScreen({Key? key}) : super(key: key);
+  const AttendanceScreen({super.key});
 
   @override
   State<AttendanceScreen> createState() => _AttendanceScreenState();

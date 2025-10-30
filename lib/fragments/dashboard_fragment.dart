@@ -4,8 +4,6 @@ import 'package:credlawn/models/user.dart';
 import 'package:credlawn/screens/cards.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:credlawn/screens/fcm_log_screen.dart';
-import '../screens/sample_screen.dart'; 
 import '../screens/attendance_screen.dart'; 
 
 class DashboardFragment extends StatefulWidget {

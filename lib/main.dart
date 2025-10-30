@@ -181,8 +181,7 @@ class _MyAppState extends State<MyApp> {
             scaffoldBackgroundColor: Colors.white,
             fontFamily: GoogleFonts.poppins().fontFamily,
             colorScheme: ColorScheme.light(primary: Colors.blue, secondary: Colors.blueAccent),
-            dialogBackgroundColor: Colors.white,
-            buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary),
+            buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary), dialogTheme: DialogThemeData(backgroundColor: Colors.white),
           ),
           home: NotificationDetailScreen(
             log: FcmLogModel(
@@ -204,16 +203,16 @@ class _MyAppState extends State<MyApp> {
         scaffoldBackgroundColor: Colors.white,
         fontFamily: GoogleFonts.poppins().fontFamily,
         colorScheme: ColorScheme.light(primary: Colors.blue, secondary: Colors.blueAccent),
-        dialogBackgroundColor: Colors.white,
-        buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary),
+        buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary), dialogTheme: DialogThemeData(backgroundColor: Colors.white),
       ),
       home: widget.pendingFeedbackMobile != null
           ? CustomerDetailsScreen(mobileNo: widget.pendingFeedbackMobile!, isAutoOpenedAfterCall: true)
           : FutureBuilder<User?>(
               future: _checkSession(context),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator());
-                else if (snapshot.hasError) return Center(child: Text('Error loading session'));
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) return Center(child: Text('Error loading session'));
                 else if (snapshot.hasData && snapshot.data != null) return HomeScreen(user: snapshot.data!);
                 else return LoginScreen();
               },

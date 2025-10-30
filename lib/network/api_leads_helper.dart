@@ -55,7 +55,7 @@ Future<bool> syncLeadUpdateToServer(LeadsModel lead, String sid) async {
   final User? user = await SessionManager.getSessionData();
   String? csrfToken = user?.csrfToken;
 
-  if (sid == null || csrfToken == null) {
+  if (csrfToken == null) {
 
     return false;
   }
@@ -106,7 +106,7 @@ Future<bool> markLeadInactiveOnServer(String frappeId, String sid) async {
   final User? user = await SessionManager.getSessionData();
   String? csrfToken = user?.csrfToken;
 
-  if (sid == null || csrfToken == null) {
+  if (csrfToken == null) {
 
     return false;
   }

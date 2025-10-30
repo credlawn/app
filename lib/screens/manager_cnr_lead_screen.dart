@@ -7,7 +7,7 @@ import '../models/user.dart';
 class ManagerCnrLeadScreen extends StatelessWidget {
   final User user;
 
-  ManagerCnrLeadScreen({super.key, required this.user});
+  const ManagerCnrLeadScreen({super.key, required this.user});
 
   // Sample API URL to fetch employees
   final String apiUrl = 'https://example.com/api/employees'; 
