@@ -247,7 +247,7 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
 
 
           if (serverResponse['message'] != null && serverResponse['message']['status'] == 'success') {
-            final String serverFrappeName = serverResponse['message']['frappe_name'];
+            final String serverFrappeName = serverResponse['message']['frappe_id'];
             await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
               caseLogin.frappeId!,
               isDirty: 0,
