@@ -36,11 +36,11 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
 
   final List<String> statusOptions = [
     'IP Approved',
+    'Docs Not Available',
     'IP Decline',
     'Customer Denied',
-    'Docs Not Available',
-    'Already Carded',
     'Recently Applied',
+    'Already Carded',
   ];
 
   @override
@@ -71,31 +71,72 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    const SizedBox(height: 15),
                     CustomerNameField(controller: _customerNameController, enable: true),
                     SizedBox(height: 15),
                     MobileField(controller: _mobileNoController, label: 'Mobile No'),
                     SizedBox(height: 15),
 
-                    DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: 'Select Status',
-                        border: OutlineInputBorder(),
-                      ),
-                      value: selectedStatus,
-                      hint: const Text('Select Status'),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedStatus = newValue;
-                          _remarksController.clear();
-                          _referenceNoController.clear();
-                        });
-                      },
-                      items: statusOptions.map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Select Status',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8.0,
+                          runSpacing: 8.0,
+                          children: statusOptions.map((String status) {
+                            final chipWidth = (MediaQuery.of(context).size.width - 30 - 8) / 2;
+                            return SizedBox(
+                              width: chipWidth,
+                              child: ChoiceChip(
+                                label: Container(
+                                  width: double.infinity,
+                                  child: Text(
+                                    status,
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.poppins(
+                                      color: selectedStatus == status
+                                          ? Colors.white
+                                          : Colors.black54,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                                selected: selectedStatus == status,
+                                selectedColor: CustomColor.MainColor,
+                                backgroundColor: Colors.grey[200],
+                                onSelected: (bool selected) {
+                                  setState(() {
+                                    if (selected) {
+                                      selectedStatus = status;
+                                    } else {
+                                      selectedStatus = null;
+                                    }
+                                    _remarksController.clear();
+                                    _referenceNoController.clear();
+                                  });
+                                },
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20.0),
+                                  side: BorderSide(
+                                    color: selectedStatus == status
+                                        ? CustomColor.MainColor
+                                        : Colors.grey[400]!,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
 
@@ -152,7 +193,7 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
                           labelText: 'Remarks',
                           border: OutlineInputBorder(),
                         ),
-                        maxLines: 3,
+                        maxLines: 1,
                       ),
                     const SizedBox(height: 20),
 
