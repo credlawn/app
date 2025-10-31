@@ -48,3 +48,29 @@ Future<Map<String, dynamic>> submitCaseLoginToServer(
     return {"status": "error", "message": "Exception: $e"};
   }
 }
+
+Future<Map<String, dynamic>> getUserCaseLoginsFromServer(String userId, String sid) async {
+  final Uri uri = Uri.https(
+    Uri.parse(ApiNetwork.baseUrl).host,
+    'api/method/credlawn.mobile.api.case_login.get_user_case_logins',
+    {'user_id': userId},
+  );
+
+  try {
+    final response = await http.get(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': 'sid=$sid',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      return {"status": "error", "message": "Server error: ${response.statusCode}"};
+    }
+  } catch (e) {
+    return {"status": "error", "message": "Exception: $e"};
+  }
+}
