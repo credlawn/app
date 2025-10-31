@@ -11,6 +11,7 @@ import 'package:credlawn/models/case_login_model.dart';
 import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/models/user.dart';
 import 'package:credlawn/network/api_case_login_helper.dart';
+import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 
 
@@ -142,56 +143,95 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
 
                     if (selectedStatus == 'IP Approved')
                       TextField(
+                        key: const ValueKey('arn_no_field'),
                         controller: _referenceNoController,
+                        textCapitalization: TextCapitalization.characters,
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(16),
+                          FilteringTextInputFormatter.allow(RegExp(r'[A-Z0-9]')),
+                        ],
                         decoration: InputDecoration(
                           labelText: 'ARN No',
                           border: const OutlineInputBorder(),
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.camera_alt),
-                            onPressed: () {
-                              showModalBottomSheet(
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: CustomColor.MainColor),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: CustomColor.MainColor),
+                          ),
+                          labelStyle: TextStyle(color: CustomColor.MainColor),
+                          suffixIcon: Container(
+                            margin: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: CustomColor.MainColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: IconButton(
+                              icon: Icon(Icons.camera_alt, color: CustomColor.MainColor, size: 20),
+                              onPressed: () {
+                                showModalBottomSheet(
                                 context: context,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                                ),
                                 builder: (context) {
-                                  return Wrap(
-                                    children: <Widget>[
-                                      ListTile(
-                                        leading: const Icon(Icons.camera_alt),
-                                        title: const Text('Camera'),
-                                        onTap: () {
-                                          Navigator.pop(context);
-                                          OcrHelper.pickImage(ImageSource.camera, (text) {
-                                            setState(() {
-                                              _referenceNoController.text = text;
-                                            });
-                                          });
-                                        },
-                                      ),
-                                      ListTile(
-                                        leading: const Icon(Icons.photo_library),
-                                        title: const Text('Gallery'),
-                                        onTap: () {
-                                          Navigator.pop(context);
-                                          OcrHelper.pickImage(ImageSource.gallery, (text) {
-                                            setState(() {
-                                              _referenceNoController.text = text;
-                                            });
-                                          });
-                                        },
-                                      ),
-                                    ],
+                                  return Padding(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          'Scan ARN Number',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: _buildCameraOption(
+                                                Icons.camera_alt,
+                                                'Camera',
+                                                ImageSource.camera,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: _buildCameraOption(
+                                                Icons.photo_library,
+                                                'Gallery',
+                                                ImageSource.gallery,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 20),
+                                      ],
+                                    ),
                                   );
                                 },
-                              );
-                            },
+                                );
+                              },
+                            ),
                           ),
                         ),
                       )
                     else if (selectedStatus != null)
                       TextField(
+                        key: const ValueKey('remarks_field'),
                         controller: _remarksController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Remarks',
-                          border: OutlineInputBorder(),
+                          border: const OutlineInputBorder(),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: CustomColor.MainColor),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: CustomColor.MainColor),
+                          ),
+                          labelStyle: TextStyle(color: CustomColor.MainColor),
                         ),
                         maxLines: 1,
                       ),
@@ -333,5 +373,27 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  Widget _buildCameraOption(IconData icon, String text, ImageSource source) {
+    return Card(
+      elevation: 2,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        leading: Icon(icon, color: CustomColor.MainColor),
+        title: Text(
+          text,
+          style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+        onTap: () {
+          Navigator.pop(context);
+          OcrHelper.pickImage(source, (text) {
+            setState(() {
+              _referenceNoController.text = text.toUpperCase();
+            });
+          });
+        },
+      ),
+    );
   }
 }
