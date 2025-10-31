@@ -56,6 +56,20 @@ class CaseLoginRepository {
     );
   }
 
+  Future<CaseLoginModel?> getCaseLoginByFrappeId(String frappeId) async {
+    final db = await _appDatabase.database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'case_login',
+      where: 'frappe_id = ?',
+      whereArgs: [frappeId],
+    );
+
+    if (maps.isNotEmpty) {
+      return CaseLoginModel.fromMap(maps.first);
+    }
+    return null;
+  }
+
   Future<int> updateCaseLoginFields(
     String currentFrappeId, {
     String? newFrappeId,

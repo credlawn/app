@@ -88,24 +88,27 @@ class _MyLoginScreenState extends State<MyLoginScreen> {
           // Check if this case login already exists locally using frappe_id
           final exists = localCaseLogins.any((cl) => cl.frappeId == caseLogin.frappeId);
 
-          if (!exists) {
-            await DatabaseService.instance.caseLoginRepository.insertCaseLogin(caseLogin);
-          } else {
-  await DatabaseService.instance.caseLoginRepository.updateCaseLoginFields(
-    caseLogin.frappeId!,
-    newFrappeId: caseLogin.frappeId,
-    isDirty: caseLogin.isDirty,
-    syncError: caseLogin.syncError,
-    customerName: caseLogin.customerName,
-    mobileNo: caseLogin.mobileNo,
-    loginDate: caseLogin.loginDate,
-    ipStatus: caseLogin.ipStatus,
-    arnNo: caseLogin.arnNo,
-    remarks: caseLogin.remarks,
-    user: caseLogin.user,
-    modified: caseLoginData['modified'] ?? '',
-  );
-          }
+if (!exists) {
+  await DatabaseService.instance.caseLoginRepository.insertCaseLogin(caseLogin);
+} else {
+  final existingCaseLogin = await DatabaseService.instance.caseLoginRepository.getCaseLoginByFrappeId(caseLogin.frappeId!);
+  if (existingCaseLogin != null && existingCaseLogin.modified != caseLoginData['modified']) {
+    await DatabaseService.instance.caseLoginRepository.updateCaseLoginFields(
+      caseLogin.frappeId!,
+      newFrappeId: caseLogin.frappeId,
+      isDirty: caseLogin.isDirty,
+      syncError: caseLogin.syncError,
+      customerName: caseLogin.customerName,
+      mobileNo: caseLogin.mobileNo,
+      loginDate: caseLogin.loginDate,
+      ipStatus: caseLogin.ipStatus,
+      arnNo: caseLogin.arnNo,
+      remarks: caseLogin.remarks,
+      user: caseLogin.user,
+      modified: caseLoginData['modified'] ?? '',
+    );
+  }
+}
         }
       }
 
