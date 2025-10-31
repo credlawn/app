@@ -70,41 +70,41 @@ class _MyLoginScreenState extends State<MyLoginScreen> {
       // Process API data - add new records or update existing ones
       if (data.isNotEmpty) {
         for (var caseLoginData in data) {
-          final caseLogin = CaseLoginModel(
-            frappeId: caseLoginData['frappe_id'],
-            syncId: caseLoginData['sync_id'],
-            customerName: caseLoginData['customer_name'],
-            mobileNo: caseLoginData['mobile_no'],
-            loginDate: caseLoginData['login_date'],
-            ipStatus: caseLoginData['ip_status'],
-            arnNo: caseLoginData['arn_no'] ?? '',
-            remarks: caseLoginData['remarks'] ?? '',
-            user: caseLoginData['user'],
-            isDirty: 0,
-            syncError: null,
-          );
+  final caseLogin = CaseLoginModel(
+    frappeId: caseLoginData['frappe_id'],
+    syncId: caseLoginData['sync_id'],
+    customerName: caseLoginData['customer_name'],
+    mobileNo: caseLoginData['mobile_no'],
+    loginDate: caseLoginData['login_date'],
+    ipStatus: caseLoginData['ip_status'],
+    arnNo: caseLoginData['arn_no'] ?? '',
+    remarks: caseLoginData['remarks'] ?? '',
+    user: caseLoginData['user'],
+    isDirty: 0,
+    syncError: null,
+    modified: caseLoginData['modified'] ?? '',
+  );
 
           // Check if this case login already exists locally using frappe_id
           final exists = localCaseLogins.any((cl) => cl.frappeId == caseLogin.frappeId);
 
           if (!exists) {
             await DatabaseService.instance.caseLoginRepository.insertCaseLogin(caseLogin);
-            print('Inserted new case login: ${caseLogin.frappeId}');
           } else {
-            await DatabaseService.instance.caseLoginRepository.updateCaseLoginFields(
-              caseLogin.frappeId!,
-              newFrappeId: caseLogin.frappeId,
-              isDirty: caseLogin.isDirty,
-              syncError: caseLogin.syncError,
-              customerName: caseLogin.customerName,
-              mobileNo: caseLogin.mobileNo,
-              loginDate: caseLogin.loginDate,
-              ipStatus: caseLogin.ipStatus,
-              arnNo: caseLogin.arnNo,
-              remarks: caseLogin.remarks,
-              user: caseLogin.user,
-            );
-            print('Updated existing case login: ${caseLogin.frappeId}');
+  await DatabaseService.instance.caseLoginRepository.updateCaseLoginFields(
+    caseLogin.frappeId!,
+    newFrappeId: caseLogin.frappeId,
+    isDirty: caseLogin.isDirty,
+    syncError: caseLogin.syncError,
+    customerName: caseLogin.customerName,
+    mobileNo: caseLogin.mobileNo,
+    loginDate: caseLogin.loginDate,
+    ipStatus: caseLogin.ipStatus,
+    arnNo: caseLogin.arnNo,
+    remarks: caseLogin.remarks,
+    user: caseLogin.user,
+    modified: caseLoginData['modified'] ?? '',
+  );
           }
         }
       }
@@ -121,13 +121,7 @@ class _MyLoginScreenState extends State<MyLoginScreen> {
         _caseLoginsFuture = _fetchCaseLogins();
       });
 
-      if (data.isNotEmpty) {
-        CustomColor.showSuccessSnackBar(context, 'Data synced from server successfully');
-      } else {
-        CustomColor.showInfoSnackBar(context, 'No case logins available on server');
-      }
     } catch (e) {
-      CustomColor.showErrorSnackBar(context, 'Error syncing data: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -147,41 +141,48 @@ class _MyLoginScreenState extends State<MyLoginScreen> {
 
     for (final caseLogin in dirtyCaseLogins.where((cl) => cl.isDirty == 1)) {
       try {
-        final Map<String, dynamic> serverResponse = await submitCaseLoginToServer(
-          caseLogin.customerName,
-          caseLogin.mobileNo,
-          caseLogin.loginDate,
-          caseLogin.ipStatus,
-          caseLogin.arnNo,
-          caseLogin.remarks,
-          caseLogin.user!,
-          currentUser.sid,
-          caseLogin.syncId,
-        );
+  final Map<String, dynamic> serverResponse = await submitCaseLoginToServer(
+    customerName: caseLogin.customerName,
+    mobileNo: caseLogin.mobileNo,
+    loginDate: caseLogin.loginDate,
+    ipStatus: caseLogin.ipStatus,
+    arnNo: caseLogin.arnNo,
+    remarks: caseLogin.remarks,
+    user: caseLogin.user!,
+    sid: currentUser.sid,
+    syncId: caseLogin.syncId,
+    modified: caseLogin.modified,
+  );
 
-        if (serverResponse['message'] != null && serverResponse['message']['status'] == 'success') {
-          final String serverFrappeName = serverResponse['message']['frappe_id'];
-          await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
-            caseLogin.frappeId!,
-            newFrappeId: serverFrappeName,
-            isDirty: 0,
-            syncError: null,
-          );
-          dataSynced = true;
-        } else {
-          final String errorMessage = serverResponse['message']?['message'] ?? 'Unknown server error';
-          await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
-            caseLogin.frappeId!,
-            isDirty: 1,
-            syncError: errorMessage,
-          );
-        }
+  print('Server Response: $serverResponse');
+
+  if (serverResponse['message'] != null && serverResponse['message']['status'] == 'success') {
+    final String serverFrappeName = serverResponse['message']['frappe_id'];
+    final String serverModified = serverResponse['message']['modified'];
+    await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
+      caseLogin.frappeId!,
+      newFrappeId: serverFrappeName,
+      isDirty: 0,
+      syncError: null,
+      modified: serverModified,
+    );
+    dataSynced = true;
+  } else {
+    final String errorMessage = serverResponse['message']?['message'] ?? 'Unknown server error';
+    await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
+      caseLogin.frappeId!,
+      isDirty: 1,
+      syncError: errorMessage,
+      modified: caseLogin.modified,
+    );
+  }
       } catch (e) {
-        await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
-          caseLogin.frappeId!,
-          isDirty: 1,
-          syncError: e.toString(),
-        );
+  await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
+    caseLogin.frappeId!,
+    isDirty: 1,
+    syncError: e.toString(),
+    modified: caseLogin.modified,
+  );
       }
     }
     return dataSynced;
@@ -235,27 +236,31 @@ class _MyLoginScreenState extends State<MyLoginScreen> {
                     itemCount: caseLogins.length,
                     itemBuilder: (context, index) {
                       final caseLogin = caseLogins[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        elevation: 2,
-                        child: Padding(
-                          padding: const EdgeInsets.all(10),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Customer: ${caseLogin.customerName}', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-                              Text('Mobile: ${caseLogin.mobileNo}', style: GoogleFonts.poppins()),
-                              Text('Status: ${caseLogin.ipStatus}', style: GoogleFonts.poppins()),
-                              if (caseLogin.arnNo?.isNotEmpty == true)
-                                Text('ARN: ${caseLogin.arnNo}', style: GoogleFonts.poppins()),
-                              if (caseLogin.remarks?.isNotEmpty == true)
-                                Text('Remarks: ${caseLogin.remarks}', style: GoogleFonts.poppins()),
-                              Text('Login Date: ${caseLogin.loginDate}', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
-                              Text('User: ${caseLogin.user}', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
-                            ],
-                          ),
-                        ),
-                      );
+  return Card(
+    margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    elevation: 2,
+    child: Padding(
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('ID: ${caseLogin.id}', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+          Text('Frappe ID: ${caseLogin.frappeId}', style: GoogleFonts.poppins()),
+          Text('Sync ID: ${caseLogin.syncId}', style: GoogleFonts.poppins()),
+          Text('Customer Name: ${caseLogin.customerName}', style: GoogleFonts.poppins()),
+          Text('Mobile No: ${caseLogin.mobileNo}', style: GoogleFonts.poppins()),
+          Text('Login Date: ${caseLogin.loginDate}', style: GoogleFonts.poppins()),
+          Text('IP Status: ${caseLogin.ipStatus}', style: GoogleFonts.poppins()),
+          Text('ARN No: ${caseLogin.arnNo}', style: GoogleFonts.poppins()),
+          Text('Remarks: ${caseLogin.remarks}', style: GoogleFonts.poppins()),
+          Text('User: ${caseLogin.user}', style: GoogleFonts.poppins()),
+          Text('Is Dirty: ${caseLogin.isDirty}', style: GoogleFonts.poppins()),
+          Text('Sync Error: ${caseLogin.syncError}', style: GoogleFonts.poppins()),
+          Text('Modified: ${caseLogin.modified}', style: GoogleFonts.poppins()),
+        ],
+      ),
+    ),
+  );
                     },
                   );
                 }

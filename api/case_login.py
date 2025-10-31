@@ -20,7 +20,7 @@ def submit_case_login(customer_name, mobile_no, login_date, ip_status, arn_no, r
             doc.user = user
             doc.save()
             frappe.db.commit()
-            return {"status": "success", "message": "Case Login updated successfully", "frappe_id": doc.name}
+            return {"status": "success", "message": "Case Login updated successfully", "frappe_id": doc.name, "modified": doc.modified}
         else:
             doc = frappe.new_doc("Case Login")
             doc.customer_name = customer_name
@@ -33,7 +33,7 @@ def submit_case_login(customer_name, mobile_no, login_date, ip_status, arn_no, r
             doc.sync_id = sync_id
             doc.insert()
             frappe.db.commit()
-            return {"status": "success", "message": "Case Login submitted successfully", "frappe_id": doc.name}
+            return {"status": "success", "message": "Case Login submitted successfully", "frappe_id": doc.name, "modified": doc.modified}
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Case Login Submission Error")
         return {"status": "error", "message": str(e)}

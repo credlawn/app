@@ -232,30 +232,32 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
         
         try {
 
-          final Map<String, dynamic> serverResponse = await submitCaseLoginToServer(
-            caseLogin.customerName,
-            caseLogin.mobileNo,
-            caseLogin.loginDate,
-            caseLogin.ipStatus,
-            caseLogin.arnNo,
-            caseLogin.remarks,
-            caseLogin.user!,
-            user.sid,
-            currentSyncId, // Pass syncId to the server API
-          );
-
-
-
-          if (serverResponse['message'] != null && serverResponse['message']['status'] == 'success') {
-            final String serverFrappeName = serverResponse['message']['frappe_id'];
-            await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
-              caseLogin.frappeId!,
-              isDirty: 0,
-              syncError: null,
+            final Map<String, dynamic> serverResponse = await submitCaseLoginToServer(
+              customerName: caseLogin.customerName,
+              mobileNo: caseLogin.mobileNo,
+              loginDate: caseLogin.loginDate,
+              ipStatus: caseLogin.ipStatus,
+              arnNo: caseLogin.arnNo,
+              remarks: caseLogin.remarks,
+              user: caseLogin.user!,
+              sid: user.sid,
+              syncId: currentSyncId, 
             );
-            CustomColor.showSuccessSnackBar(context, 'Data Synced Successfully');
-
-          } else {
+  
+            
+  
+            if (serverResponse['message'] != null && serverResponse['message']['status'] == 'success') {
+              final String serverFrappeName = serverResponse['message']['frappe_id'];
+              final String modified = serverResponse['message']['modified'];
+              await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
+                caseLogin.frappeId!,
+                newFrappeId: serverFrappeName,
+                isDirty: 0,
+                syncError: null,
+                modified: modified,
+              );
+              CustomColor.showSuccessSnackBar(context, 'Data Synced Successfully');
+            } else {
             await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
               caseLogin.frappeId!,
               isDirty: 1,

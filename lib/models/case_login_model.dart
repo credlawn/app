@@ -11,6 +11,7 @@ class CaseLoginModel {
   final String? user;
   final int isDirty;
   final String? syncError;
+  final String modified;
 
   CaseLoginModel({
     this.id,
@@ -25,6 +26,7 @@ class CaseLoginModel {
     this.user,
     this.isDirty = 0,
     this.syncError,
+    this.modified = '',
   });
 
   Map<String, dynamic> toMap() {
@@ -41,6 +43,7 @@ class CaseLoginModel {
       'user': user,
       'is_dirty': isDirty,
       'sync_error': syncError,
+      'modified': modified,
     };
   }
 
@@ -58,6 +61,7 @@ class CaseLoginModel {
       user: map['user'],
       isDirty: map['is_dirty'] ?? 0,
       syncError: map['sync_error'],
+      modified: map['modified'] ?? '',
     );
   }
 
@@ -88,6 +92,7 @@ class CaseLoginModel {
       user: user ?? this.user,
       isDirty: isDirty ?? this.isDirty,
       syncError: syncError ?? this.syncError,
+      modified: modified ?? this.modified,
     );
   }
 }

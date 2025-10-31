@@ -82,7 +82,8 @@ CREATE TABLE case_login (
   remarks $textType DEFAULT '',
   user $textType DEFAULT '',
   is_dirty $intType DEFAULT 0,
-  sync_error $textType DEFAULT ''
+  sync_error $textType DEFAULT '',
+  modified $textType DEFAULT ''
 )
 ''');
   }

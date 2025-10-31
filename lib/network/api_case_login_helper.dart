@@ -3,40 +3,41 @@ import 'package:http/http.dart' as http;
 import 'package:credlawn/models/case_login_model.dart';
 import 'package:credlawn/network/api_network.dart';
 
-Future<Map<String, dynamic>> submitCaseLoginToServer(
-  String customerName,
-  String mobileNo,
-  String loginDate,
-  String ipStatus,
-  String arnNo,
-  String remarks,
-  String user,
-  String sid,
-  String syncId,
-) async {
+Future<Map<String, dynamic>> submitCaseLoginToServer({
+  required String customerName,
+  required String mobileNo,
+  required String loginDate,
+  required String ipStatus,
+  required String arnNo,
+  required String remarks,
+  required String user,
+  required String sid,
+  required String syncId,
+  String? modified,
+}) async {
   final Uri uri = Uri.https(
     Uri.parse(ApiNetwork.baseUrl).host,
     'api/method/credlawn.mobile.api.case_login.submit_case_login',
   );
 
   try {
-    final response = await http.post(
-      uri,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': 'sid=$sid',
-      },
-      body: json.encode({
-        'customer_name': customerName,
-        'mobile_no': mobileNo,
-        'login_date': loginDate,
-        'ip_status': ipStatus,
-        'arn_no': arnNo,
-        'remarks': remarks,
-        'user': user,
-        'sync_id': syncId,
-      }),
-    );
+  final response = await http.post(
+    uri,
+    headers: {
+      'Content-Type': 'application/json',
+      'Cookie': 'sid=$sid',
+    },
+    body: json.encode({
+      'customer_name': customerName,
+      'mobile_no': mobileNo,
+      'login_date': loginDate,
+      'ip_status': ipStatus,
+      'arn_no': arnNo,
+      'remarks': remarks,
+      'user': user,
+      'sync_id': syncId,
+    }),
+  );
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> jsonResponse = json.decode(response.body);
