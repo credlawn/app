@@ -158,7 +158,7 @@ if (!exists) {
     modified: caseLogin.modified,
   );
 
-  print('Server Response: $serverResponse');
+  
 
   if (serverResponse['message'] != null && serverResponse['message']['status'] == 'success') {
     final String serverFrappeName = serverResponse['message']['frappe_id'];
