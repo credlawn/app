@@ -43,4 +43,13 @@ class CaseLoginRepository {
       whereArgs: [currentFrappeId],
     );
   }
+
+  Future<int> deleteCaseLogin(String frappeId) async {
+    final db = await _appDatabase.database;
+    return await db.delete(
+      'case_login',
+      where: 'frappe_id = ?',
+      whereArgs: [frappeId],
+    );
+  }
 }

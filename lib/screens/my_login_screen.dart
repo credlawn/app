@@ -55,6 +55,19 @@ class _MyLoginScreenState extends State<MyLoginScreen> {
       }
 
       final data = message['data'];
+
+      // Get all frappe_ids from API response
+      final Set<String> serverFrappeIds = {};
+      if (data.isNotEmpty) {
+        for (var caseLoginData in data) {
+          serverFrappeIds.add(caseLoginData['frappe_id']);
+        }
+      }
+
+      // Get all local case logins
+      final localCaseLogins = await DatabaseService.instance.caseLoginRepository.getAllCaseLogins();
+
+      // Process API data - add new records
       if (data.isNotEmpty) {
         for (var caseLoginData in data) {
           final caseLogin = CaseLoginModel(
@@ -71,18 +84,28 @@ class _MyLoginScreenState extends State<MyLoginScreen> {
             syncError: null,
           );
 
-          final existing = await DatabaseService.instance.caseLoginRepository.getAllCaseLogins();
-          final exists = existing.any((cl) => cl.syncId == caseLogin.syncId);
+          // Check if this case login already exists locally using frappe_id
+          final exists = localCaseLogins.any((cl) => cl.frappeId == caseLogin.frappeId);
 
           if (!exists) {
             await DatabaseService.instance.caseLoginRepository.insertCaseLogin(caseLogin);
           }
         }
+      }
 
-        setState(() {
-          _caseLoginsFuture = _fetchCaseLogins();
-        });
+      // Delete records that exist locally but not in API response
+      // Only delete records that have a frappe_id (skip records without frappe_id)
+      for (final localCaseLogin in localCaseLogins) {
+        if (localCaseLogin.frappeId != null && !serverFrappeIds.contains(localCaseLogin.frappeId)) {
+          await DatabaseService.instance.caseLoginRepository.deleteCaseLogin(localCaseLogin.frappeId!);
+        }
+      }
 
+      setState(() {
+        _caseLoginsFuture = _fetchCaseLogins();
+      });
+
+      if (data.isNotEmpty) {
         CustomColor.showSuccessSnackBar(context, 'Data synced from server successfully');
       } else {
         CustomColor.showInfoSnackBar(context, 'No case logins available on server');
