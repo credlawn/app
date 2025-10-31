@@ -18,12 +18,13 @@ class _MyLoginScreenState extends State<MyLoginScreen> {
   late Future<List<CaseLoginModel>> _caseLoginsFuture;
   bool _isLoading = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _syncDirtyCaseLogins();
-    _caseLoginsFuture = _fetchCaseLogins();
-  }
+@override
+void initState() {
+  super.initState();
+  _syncDirtyCaseLogins();
+  _syncCaseLoginsFromServer();
+  _caseLoginsFuture = _fetchCaseLogins();
+}
 
   Future<List<CaseLoginModel>> _fetchCaseLogins() async {
     return await DatabaseService.instance.caseLoginRepository.getAllCaseLogins();
@@ -199,31 +200,25 @@ if (!exists) {
         elevation: 0.5,
         backgroundColor: CustomColor.MainColor,
         title: Text('My Login', style: GoogleFonts.poppins(color: Colors.white)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.sync, color: Colors.white),
-            onPressed: () async {
-              await _syncCaseLoginsFromServer();
-            },
-          ),
-        ],
+actions: [],
       ),
       body: Stack(
         children: [
           RefreshIndicator(
-            onRefresh: () async {
-              final bool synced = await _syncDirtyCaseLogins();
-              setState(() {
-                _caseLoginsFuture = _fetchCaseLogins();
-              });
-              if (mounted) {
-                if (synced) {
-                  CustomColor.showSuccessSnackBar(context, 'Data Updated Successfully');
-                } else {
-                  CustomColor.showInfoSnackBar(context, 'Everything up to date.');
-                }
-              }
-            },
+onRefresh: () async {
+  final bool synced = await _syncDirtyCaseLogins();
+  await _syncCaseLoginsFromServer();
+  setState(() {
+    _caseLoginsFuture = _fetchCaseLogins();
+  });
+  if (mounted) {
+    if (synced) {
+      CustomColor.showSuccessSnackBar(context, 'Data Updated Successfully');
+    } else {
+      CustomColor.showInfoSnackBar(context, 'Everything up to date.');
+    }
+  }
+},
             child: FutureBuilder<List<CaseLoginModel>>(
               future: _caseLoginsFuture,
               builder: (context, snapshot) {
