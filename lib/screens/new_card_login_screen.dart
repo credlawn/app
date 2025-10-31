@@ -76,9 +76,9 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
                       focusNode: _customerNameFocusNode,
                       enable: true,
                     ),
-                    SizedBox(height: 15),
+SizedBox(height: 20),
                     MobileField(controller: _mobileNoController, label: 'Mobile No'),
-                    SizedBox(height: 15),
+                    SizedBox(height: 20),
 
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
