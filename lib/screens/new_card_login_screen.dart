@@ -14,7 +14,6 @@ import 'package:credlawn/network/api_case_login_helper.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 
-
 class NewCardLoginScreen extends StatefulWidget {
   const NewCardLoginScreen({super.key});
 
@@ -28,12 +27,10 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
   final _mobileNoController = TextEditingController();
   final _referenceNoController = TextEditingController();
 
-
   String? selectedStatus;
   final TextEditingController _remarksController = TextEditingController();
 
   final Uuid _uuid = Uuid();
-
 
   final List<String> statusOptions = [
     'IP Approved',
@@ -61,7 +58,6 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
         elevation: 0.5,
         backgroundColor: CustomColor.MainColor,
         title: Text('New Case Login', style: GoogleFonts.poppins(color: Colors.white)),
-
       ),
       body: SafeArea(
         child: Stack(
@@ -235,7 +231,7 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
                         ),
                         maxLines: 1,
                       ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 40),
 
                     CustomColor.customButton(
                       context: context,
@@ -309,8 +305,6 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
 
       if (id > 0) {
 
-
-        
         try {
 
             final Map<String, dynamic> serverResponse = await submitCaseLoginToServer(
@@ -322,11 +316,9 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
               remarks: caseLogin.remarks,
               user: caseLogin.user!,
               sid: user.sid,
-              syncId: currentSyncId, 
+              syncId: currentSyncId,
             );
-  
-            
-  
+
             if (serverResponse['message'] != null && serverResponse['message']['status'] == 'success') {
               final String serverFrappeName = serverResponse['message']['frappe_id'];
               final String modified = serverResponse['message']['modified'];
@@ -354,7 +346,6 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
           );
           CustomColor.showSuccessSnackBar(context, 'Data Saved Successfully');
         }
-
 
         _customerNameController.clear();
         _mobileNoController.clear();
