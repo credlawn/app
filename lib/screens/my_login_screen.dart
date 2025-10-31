@@ -67,7 +67,7 @@ class _MyLoginScreenState extends State<MyLoginScreen> {
       // Get all local case logins
       final localCaseLogins = await DatabaseService.instance.caseLoginRepository.getAllCaseLogins();
 
-      // Process API data - add new records
+      // Process API data - add new records or update existing ones
       if (data.isNotEmpty) {
         for (var caseLoginData in data) {
           final caseLogin = CaseLoginModel(
@@ -89,6 +89,22 @@ class _MyLoginScreenState extends State<MyLoginScreen> {
 
           if (!exists) {
             await DatabaseService.instance.caseLoginRepository.insertCaseLogin(caseLogin);
+            print('Inserted new case login: ${caseLogin.frappeId}');
+          } else {
+            await DatabaseService.instance.caseLoginRepository.updateCaseLoginFields(
+              caseLogin.frappeId!,
+              newFrappeId: caseLogin.frappeId,
+              isDirty: caseLogin.isDirty,
+              syncError: caseLogin.syncError,
+              customerName: caseLogin.customerName,
+              mobileNo: caseLogin.mobileNo,
+              loginDate: caseLogin.loginDate,
+              ipStatus: caseLogin.ipStatus,
+              arnNo: caseLogin.arnNo,
+              remarks: caseLogin.remarks,
+              user: caseLogin.user,
+            );
+            print('Updated existing case login: ${caseLogin.frappeId}');
           }
         }
       }

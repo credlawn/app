@@ -52,4 +52,40 @@ class CaseLoginRepository {
       whereArgs: [frappeId],
     );
   }
+
+  Future<int> updateCaseLoginFields(
+    String currentFrappeId, {
+    String? newFrappeId,
+    int? isDirty,
+    String? syncError,
+    String? customerName,
+    String? mobileNo,
+    String? loginDate,
+    String? ipStatus,
+    String? arnNo,
+    String? remarks,
+    String? user,
+  }) async {
+    final db = await _appDatabase.database;
+    final Map<String, dynamic> updates = {};
+    if (newFrappeId != null) updates['frappe_id'] = newFrappeId;
+    if (isDirty != null) updates['is_dirty'] = isDirty;
+    if (syncError != null) updates['sync_error'] = syncError;
+    if (customerName != null) updates['customer_name'] = customerName;
+    if (mobileNo != null) updates['mobile_no'] = mobileNo;
+    if (loginDate != null) updates['login_date'] = loginDate;
+    if (ipStatus != null) updates['ip_status'] = ipStatus;
+    if (arnNo != null) updates['arn_no'] = arnNo;
+    if (remarks != null) updates['remarks'] = remarks;
+    if (user != null) updates['user'] = user;
+
+    if (updates.isEmpty) return 0; // No fields to update
+
+    return await db.update(
+      'case_login',
+      updates,
+      where: 'frappe_id = ?',
+      whereArgs: [currentFrappeId],
+    );
+  }
 }
