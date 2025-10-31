@@ -3,6 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:credlawn/custom/custom_color.dart';
 import 'package:credlawn/helpers/database_service.dart';
 import 'package:credlawn/models/case_login_model.dart';
+import 'package:credlawn/helpers/session_manager.dart';
+import 'package:credlawn/models/user.dart';
+import 'package:credlawn/network/api_case_login_helper.dart';
 
 class MyLoginScreen extends StatefulWidget {
   const MyLoginScreen({super.key});
@@ -17,11 +20,63 @@ class _MyLoginScreenState extends State<MyLoginScreen> {
   @override
   void initState() {
     super.initState();
+    _syncDirtyCaseLogins(); // Trigger sync on screen open
     _caseLoginsFuture = _fetchCaseLogins();
   }
 
   Future<List<CaseLoginModel>> _fetchCaseLogins() async {
     return await DatabaseService.instance.caseLoginRepository.getAllCaseLogins();
+  }
+
+  Future<bool> _syncDirtyCaseLogins() async {
+    bool dataSynced = false;
+    final User? currentUser = await SessionManager.getSessionData();
+    if (currentUser == null) {
+      return false;
+    }
+
+    final List<CaseLoginModel> dirtyCaseLogins =
+        await DatabaseService.instance.caseLoginRepository.getAllCaseLogins();
+
+    for (final caseLogin in dirtyCaseLogins.where((cl) => cl.isDirty == 1)) {
+      try {
+        final Map<String, dynamic> serverResponse = await submitCaseLoginToServer(
+          caseLogin.customerName,
+          caseLogin.mobileNo,
+          caseLogin.loginDate,
+          caseLogin.ipStatus,
+          caseLogin.arnNo,
+          caseLogin.remarks,
+          caseLogin.user!,
+          currentUser.sid,
+        );
+
+        if (serverResponse['message'] != null && serverResponse['message']['status'] == 'success') {
+          final String serverFrappeName = serverResponse['message']['frappe_name'];
+          await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
+            caseLogin.frappeId!,
+            newFrappeId: serverFrappeName,
+            isDirty: 0,
+            syncError: null,
+          );
+          dataSynced = true;
+        } else {
+          final String errorMessage = serverResponse['message']?['message'] ?? 'Unknown server error';
+          await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
+            caseLogin.frappeId!,
+            isDirty: 1,
+            syncError: errorMessage,
+          );
+        }
+      } catch (e) {
+        await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
+          caseLogin.frappeId!,
+          isDirty: 1,
+          syncError: e.toString(),
+        );
+      }
+    }
+    return dataSynced;
   }
 
   @override
@@ -33,9 +88,23 @@ class _MyLoginScreenState extends State<MyLoginScreen> {
         backgroundColor: CustomColor.MainColor,
         title: Text('My Login', style: GoogleFonts.poppins(color: Colors.white)),
       ),
-      body: FutureBuilder<List<CaseLoginModel>>(
-        future: _caseLoginsFuture,
-        builder: (context, snapshot) {
+      body: RefreshIndicator(
+        onRefresh: () async {
+          final bool synced = await _syncDirtyCaseLogins();
+          setState(() {
+            _caseLoginsFuture = _fetchCaseLogins();
+          });
+          if (mounted) {
+            if (synced) {
+              CustomColor.showSuccessSnackBar(context, 'Data Updated Successfully');
+            } else {
+              CustomColor.showInfoSnackBar(context, 'Everything up to date.');
+            }
+          }
+        },
+        child: FutureBuilder<List<CaseLoginModel>>(
+          future: _caseLoginsFuture,
+          builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator(color: CustomColor.MainColor));
           } else if (snapshot.hasError) {
@@ -72,7 +141,7 @@ class _MyLoginScreenState extends State<MyLoginScreen> {
               },
             );
           }
-        },
+        }),
       ),
     );
   }

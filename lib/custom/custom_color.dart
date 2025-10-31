@@ -136,6 +136,71 @@ class CustomColor {
     );
   }
 
+  // Show Professional Info SnackBar
+  static void showInfoSnackBar(BuildContext context, String message, {
+    Duration duration = const Duration(seconds: 3),
+    bool showCloseIcon = true,
+    String title = "Info",
+    IconData icon = Icons.info_outline,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Container(
+          padding: EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: Colors.white, size: 20),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      message,
+                      style: GoogleFonts.poppins(
+                        color: Colors.white.withOpacity(0.9),
+                        fontWeight: FontWeight.w400,
+                        fontSize: 13,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        backgroundColor: Colors.blue.shade600, // Info color
+        duration: duration,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: EdgeInsets.all(16),
+        showCloseIcon: showCloseIcon,
+        closeIconColor: Colors.white,
+        elevation: 6,
+        clipBehavior: Clip.antiAlias,
+      ),
+    );
+  }
+
   // Show Smart SnackBar with auto-detection
   static void showSmartSnackBar(BuildContext context, String message, {
     bool isError = false,

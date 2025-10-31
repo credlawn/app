@@ -222,7 +222,7 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
       final int id = await DatabaseService.instance.caseLoginRepository.insertCaseLogin(caseLogin);
 
       if (id > 0) {
-        CustomColor.showSuccessSnackBar(context, 'Data Saved Successfully');
+
 
         
         try {
@@ -244,10 +244,10 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
             final String serverFrappeName = serverResponse['message']['frappe_name'];
             await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
               caseLogin.frappeId!,
-
               isDirty: 0,
               syncError: null,
             );
+            CustomColor.showSuccessSnackBar(context, 'Data Synced Successfully');
 
           } else {
             await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
@@ -255,7 +255,7 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
               isDirty: 1,
               syncError: serverResponse['message'] ?? 'Server sync failed',
             );
-            CustomColor.showErrorSnackBar(context, 'Failed to Save data.');
+            CustomColor.showSuccessSnackBar(context, 'Data Saved Successfully');
           }
         } catch (syncE) {
           await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
@@ -263,7 +263,7 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
             isDirty: 1,
             syncError: syncE.toString(),
           );
-          CustomColor.showErrorSnackBar(context, 'Failed to Save data.');
+          CustomColor.showSuccessSnackBar(context, 'Data Saved Successfully');
         }
 
 
@@ -275,7 +275,7 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
           selectedStatus = null;
         });
       } else {
-        CustomColor.showErrorSnackBar(context, 'Failed to submit Case Login to local database.');
+        CustomColor.showErrorSnackBar(context, 'Failed to Submit Data.');
       }
     } catch (e) {
       CustomColor.showErrorSnackBar(context, 'Error: $e');

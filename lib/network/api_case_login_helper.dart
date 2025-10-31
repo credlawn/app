@@ -40,13 +40,9 @@ Future<Map<String, dynamic>> submitCaseLoginToServer(
       final Map<String, dynamic> jsonResponse = json.decode(response.body);
       return jsonResponse; // Return the full response from the server
     } else {
-      // Log or handle server error
-      print('Server error submitting case login: ${response.statusCode} - ${response.body}');
       return {"status": "error", "message": "Server error: ${response.statusCode}"};
     }
   } catch (e) {
-    // Log or handle network/other exceptions
-    print('Exception submitting case login: $e');
     return {"status": "error", "message": "Exception: $e"};
   }
 }
