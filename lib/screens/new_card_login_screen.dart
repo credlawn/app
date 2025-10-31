@@ -24,6 +24,7 @@ class NewCardLoginScreen extends StatefulWidget {
 class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
   bool _isLoading = false;
   final _customerNameController = TextEditingController();
+  final _customerNameFocusNode = FocusNode();
   final _mobileNoController = TextEditingController();
   final _referenceNoController = TextEditingController();
 
@@ -44,6 +45,7 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
   @override
   void dispose() {
     _customerNameController.dispose();
+    _customerNameFocusNode.dispose();
     _mobileNoController.dispose();
     _referenceNoController.dispose();
     _remarksController.dispose();
@@ -69,7 +71,11 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const SizedBox(height: 15),
-                    CustomerNameField(controller: _customerNameController, enable: true),
+                    CustomerNameField(
+                      controller: _customerNameController,
+                      focusNode: _customerNameFocusNode,
+                      enable: true,
+                    ),
                     SizedBox(height: 15),
                     MobileField(controller: _mobileNoController, label: 'Mobile No'),
                     SizedBox(height: 15),
@@ -277,7 +283,7 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
 
     try {
       final String frappeId = DateTime.now().millisecondsSinceEpoch.toString();
-      final String currentSyncId = _uuid.v4(); // Generate a UUID
+      final String currentSyncId = _uuid.v4();
       final String loginDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
       final String arnNo = selectedStatus == 'IP Approved' ? _referenceNoController.text : '';
       final String remarks = _remarksController.text;
@@ -347,13 +353,15 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
           CustomColor.showSuccessSnackBar(context, 'Data Saved Successfully');
         }
 
-        _customerNameController.clear();
-        _mobileNoController.clear();
-        _referenceNoController.clear();
-        _remarksController.clear();
-        setState(() {
-          selectedStatus = null;
-        });
+_customerNameController.clear();
+_mobileNoController.clear();
+_referenceNoController.clear();
+_remarksController.clear();
+setState(() {
+  selectedStatus = null;
+});
+FocusScope.of(context).requestFocus(FocusNode());
+FocusScope.of(context).requestFocus(_customerNameFocusNode);
       } else {
         CustomColor.showErrorSnackBar(context, 'Failed to Submit Data.');
       }

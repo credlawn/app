@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; 
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 
 class CustomTextField extends StatefulWidget {
   const CustomTextField({
@@ -13,33 +12,34 @@ class CustomTextField extends StatefulWidget {
     this.keyboardType,
     this.maxLength,
     this.enable = true,
-    this.onChanged, // Add onChanged parameter
-    this.borderColor = Colors.blue, // Use a default color (Colors.blue)
+    this.onChanged,
+    this.borderColor = Colors.blue,
+    this.focusNode,
   });
 
-  final String label;
+final String label;
   final String? hint;
   final Icon? prefixIcon;
   final TextEditingController? controller;
   final TextInputType? keyboardType;
   final int? maxLength;
   final bool enable;
-  final ValueChanged<String>? onChanged; // Define the onChanged callback
-  final Color borderColor; // Define borderColor as a parameter
+  final ValueChanged<String>? onChanged;
+  final Color borderColor;
+  final FocusNode? focusNode;
 
   @override
-  // ignore: library_private_types_in_public_api
   _CustomTextFieldState createState() => _CustomTextFieldState();
 }
 
 class _CustomTextFieldState extends State<CustomTextField> {
-  final FocusNode _focusNode = FocusNode(); // Focus node to manage the focus state
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _focusNode.addListener(() {
-      setState(() {}); // Rebuild when focus changes
+      setState(() {});
     });
   }
 
@@ -62,21 +62,21 @@ class _CustomTextFieldState extends State<CustomTextField> {
       child: TextField(
         focusNode: _focusNode,
         inputFormatters: [
-          LengthLimitingTextInputFormatter(widget.maxLength), // Limit input length
+          LengthLimitingTextInputFormatter(widget.maxLength),
         ],
         keyboardType: widget.keyboardType,
         controller: widget.controller,
         textInputAction: TextInputAction.next,
-        onChanged: widget.onChanged, // Use the onChanged callback passed in
+        onChanged: widget.onChanged,
         decoration: InputDecoration(
           enabled: widget.enable,
           prefixIcon: widget.prefixIcon,
-          prefixIconColor: widget.borderColor, // Custom color for prefix icon
+          prefixIconColor: widget.borderColor,
           hintText: widget.hint,
           label: Text(
             widget.label,
             style: GoogleFonts.poppins(
-              color: widget.borderColor, // Custom color for label text
+              color: widget.borderColor,
             ),
           ),
           border: OutlineInputBorder(
@@ -84,11 +84,11 @@ class _CustomTextFieldState extends State<CustomTextField> {
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: widget.borderColor), // Use the dynamic borderColor here
+            borderSide: BorderSide(color: widget.borderColor),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.blue), // Blue border when focused
+            borderSide: BorderSide(color: Colors.blue),
           ),
         ),
       ),
@@ -97,7 +97,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
   @override
   void dispose() {
-    _focusNode.dispose(); // Clean up the focus node when the widget is disposed
+    _focusNode.dispose();
     super.dispose();
   }
 }

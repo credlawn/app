@@ -1,28 +1,27 @@
 import 'package:flutter/material.dart';
-import 'custom_color.dart'; 
-import 'custom_text_field.dart'; 
+import 'custom_color.dart';
+import 'custom_text_field.dart';
 
 class CustomerNameField extends StatefulWidget {
   final TextEditingController controller;
   final bool enable;
+  final FocusNode? focusNode;
 
-  const CustomerNameField({super.key, required this.controller, this.enable = true});
+  const CustomerNameField({super.key, required this.controller, this.enable = true, this.focusNode});
 
   @override
   _CustomerNameFieldState createState() => _CustomerNameFieldState();
 }
 
 class _CustomerNameFieldState extends State<CustomerNameField> {
-  Color _borderColor = CustomColor.MainColor;  // Default border color
-  bool _isValidName = true;  // Default to valid when empty or initially valid
+  Color _borderColor = CustomColor.MainColor;
+  bool _isValidName = true;
 
-  // Validate if the name has at least 5 characters and contains only alphabetic characters and spaces
   bool _isValidNameInput(String input) {
-    final nameRegex = RegExp(r'^[A-Za-z\s]+$');  // Only alphabetic characters and spaces allowed
+    final nameRegex = RegExp(r'^[A-Za-z\s]+$');
     return input.length >= 5 && nameRegex.hasMatch(input);
   }
 
-  // Convert text to title case (first letter uppercase, the rest lowercase)
   String _toTitleCase(String text) {
     if (text.isEmpty) return text;
     return text.split(' ').map((str) {
@@ -47,12 +46,12 @@ class _CustomerNameFieldState extends State<CustomerNameField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CustomTextField(
+CustomTextField(
           controller: widget.controller,
           label: 'Customer Name',
           hint: '',
           prefixIcon: Icon(
-            Icons.person, // Icon for customer name
+            Icons.person,
             color: CustomColor.MainColor,
           ),
           enable: widget.enable,
@@ -60,26 +59,22 @@ class _CustomerNameFieldState extends State<CustomerNameField> {
           borderColor: _borderColor,
           onChanged: (text) {
             setState(() {
-              // Convert the text to title case (only alphabetic characters)
               String updatedText = _toTitleCase(text);
 
-              // Update the text in the controller
               widget.controller.text = updatedText;
 
-              // Reposition the cursor to the end of the text
               widget.controller.selection = TextSelection.fromPosition(
                 TextPosition(offset: widget.controller.text.length),
               );
 
-              // Validate the name (at least 5 characters, alphabetic only)
               _isValidName = _isValidNameInput(updatedText);
               _borderColor = _isValidName || widget.controller.text.isEmpty
                   ? CustomColor.MainColor
                   : Colors.red;
             });
           },
+          focusNode: widget.focusNode,
         ),
-        // Display error message if the name is invalid
         if (!_isValidName && widget.controller.text.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
