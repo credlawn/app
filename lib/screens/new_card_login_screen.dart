@@ -11,6 +11,7 @@ import 'package:credlawn/models/case_login_model.dart';
 import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/models/user.dart';
 import 'package:credlawn/network/api_case_login_helper.dart';
+import 'package:uuid/uuid.dart';
 
 
 class NewCardLoginScreen extends StatefulWidget {
@@ -29,6 +30,8 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
 
   String? selectedStatus;
   final TextEditingController _remarksController = TextEditingController();
+
+  final Uuid _uuid = Uuid();
 
 
   final List<String> statusOptions = [
@@ -197,6 +200,7 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
 
     try {
       final String frappeId = DateTime.now().millisecondsSinceEpoch.toString();
+      final String currentSyncId = _uuid.v4(); // Generate a UUID
       final String loginDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
       final String arnNo = selectedStatus == 'IP Approved' ? _referenceNoController.text : '';
       final String remarks = _remarksController.text;
@@ -210,6 +214,7 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
 
       final caseLogin = CaseLoginModel(
         frappeId: frappeId,
+        syncId: currentSyncId,
         customerName: _customerNameController.text,
         mobileNo: _mobileNoController.text,
         loginDate: loginDate,
@@ -236,6 +241,7 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
             caseLogin.remarks,
             caseLogin.user!,
             user.sid,
+            currentSyncId, // Pass syncId to the server API
           );
 
 

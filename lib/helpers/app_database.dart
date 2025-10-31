@@ -18,7 +18,7 @@ class AppDatabase {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 6, onCreate: _createDB, onUpgrade: _onUpgrade);
+    return await openDatabase(path, version: 7, onCreate: _createDB, onUpgrade: _onUpgrade);
   }
 
   Future _createDB(Database db, int version) async {
@@ -68,6 +68,23 @@ CREATE TABLE leads (
   follow_up_time $textType DEFAULT ''
 )
 ''');
+
+    await db.execute('''
+CREATE TABLE case_login (
+  id $idType,
+  frappe_id $textType UNIQUE,
+  sync_id $textType UNIQUE,
+  customer_name $textType,
+  mobile_no $textType,
+  login_date $textType,
+  ip_status $textType,
+  arn_no $textType DEFAULT '',
+  remarks $textType DEFAULT '',
+  user $textType DEFAULT '',
+  is_dirty $intType DEFAULT 0,
+  sync_error $textType DEFAULT ''
+)
+''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -108,29 +125,16 @@ CREATE TABLE leads (
 ''');
     }
     if (oldVersion < 4) {
-      const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
-      const textType = 'TEXT NOT NULL';
-      await db.execute('''
-CREATE TABLE case_login (
-  id $idType,
-  frappe_id $textType UNIQUE,
-  customer_name $textType,
-  mobile_no $textType,
-  login_date $textType,
-  ip_status $textType,
-  arn_no $textType DEFAULT '',
-  remarks $textType DEFAULT '',
-  user $textType DEFAULT ''
-)
-'''
-);
+      
     }
     if (oldVersion < 5) {
-      await db.execute('ALTER TABLE case_login ADD COLUMN user TEXT');
+      
     }
     if (oldVersion < 6) {
-      await db.execute('ALTER TABLE case_login ADD COLUMN is_dirty INTEGER DEFAULT 0');
-      await db.execute('ALTER TABLE case_login ADD COLUMN sync_error TEXT');
+      
+    }
+    if (oldVersion < 7) {
+      await db.execute('ALTER TABLE case_login ADD COLUMN sync_id TEXT UNIQUE');
     }
   }
 

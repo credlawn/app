@@ -35,6 +35,7 @@ dependencies:
   firebase_messaging: ^16.0.3
   device_info_plus: ^12.2.0
   font_awesome_flutter: ^10.7.0
+  uuid: ^4.4.0
 
   collection: any
   sqflite: any

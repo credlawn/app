@@ -1,6 +1,7 @@
 class CaseLoginModel {
   final int? id;
   final String? frappeId;
+  final String syncId;
   final String customerName;
   final String mobileNo;
   final String loginDate;
@@ -14,6 +15,7 @@ class CaseLoginModel {
   CaseLoginModel({
     this.id,
     this.frappeId,
+    required this.syncId,
     required this.customerName,
     required this.mobileNo,
     required this.loginDate,
@@ -29,6 +31,7 @@ class CaseLoginModel {
     return {
       'id': id,
       'frappe_id': frappeId,
+      'sync_id': syncId,
       'customer_name': customerName,
       'mobile_no': mobileNo,
       'login_date': loginDate,
@@ -45,6 +48,7 @@ class CaseLoginModel {
     return CaseLoginModel(
       id: map['id'],
       frappeId: map['frappe_id'],
+      syncId: map['sync_id'],
       customerName: map['customer_name'],
       mobileNo: map['mobile_no'],
       loginDate: map['login_date'],
@@ -60,6 +64,7 @@ class CaseLoginModel {
   CaseLoginModel copyWith({
     int? id,
     String? frappeId,
+    String? syncId,
     String? customerName,
     String? mobileNo,
     String? loginDate,
@@ -73,6 +78,7 @@ class CaseLoginModel {
     return CaseLoginModel(
       id: id ?? this.id,
       frappeId: frappeId ?? this.frappeId,
+      syncId: syncId ?? this.syncId,
       customerName: customerName ?? this.customerName,
       mobileNo: mobileNo ?? this.mobileNo,
       loginDate: loginDate ?? this.loginDate,

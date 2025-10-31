@@ -12,10 +12,11 @@ Future<Map<String, dynamic>> submitCaseLoginToServer(
   String remarks,
   String user,
   String sid,
+  String syncId,
 ) async {
   final Uri uri = Uri.https(
     Uri.parse(ApiNetwork.baseUrl).host,
-    'api/method/credlawn.mobile.api.case_login.submit_case_login', // Assuming this is the server endpoint
+    'api/method/credlawn.mobile.api.case_login.submit_case_login',
   );
 
   try {
@@ -33,6 +34,7 @@ Future<Map<String, dynamic>> submitCaseLoginToServer(
         'arn_no': arnNo,
         'remarks': remarks,
         'user': user,
+        'sync_id': syncId,
       }),
     );
 
