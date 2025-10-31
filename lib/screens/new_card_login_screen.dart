@@ -10,6 +10,7 @@ import 'package:credlawn/helpers/database_service.dart';
 import 'package:credlawn/models/case_login_model.dart';
 import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/models/user.dart';
+import 'package:credlawn/network/api_case_login_helper.dart';
 
 
 class NewCardLoginScreen extends StatefulWidget {
@@ -23,12 +24,13 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
   bool _isLoading = false;
   final _customerNameController = TextEditingController();
   final _mobileNoController = TextEditingController();
-  final _referenceNoController = TextEditingController(); // For ARN No
+  final _referenceNoController = TextEditingController();
+
 
   String? selectedStatus;
   final TextEditingController _remarksController = TextEditingController();
 
-  // Updated statusOptions - removed 'CNR', 'Follow up'
+
   final List<String> statusOptions = [
     'IP Approved',
     'IP Decline',
@@ -54,7 +56,8 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
       appBar: AppBar(
         elevation: 0.5,
         backgroundColor: CustomColor.MainColor,
-        title: Text('New Case Login', style: GoogleFonts.poppins(color: Colors.white)), // Changed title
+        title: Text('New Case Login', style: GoogleFonts.poppins(color: Colors.white)),
+
       ),
       body: SafeArea(
         child: Stack(
@@ -219,8 +222,51 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
       final int id = await DatabaseService.instance.caseLoginRepository.insertCaseLogin(caseLogin);
 
       if (id > 0) {
-        CustomColor.showSuccessSnackBar(context, 'Case Login Submitted Successfully!');
-        // Clear fields after successful submission
+        CustomColor.showSuccessSnackBar(context, 'Data Saved Successfully');
+
+        
+        try {
+
+          final Map<String, dynamic> serverResponse = await submitCaseLoginToServer(
+            caseLogin.customerName,
+            caseLogin.mobileNo,
+            caseLogin.loginDate,
+            caseLogin.ipStatus,
+            caseLogin.arnNo,
+            caseLogin.remarks,
+            caseLogin.user!,
+            user.sid,
+          );
+
+
+
+          if (serverResponse['message'] != null && serverResponse['message']['status'] == 'success') {
+            final String serverFrappeName = serverResponse['message']['frappe_name'];
+            await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
+              caseLogin.frappeId!,
+
+              isDirty: 0,
+              syncError: null,
+            );
+
+          } else {
+            await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
+              caseLogin.frappeId!,
+              isDirty: 1,
+              syncError: serverResponse['message'] ?? 'Server sync failed',
+            );
+            CustomColor.showErrorSnackBar(context, 'Failed to Save data.');
+          }
+        } catch (syncE) {
+          await DatabaseService.instance.caseLoginRepository.updateCaseLoginLocalFields(
+            caseLogin.frappeId!,
+            isDirty: 1,
+            syncError: syncE.toString(),
+          );
+          CustomColor.showErrorSnackBar(context, 'Failed to Save data.');
+        }
+
+
         _customerNameController.clear();
         _mobileNoController.clear();
         _referenceNoController.clear();

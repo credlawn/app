@@ -59,9 +59,9 @@ class _MyLoginScreenState extends State<MyLoginScreen> {
                         Text('Customer: ${caseLogin.customerName}', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
                         Text('Mobile: ${caseLogin.mobileNo}', style: GoogleFonts.poppins()),
                         Text('Status: ${caseLogin.ipStatus}', style: GoogleFonts.poppins()),
-                        if (caseLogin.arnNo.isNotEmpty)
+                        if (caseLogin.arnNo?.isNotEmpty == true)
                           Text('ARN: ${caseLogin.arnNo}', style: GoogleFonts.poppins()),
-                        if (caseLogin.remarks.isNotEmpty)
+                        if (caseLogin.remarks?.isNotEmpty == true)
                           Text('Remarks: ${caseLogin.remarks}', style: GoogleFonts.poppins()),
                         Text('Login Date: ${caseLogin.loginDate}', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
                         Text('User: ${caseLogin.user}', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),

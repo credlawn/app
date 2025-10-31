@@ -1,6 +1,6 @@
 class CaseLoginModel {
   final int? id;
-  final String frappeId;
+  final String? frappeId;
   final String customerName;
   final String mobileNo;
   final String loginDate;
@@ -8,17 +8,21 @@ class CaseLoginModel {
   final String arnNo;
   final String remarks;
   final String? user;
+  final int isDirty;
+  final String? syncError;
 
   CaseLoginModel({
     this.id,
-    required this.frappeId,
+    this.frappeId,
     required this.customerName,
     required this.mobileNo,
     required this.loginDate,
     required this.ipStatus,
-    required this.arnNo,
-    required this.remarks,
+    this.arnNo = '',
+    this.remarks = '',
     this.user,
+    this.isDirty = 0,
+    this.syncError,
   });
 
   Map<String, dynamic> toMap() {
@@ -32,6 +36,8 @@ class CaseLoginModel {
       'arn_no': arnNo,
       'remarks': remarks,
       'user': user,
+      'is_dirty': isDirty,
+      'sync_error': syncError,
     };
   }
 
@@ -43,9 +49,39 @@ class CaseLoginModel {
       mobileNo: map['mobile_no'],
       loginDate: map['login_date'],
       ipStatus: map['ip_status'],
-      arnNo: map['arn_no'],
-      remarks: map['remarks'],
+      arnNo: map['arn_no'] ?? '',
+      remarks: map['remarks'] ?? '',
       user: map['user'],
+      isDirty: map['is_dirty'] ?? 0,
+      syncError: map['sync_error'],
+    );
+  }
+
+  CaseLoginModel copyWith({
+    int? id,
+    String? frappeId,
+    String? customerName,
+    String? mobileNo,
+    String? loginDate,
+    String? ipStatus,
+    String? arnNo,
+    String? remarks,
+    String? user,
+    int? isDirty,
+    String? syncError,
+  }) {
+    return CaseLoginModel(
+      id: id ?? this.id,
+      frappeId: frappeId ?? this.frappeId,
+      customerName: customerName ?? this.customerName,
+      mobileNo: mobileNo ?? this.mobileNo,
+      loginDate: loginDate ?? this.loginDate,
+      ipStatus: ipStatus ?? this.ipStatus,
+      arnNo: arnNo ?? this.arnNo,
+      remarks: remarks ?? this.remarks,
+      user: user ?? this.user,
+      isDirty: isDirty ?? this.isDirty,
+      syncError: syncError ?? this.syncError,
     );
   }
 }

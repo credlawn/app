@@ -18,7 +18,7 @@ class AppDatabase {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 5, onCreate: _createDB, onUpgrade: _onUpgrade);
+    return await openDatabase(path, version: 6, onCreate: _createDB, onUpgrade: _onUpgrade);
   }
 
   Future _createDB(Database db, int version) async {
@@ -118,8 +118,8 @@ CREATE TABLE case_login (
   mobile_no $textType,
   login_date $textType,
   ip_status $textType,
-  arn_no $textType,
-  remarks $textType,
+  arn_no $textType DEFAULT '',
+  remarks $textType DEFAULT '',
   user $textType DEFAULT ''
 )
 '''
@@ -127,6 +127,10 @@ CREATE TABLE case_login (
     }
     if (oldVersion < 5) {
       await db.execute('ALTER TABLE case_login ADD COLUMN user TEXT');
+    }
+    if (oldVersion < 6) {
+      await db.execute('ALTER TABLE case_login ADD COLUMN is_dirty INTEGER DEFAULT 0');
+      await db.execute('ALTER TABLE case_login ADD COLUMN sync_error TEXT');
     }
   }
 
