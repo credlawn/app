@@ -76,7 +76,7 @@ class _NewCardLoginScreenState extends State<NewCardLoginScreen> {
                       focusNode: _customerNameFocusNode,
                       enable: true,
                     ),
-SizedBox(height: 20),
+                    SizedBox(height: 20),
                     MobileField(controller: _mobileNoController, label: 'Mobile No'),
                     SizedBox(height: 20),
 
@@ -116,17 +116,20 @@ SizedBox(height: 20),
                                 selected: selectedStatus == status,
                                 selectedColor: CustomColor.MainColor,
                                 backgroundColor: Colors.grey[200],
-                                onSelected: (bool selected) {
-                                  setState(() {
-                                    if (selected) {
-                                      selectedStatus = status;
-                                    } else {
-                                      selectedStatus = null;
-                                    }
-                                    _remarksController.clear();
-                                    _referenceNoController.clear();
-                                  });
-                                },
+onSelected: (bool selected) {
+  // Unfocus any text field and hide keyboard
+  FocusScope.of(context).unfocus();
+
+  setState(() {
+    if (selected) {
+      selectedStatus = status;
+    } else {
+      selectedStatus = null;
+    }
+    _remarksController.clear();
+    _referenceNoController.clear();
+  });
+},
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20.0),
                                   side: BorderSide(
@@ -144,98 +147,138 @@ SizedBox(height: 20),
                     const SizedBox(height: 16),
 
                     if (selectedStatus == 'IP Approved')
-                      TextField(
-                        key: const ValueKey('arn_no_field'),
-                        controller: _referenceNoController,
-                        textCapitalization: TextCapitalization.characters,
-                        inputFormatters: [
-                          LengthLimitingTextInputFormatter(16),
-                          FilteringTextInputFormatter.allow(RegExp(r'[A-Z0-9]')),
-                        ],
-                        decoration: InputDecoration(
-                          labelText: 'ARN No',
-                          border: const OutlineInputBorder(),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: CustomColor.MainColor),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: CustomColor.MainColor),
-                          ),
-                          labelStyle: TextStyle(color: CustomColor.MainColor),
-                          suffixIcon: Container(
-                            margin: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: CustomColor.MainColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(6),
+                      Container(
+                        height: 55.0,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withAlpha(100),
+                              blurRadius: 1.5,
+                              spreadRadius: 1.5,
+                              offset: Offset(0.3, 0.3),
                             ),
-                            child: IconButton(
-                              icon: Icon(Icons.camera_alt, color: CustomColor.MainColor, size: 20),
-                              onPressed: () {
-                                showModalBottomSheet(
-                                context: context,
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                                ),
-                                builder: (context) {
-                                  return Padding(
-                                    padding: const EdgeInsets.all(20),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          'Scan ARN Number',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
+                          ],
+                        ),
+                        child: TextField(
+                          key: const ValueKey('arn_no_field'),
+                          controller: _referenceNoController,
+                          textCapitalization: TextCapitalization.characters,
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(16),
+                            FilteringTextInputFormatter.allow(RegExp(r'[A-Z0-9]')),
+                          ],
+                          decoration: InputDecoration(
+                            labelText: 'ARN No',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: CustomColor.MainColor),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.blue),
+                            ),
+                            labelStyle: TextStyle(color: CustomColor.MainColor),
+                            prefixIcon: Icon(Icons.confirmation_number_outlined, color: CustomColor.MainColor),
+                            suffixIcon: Container(
+                              margin: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: CustomColor.MainColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: IconButton(
+                                icon: Icon(Icons.camera_alt, color: CustomColor.MainColor, size: 20),
+                                onPressed: () {
+                                  showModalBottomSheet(
+                                  context: context,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                                  ),
+                                  builder: (context) {
+                                    return Padding(
+                                      padding: const EdgeInsets.all(20),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            'Scan ARN Number',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: _buildCameraOption(
-                                                Icons.camera_alt,
-                                                'Camera',
-                                                ImageSource.camera,
+                                          const SizedBox(height: 16),
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: _buildCameraOption(
+                                                  Icons.camera_alt,
+                                                  'Camera',
+                                                  ImageSource.camera,
+                                                ),
                                               ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: _buildCameraOption(
-                                                Icons.photo_library,
-                                                'Gallery',
-                                                ImageSource.gallery,
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: _buildCameraOption(
+                                                  Icons.photo_library,
+                                                  'Gallery',
+                                                  ImageSource.gallery,
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 20),
-                                      ],
-                                    ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 20),
+                                        ],
+                                      ),
+                                    );
+                                  },
                                   );
                                 },
-                                );
-                              },
+                              ),
                             ),
                           ),
                         ),
                       )
                     else if (selectedStatus != null)
-                      TextField(
-                        key: const ValueKey('remarks_field'),
-                        controller: _remarksController,
-                        decoration: InputDecoration(
-                          labelText: 'Remarks',
-                          border: const OutlineInputBorder(),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: CustomColor.MainColor),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: CustomColor.MainColor),
-                          ),
-                          labelStyle: TextStyle(color: CustomColor.MainColor),
+                      Container(
+                        height: 55.0,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withAlpha(100),
+                              blurRadius: 1.5,
+                              spreadRadius: 1.5,
+                              offset: Offset(0.3, 0.3),
+                            ),
+                          ],
                         ),
-                        maxLines: 1,
+                        child: TextField(
+                          key: const ValueKey('remarks_field'),
+                          controller: _remarksController,
+                          decoration: InputDecoration(
+                            labelText: 'Remarks',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: CustomColor.MainColor),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.blue),
+                            ),
+                            labelStyle: TextStyle(color: CustomColor.MainColor),
+                            prefixIcon: Icon(Icons.feedback_outlined, color: CustomColor.MainColor),
+                          ),
+                          maxLines: 1,
+                        ),
                       ),
                     const SizedBox(height: 40),
 
