@@ -333,14 +333,14 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: CustomColor.MainColor),
+                          borderSide: BorderSide(color: Colors.green),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.blue),
+                          borderSide: BorderSide(color: Colors.green.shade600),
                         ),
-                        labelStyle: TextStyle(color: CustomColor.MainColor),
-                        prefixIcon: Icon(Icons.confirmation_number_outlined, color: CustomColor.MainColor),
+                        labelStyle: TextStyle(color: Colors.green.shade700),
+                        prefixIcon: Icon(Icons.confirmation_number_outlined, color: Colors.green.shade700),
                         suffixIcon: Container(
                           margin: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
@@ -401,51 +401,151 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                     ),
                   )
                 else if (selectedStatus == 'Follow up')
-                  Column(
-                    children: [
-                      ListTile(
-                        title: Text(
-                          selectedDate == null
-                              ? 'Select Date'
-                              : 'Date: ${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
-                          style: GoogleFonts.poppins(fontSize: 14),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.indigo.shade50.withOpacity(0.3),
+                          blurRadius: 6,
+                          spreadRadius: 2,
+                          offset: const Offset(0, 2),
                         ),
-                        trailing: const Icon(Icons.calendar_today),
-                        onTap: () async {
-                          final DateTime? picked = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate ?? DateTime.now(),
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2101),
-                          );
-                          if (picked != null && picked != selectedDate) {
-                            setState(() {
-                              selectedDate = picked;
-                            });
-                          }
-                        },
-                      ),
-                      ListTile(
-                        title: Text(
-                          selectedTime == null
-                              ? 'Select Time'
-                              : 'Time: ${selectedTime!.format(context)}',
-                          style: GoogleFonts.poppins(fontSize: 14),
+                      ],
+                      border: Border.all(color: Colors.indigo.shade100),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      children: [
+                        // Date selection
+                        InkWell(
+                          onTap: () async {
+                            final DateTime? picked = await showDatePicker(
+                              context: context,
+                              initialDate: selectedDate ?? DateTime.now(),
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime(2101),
+                              builder: (context, child) {
+                                return Theme(
+                                  data: Theme.of(context).copyWith(
+                                    colorScheme: ColorScheme.light(
+                                      primary: Colors.indigo, // Header background color
+                                      onPrimary: Colors.white, // Header text color
+                                      onSurface: Colors.indigo.shade800, // Body text color
+                                    ),
+                                    textButtonTheme: TextButtonThemeData(
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: Colors.indigo, // Button text color
+                                      ),
+                                    ),
+                                  ),
+                                  child: child!,
+                                );
+                              },
+                            );
+                            if (picked != null && picked != selectedDate) {
+                              setState(() {
+                                selectedDate = picked;
+                              });
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.indigo.shade50.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.indigo.shade100),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.calendar_today, color: Colors.indigo.shade700, size: 20),
+                                const SizedBox(width: 12),
+                                Text(
+                                  selectedDate == null
+                                      ? 'Select Follow-up Date'
+                                      : 'Date: ${DateFormat('dd MMM yyyy').format(selectedDate!)}',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.indigo.shade700,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Icon(Icons.arrow_drop_down, color: Colors.indigo.shade600, size: 24),
+                              ],
+                            ),
+                          ),
                         ),
-                        trailing: const Icon(Icons.access_time),
-                        onTap: () async {
-                          final TimeOfDay? picked = await showTimePicker(
-                            context: context,
-                            initialTime: selectedTime ?? TimeOfDay.now(),
-                          );
-                          if (picked != null && picked != selectedTime) {
-                            setState(() {
-                              selectedTime = picked;
-                            });
-                          }
-                        },
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        // Time selection
+                        InkWell(
+                          onTap: () async {
+                            final TimeOfDay? picked = await showTimePicker(
+                              context: context,
+                              initialTime: selectedTime ?? TimeOfDay.now(),
+                              builder: (context, child) {
+                                return Theme(
+                                  data: Theme.of(context).copyWith(
+                                    colorScheme: ColorScheme.light(
+                                      primary: Colors.indigo, // Header background color
+                                      onPrimary: Colors.white, // Header text color
+                                      onSurface: Colors.indigo.shade800, // Body text color
+                                    ),
+                                    textButtonTheme: TextButtonThemeData(
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: Colors.indigo, // Button text color
+                                      ),
+                                    ),
+                                    timePickerTheme: TimePickerThemeData(
+                                      dialBackgroundColor: Colors.indigo.shade50,
+                                      hourMinuteTextColor: Colors.indigo.shade800,
+                                      hourMinuteColor: Colors.indigo.shade100,
+                                      dialHandColor: Colors.indigo.shade700,
+                                      entryModeIconColor: Colors.indigo.shade700,
+                                    ),
+                                  ),
+                                  child: child!,
+                                );
+                              },
+                            );
+                            if (picked != null && picked != selectedTime) {
+                              setState(() {
+                                selectedTime = picked;
+                              });
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.indigo.shade50.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.indigo.shade100),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.access_time, color: Colors.indigo.shade700, size: 20),
+                                const SizedBox(width: 12),
+                                Text(
+                                  selectedTime == null
+                                      ? 'Select Follow-up Time'
+                                      : 'Time: ${selectedTime!.format(context)}',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.indigo.shade700,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Icon(Icons.arrow_drop_down, color: Colors.indigo.shade600, size: 24),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   )
                 else if (selectedStatus != null)
                   Container(
