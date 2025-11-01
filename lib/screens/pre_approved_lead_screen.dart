@@ -208,22 +208,41 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
       'Already Carded',
       'Recently Applied',
       'CNR',
-      'Follow up'
     ];
 
     return feedbackStatuses.contains(leadStatus);
   }
 
+  bool _isFollowUpLead(LeadsModel lead) {
+    return lead.leadStatus == 'Follow up' && lead.followUpDate != null;
+  }
+
   List<LeadWithCallInfo> _getFilteredLeadsByGroup(List<LeadWithCallInfo> leads) {
     switch (_selectedLeadGroup) {
       case 'New Leads':
-        return leads.where((lead) => lead.callCount == 0 && !_hasFeedback(lead.lead.leadStatus)).toList();
+        return leads.where((lead) =>
+          lead.callCount == 0 &&
+          !_hasFeedback(lead.lead.leadStatus) &&
+          !_isFollowUpLead(lead.lead)
+        ).toList();
       case 'CNR Leads':
-        return leads.where((lead) => (lead.lastCallDuration ?? 0) == 0 && (lead.callCount ?? 0) > 0 && !_hasFeedback(lead.lead.leadStatus)).toList();
+        return leads.where((lead) =>
+          (lead.lastCallDuration ?? 0) == 0 &&
+          (lead.callCount ?? 0) > 0 &&
+          !_hasFeedback(lead.lead.leadStatus) &&
+          !_isFollowUpLead(lead.lead)
+        ).toList();
       case 'Used Leads':
         return leads.where((lead) => _hasFeedback(lead.lead.leadStatus)).toList();
+      case 'Follow Up':
+        return leads.where((lead) => _isFollowUpLead(lead.lead)).toList();
       default:
-        return leads.where((lead) => (lead.callCount ?? 0) > 0 && (lead.lastCallDuration ?? 0) > 0 && !_hasFeedback(lead.lead.leadStatus)).toList();
+        return leads.where((lead) =>
+          (lead.callCount ?? 0) > 0 &&
+          (lead.lastCallDuration ?? 0) > 0 &&
+          !_hasFeedback(lead.lead.leadStatus) &&
+          !_isFollowUpLead(lead.lead)
+        ).toList();
     }
   }
 
