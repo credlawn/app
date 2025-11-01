@@ -1,0 +1,51 @@
+import 'package:flutter/material.dart';
+import 'package:credlawn/screens/components/lead_list_item.dart';
+import 'package:credlawn/helpers/lead_data_helper.dart';
+
+class LeadList extends StatelessWidget {
+  final List<LeadWithCallInfo> leads;
+  final String? expandedLeadId;
+  final Function(String) onExpandItem;
+  final VoidCallback onNavigate;
+
+  const LeadList({
+    super.key,
+    required this.leads,
+    required this.expandedLeadId,
+    required this.onExpandItem,
+    required this.onNavigate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (leads.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Column(
+        children: [
+          ...leads.map((leadWithInfo) {
+            return Column(
+              children: [
+                LeadListItem(
+                  leadWithInfo: leadWithInfo,
+                  isExpanded: expandedLeadId == leadWithInfo.lead.mobileNo,
+                  onTap: () => onExpandItem(leadWithInfo.lead.mobileNo),
+                  onNavigate: onNavigate,
+                ),
+                if (leadWithInfo != leads.last)
+                  Container(
+                    height: 0.5,
+                    color: Colors.grey.shade300,
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+              ],
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
+}

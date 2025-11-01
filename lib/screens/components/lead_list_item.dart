@@ -170,7 +170,48 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
   }
 
   Widget _buildStatusBadge() {
-    if (widget.leadWithInfo.callCount == 0) {
+    if (_hasFeedback(widget.leadWithInfo.lead.leadStatus)) {
+      return Padding(
+        padding: const EdgeInsets.only(left: 8.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                widget.leadWithInfo.callCount > 99 ? '99+' : '${widget.leadWithInfo.callCount}',
+                style: GoogleFonts.poppins(
+                  color: Colors.blue,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.purple,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                widget.leadWithInfo.lead.leadStatus ?? '',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    else if (widget.leadWithInfo.callCount == 0) {
       return Padding(
         padding: const EdgeInsets.only(left: 8.0),
         child: Container(
@@ -251,6 +292,25 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
         ),
       );
     }
+  }
+
+  bool _hasFeedback(String? leadStatus) {
+    if (leadStatus == null || leadStatus.isEmpty) {
+      return false;
+    }
+
+    final feedbackStatuses = [
+      'IP Approved',
+      'IP Decline',
+      'Customer Denied',
+      'Docs Not Available',
+      'Already Carded',
+      'Recently Applied',
+      'CNR',
+      'Follow up'
+    ];
+
+    return feedbackStatuses.contains(leadStatus);
   }
 
   Widget _buildHeader() {

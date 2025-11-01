@@ -16,6 +16,10 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:credlawn/screens/components/lead_list_item.dart';
+import 'package:credlawn/screens/components/lead_group_chips.dart';
+import 'package:credlawn/screens/components/lead_list.dart';
+import 'package:credlawn/screens/components/error_view.dart';
+import 'package:credlawn/screens/components/empty_view.dart';
 
 class PreApprovedLeadsScreen extends StatefulWidget {
   final User user;
@@ -33,6 +37,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
   final TextEditingController _searchController = TextEditingController();
   List<LeadWithCallInfo> _allLeads = [];
   List<LeadWithCallInfo> _filteredLeads = [];
+  String _selectedLeadGroup = 'New Leads';
 
   @override
   void initState() {
@@ -190,63 +195,36 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
     });
   }
 
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'New Lead':
-        return Colors.blue;
-      case 'CNR':
-        return Colors.red;
-      default:
-        return Colors.grey.shade600;
+  bool _hasFeedback(String? leadStatus) {
+    if (leadStatus == null || leadStatus.isEmpty) {
+      return false;
     }
+
+    final feedbackStatuses = [
+      'IP Approved',
+      'IP Decline',
+      'Customer Denied',
+      'Docs Not Available',
+      'Already Carded',
+      'Recently Applied',
+      'CNR',
+      'Follow up'
+    ];
+
+    return feedbackStatuses.contains(leadStatus);
   }
 
-  Widget _buildLeadGroup({required String title, required List<LeadWithCallInfo> leads}) {
-    if (leads.isEmpty) {
-      return SizedBox.shrink();
+  List<LeadWithCallInfo> _getFilteredLeadsByGroup(List<LeadWithCallInfo> leads) {
+    switch (_selectedLeadGroup) {
+      case 'New Leads':
+        return leads.where((lead) => lead.callCount == 0 && !_hasFeedback(lead.lead.leadStatus)).toList();
+      case 'CNR Leads':
+        return leads.where((lead) => (lead.lastCallDuration ?? 0) == 0 && (lead.callCount ?? 0) > 0 && !_hasFeedback(lead.lead.leadStatus)).toList();
+      case 'Used Leads':
+        return leads.where((lead) => _hasFeedback(lead.lead.leadStatus)).toList();
+      default:
+        return leads.where((lead) => (lead.callCount ?? 0) > 0 && (lead.lastCallDuration ?? 0) > 0 && !_hasFeedback(lead.lead.leadStatus)).toList();
     }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-        ),
-        Card(
-          margin: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: Column(
-            children: [
-              ...leads.map((leadWithInfo) {
-                return Column(
-                  children: [
-                    LeadListItem(
-                      leadWithInfo: leadWithInfo,
-                      isExpanded: _expandedLeadId == leadWithInfo.lead.mobileNo,
-                      onTap: () => _expandItem(leadWithInfo.lead.mobileNo),
-                      onNavigate: _closeExpandedItem,
-                    ),
-                    if (leadWithInfo != leads.last)
-                      Container(
-                        height: 0.5,
-                        color: Colors.grey.shade300,
-                        margin: const EdgeInsets.symmetric(horizontal: 16),
-                      ),
-                  ],
-                );
-              }).toList(),
-            ],
-          ),
-        ),
-      ],
-    );
   }
 
   AppBar _buildAppBar() {
@@ -311,64 +289,54 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: SpinKitCircle(color: CustomColor.MainColor, size: 50));
           } else if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, color: Colors.red, size: 60),
-                  SizedBox(height: 16),
-                  Text('Error: ${snapshot.error}', style: GoogleFonts.poppins(fontSize: 16)),
-                  SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: _refreshLeads,
-                    child: Text('Retry', style: GoogleFonts.poppins()),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: CustomColor.MainColor,
-                    ),
-                  ),
-                ],
-              ),
+            return ErrorView(
+              errorMessage: 'Error: ${snapshot.error}',
+              onRetry: _refreshLeads,
             );
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.people_outline, color: Colors.grey, size: 60),
-                  SizedBox(height: 16),
-                  Text('No leads available.', style: GoogleFonts.poppins(fontSize: 16)),
-                  SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: _refreshLeads,
-                    child: Text('Refresh', style: GoogleFonts.poppins()),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: CustomColor.MainColor,
-                    ),
-                  ),
-                ],
-              ),
+            return EmptyView(
+              message: 'No leads available.',
+              onRefresh: _refreshLeads,
             );
           } else {
             _allLeads = snapshot.data!;
             _filteredLeads = _allLeads;
 
+            final filteredLeads = _getFilteredLeadsByGroup(_filteredLeads);
+
             return RefreshIndicator(
               onRefresh: _refreshLeads,
               child: ListView(
-                padding: EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: 8),
                 children: [
-                  _buildLeadGroup(
-                    title: 'New Leads',
-                    leads: _filteredLeads.where((lead) => lead.callCount == 0).toList(),
+                  LeadGroupChips(
+                    selectedGroup: _selectedLeadGroup,
+                    onGroupSelected: (group) {
+                      setState(() {
+                        _selectedLeadGroup = group;
+                      });
+                    },
                   ),
-                  _buildLeadGroup(
-                    title: 'CNR Leads',
-                    leads: _filteredLeads.where((lead) => (lead.lastCallDuration ?? 0) == 0 && (lead.callCount ?? 0) > 0).toList(),
-                  ),
-                  _buildLeadGroup(
-                    title: 'Called Leads',
-                    leads: _filteredLeads.where((lead) => (lead.callCount ?? 0) > 0 && (lead.lastCallDuration ?? 0) > 0).toList(),
-                  ),
+                  if (filteredLeads.isNotEmpty)
+                    LeadList(
+                      leads: filteredLeads,
+                      expandedLeadId: _expandedLeadId,
+                      onExpandItem: _expandItem,
+                      onNavigate: _closeExpandedItem,
+                    )
+                  else
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 32.0),
+                        child: Text(
+                          'No leads available in this category.',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             );

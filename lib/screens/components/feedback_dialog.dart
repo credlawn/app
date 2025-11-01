@@ -31,7 +31,6 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
     'Docs Not Available',
     'Already Carded',
     'Recently Applied',
-    'CNR',
     'Follow up'
   ];
 
