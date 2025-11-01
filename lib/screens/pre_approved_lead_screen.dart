@@ -201,6 +201,54 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
     }
   }
 
+  Widget _buildLeadGroup({required String title, required List<LeadWithCallInfo> leads}) {
+    if (leads.isEmpty) {
+      return SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Column(
+            children: [
+              ...leads.map((leadWithInfo) {
+                return Column(
+                  children: [
+                    LeadListItem(
+                      leadWithInfo: leadWithInfo,
+                      isExpanded: _expandedLeadId == leadWithInfo.lead.mobileNo,
+                      onTap: () => _expandItem(leadWithInfo.lead.mobileNo),
+                      onNavigate: _closeExpandedItem,
+                    ),
+                    if (leadWithInfo != leads.last)
+                      Container(
+                        height: 0.5,
+                        color: Colors.grey.shade300,
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                      ),
+                  ],
+                );
+              }).toList(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   AppBar _buildAppBar() {
     if (_isSearching) {
       return AppBar(
@@ -302,31 +350,26 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
             );
           } else {
             _allLeads = snapshot.data!;
-            _allLeads.sort((a, b) {
-              final statusOrder = {
-                'New Lead': 0,
-                'CNR': 1,
-              };
-              final aOrder = statusOrder[a.lead.leadStatus] ?? 2;
-              final bOrder = statusOrder[b.lead.leadStatus] ?? 2;
-              return aOrder.compareTo(bOrder);
-            });
             _filteredLeads = _allLeads;
 
             return RefreshIndicator(
               onRefresh: _refreshLeads,
-              child: ListView.builder(
+              child: ListView(
                 padding: EdgeInsets.only(top: 8),
-                itemCount: _filteredLeads.length,
-                itemBuilder: (context, index) {
-                  final leadWithInfo = _filteredLeads[index];
-                  return LeadListItem(
-                    leadWithInfo: leadWithInfo,
-                    isExpanded: _expandedLeadId == leadWithInfo.lead.mobileNo,
-                    onTap: () => _expandItem(leadWithInfo.lead.mobileNo),
-                    onNavigate: _closeExpandedItem,
-                  );
-                },
+                children: [
+                  _buildLeadGroup(
+                    title: 'New Leads',
+                    leads: _filteredLeads.where((lead) => lead.callCount == 0).toList(),
+                  ),
+                  _buildLeadGroup(
+                    title: 'CNR Leads',
+                    leads: _filteredLeads.where((lead) => (lead.lastCallDuration ?? 0) == 0 && (lead.callCount ?? 0) > 0).toList(),
+                  ),
+                  _buildLeadGroup(
+                    title: 'Called Leads',
+                    leads: _filteredLeads.where((lead) => (lead.callCount ?? 0) > 0 && (lead.lastCallDuration ?? 0) > 0).toList(),
+                  ),
+                ],
               ),
             );
           }

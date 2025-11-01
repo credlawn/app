@@ -386,13 +386,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
           decoration: BoxDecoration(
             color: _backgroundColorAnimation.value,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            border: Border.all(color: Colors.transparent),
           ),
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           child: Column(
@@ -402,11 +396,6 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                 sizeFactor: _heightFactorAnimation,
                 axis: Axis.vertical,
                 child: widget.isExpanded ? _buildExpandedSection() : const SizedBox.shrink(),
-              ),
-              Container(
-                margin: const EdgeInsets.only(left: 44),
-                height: 0.5,
-                color: Colors.grey.shade300,
               ),
             ],
           ),
