@@ -255,17 +255,51 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey.shade50,
       appBar: _buildAppBar(),
       body: FutureBuilder<List<LeadWithCallInfo>>(
         future: _leadsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: SpinKitCircle(color: CustomColor.MainColor));
+            return Center(child: SpinKitCircle(color: CustomColor.MainColor, size: 50));
           } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, color: Colors.red, size: 60),
+                  SizedBox(height: 16),
+                  Text('Error: ${snapshot.error}', style: GoogleFonts.poppins(fontSize: 16)),
+                  SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: _refreshLeads,
+                    child: Text('Retry', style: GoogleFonts.poppins()),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: CustomColor.MainColor,
+                    ),
+                  ),
+                ],
+              ),
+            );
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No leads available.'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.people_outline, color: Colors.grey, size: 60),
+                  SizedBox(height: 16),
+                  Text('No leads available.', style: GoogleFonts.poppins(fontSize: 16)),
+                  SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: _refreshLeads,
+                    child: Text('Refresh', style: GoogleFonts.poppins()),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: CustomColor.MainColor,
+                    ),
+                  ),
+                ],
+              ),
+            );
           } else {
             _allLeads = snapshot.data!;
             _allLeads.sort((a, b) {
@@ -282,6 +316,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
             return RefreshIndicator(
               onRefresh: _refreshLeads,
               child: ListView.builder(
+                padding: EdgeInsets.only(top: 8),
                 itemCount: _filteredLeads.length,
                 itemBuilder: (context, index) {
                   final leadWithInfo = _filteredLeads[index];
@@ -296,6 +331,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
             );
           }
         },
-      ),    );
+      ),
+    );
   }
 }

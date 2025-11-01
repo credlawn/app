@@ -31,9 +31,9 @@ class LeadListItem extends StatefulWidget {
 
 class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _iconFadeAnimation;
-  late Animation<double> _nameSizeAnimation;
-  late Animation<double> _namePaddingAnimation;
+  late Animation<double> _iconTurnsAnimation;
+  late Animation<double> _heightFactorAnimation;
+  late Animation<Color?> _backgroundColorAnimation;
 
   @override
   void initState() {
@@ -43,11 +43,21 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
       vsync: this,
     );
 
-    final curvedAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+    _iconTurnsAnimation = Tween<double>(begin: 0.0, end: 0.5).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
 
-    _iconFadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(curvedAnimation);
-    _nameSizeAnimation = Tween<double>(begin: 15.0, end: 17.0).animate(curvedAnimation);
-    _namePaddingAnimation = Tween<double>(begin: 12.0, end: 0.0).animate(curvedAnimation);
+    _heightFactorAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
+
+    _backgroundColorAnimation = ColorTween(
+      begin: Colors.white,
+      end: Colors.grey.shade50,
+    ).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
 
     if (widget.isExpanded) {
       _controller.value = 1.0;
@@ -137,16 +147,24 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
     required VoidCallback onPressed,
   }) {
     return Container(
-      width: 42,
-      height: 42,
+      width: 36,
+      height: 36,
       decoration: BoxDecoration(
         color: backgroundColor,
         shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: IconButton(
         onPressed: onPressed,
-        icon: Icon(icon, color: iconColor, size: 22),
+        icon: Icon(icon, color: iconColor, size: 18),
         padding: EdgeInsets.zero,
+        splashColor: iconColor.withOpacity(0.2),
       ),
     );
   }
@@ -156,17 +174,16 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
       return Padding(
         padding: const EdgeInsets.only(left: 8.0),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: Colors.green,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             'New',
             style: GoogleFonts.poppins(
               color: Colors.white,
-
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -180,33 +197,32 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: Colors.blue.shade100,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 widget.leadWithInfo.callCount > 99 ? '99+' : '${widget.leadWithInfo.callCount}',
                 style: GoogleFonts.poppins(
                   color: Colors.blue,
-
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-            const SizedBox(width: 16), 
+            const SizedBox(width: 12),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: Colors.orange,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 'CNR',
                 style: GoogleFonts.poppins(
                   color: Colors.white,
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -219,17 +235,16 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
       return Padding(
         padding: const EdgeInsets.only(left: 8.0),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: Colors.blue.shade100,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             widget.leadWithInfo.callCount > 99 ? '99+' : '${widget.leadWithInfo.callCount}',
             style: GoogleFonts.poppins(
               color: Colors.blue,
-
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -245,7 +260,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            SizedBox(width: _namePaddingAnimation.value),
+            const SizedBox(width: 12),
             Expanded(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -255,7 +270,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                       _toTitleCase(widget.leadWithInfo.lead.customerName),
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w500,
-                        fontSize: _nameSizeAnimation.value,
+                        fontSize: 16,
                         color: Colors.black87,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -263,13 +278,6 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                   ),
                   _buildStatusBadge(),
                 ],
-              ),
-            ),
-            Text(
-              _formatTime(widget.leadWithInfo.lead.allocationDate),
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: Colors.grey.shade600,
               ),
             ),
           ],
@@ -374,22 +382,34 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        return Column(
-          children: [
-            _buildHeader(),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              child: widget.isExpanded
-                  ? _buildExpandedSection()
-                  : const SizedBox.shrink(),
-            ),
-            Container(
-              margin: const EdgeInsets.only(left: 44),
-              height: 0.5,
-              color: Colors.grey.shade300,
-            ),
-          ],
+        return Container(
+          decoration: BoxDecoration(
+            color: _backgroundColorAnimation.value,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Column(
+            children: [
+              _buildHeader(),
+              SizeTransition(
+                sizeFactor: _heightFactorAnimation,
+                axis: Axis.vertical,
+                child: widget.isExpanded ? _buildExpandedSection() : const SizedBox.shrink(),
+              ),
+              Container(
+                margin: const EdgeInsets.only(left: 44),
+                height: 0.5,
+                color: Colors.grey.shade300,
+              ),
+            ],
+          ),
         );
       },
     );
