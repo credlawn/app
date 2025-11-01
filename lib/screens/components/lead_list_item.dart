@@ -397,21 +397,22 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                   },
                 ),
                 const SizedBox(width: 32), // Increased gap
-                _buildSmallActionButton(
-                  icon: Icons.feedback,
-                  backgroundColor: Colors.orange.withOpacity(0.1),
-                  iconColor: Colors.orange,
-                  onPressed: () {
-                    widget.onNavigate();
-                    showDialog<bool>(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (BuildContext dialogContext) {
-                        return FeedbackDialog(mobileNo: widget.leadWithInfo.lead.mobileNo);
-                      },
-                    );
-                  },
-                ),
+_buildSmallActionButton(
+  icon: Icons.feedback,
+  backgroundColor: Colors.orange.withOpacity(0.1),
+  iconColor: Colors.orange,
+  onPressed: () {
+    widget.onNavigate();
+    Navigator.of(context).push(
+      MaterialPageRoute<bool>(
+        fullscreenDialog: true,
+        builder: (BuildContext context) {
+          return FeedbackDialog(mobileNo: widget.leadWithInfo.lead.mobileNo);
+        },
+      ),
+    );
+  },
+),
                 const SizedBox(width: 32), // Increased gap
                 _buildSmallActionButton(
                   icon: Icons.history,
