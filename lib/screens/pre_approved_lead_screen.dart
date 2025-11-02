@@ -154,34 +154,25 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
 
 
       final apiLeads = await fetchEmployeeLeadsFromApi(currentUser.userId, currentUser.sid);
-      
-      
-
-
-
-      final localActiveFrappeIds = await DatabaseService.instance.leadsRepository.getFrappeIdsOfActiveLeads();
-      
-
       final Set<String> apiFrappeIds = apiLeads.map((lead) => lead.frappeId).toSet();
 
-
+      // Upsert all leads from the server first
       for (final apiLead in apiLeads) {
         await DatabaseService.instance.leadsRepository.upsertLeadFromApi(apiLead);
       }
 
-
-
-      for (final localFrappeId in localActiveFrappeIds) {
-        if (!apiFrappeIds.contains(localFrappeId)) {
-          final result = await DatabaseService.instance.leadsRepository.markLeadAsInactive(localFrappeId);
-          
+      // Now, get the full list of local leads and mark the inactive ones
+      final allLocalLeads = await DatabaseService.instance.leadsRepository.getAllLeads();
+      for (final localLead in allLocalLeads) {
+        if (localLead.allocationStatus == 'Active' && !apiFrappeIds.contains(localLead.frappeId)) {
+          await DatabaseService.instance.leadsRepository.markLeadAsInactive(localLead.frappeId);
         }
       }
       
 
 
       final leadsForDisplay = await getLeadsWithCallCounts();
-
+      print('Final data for UI: ${leadsForDisplay.map((l) => {'lead': l.lead.toMap(), 'callCount': l.callCount, 'lastCallDuration': l.lastCallDuration}).toList()}');
       return leadsForDisplay;
     } catch (e) {
 
@@ -200,7 +191,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
   }
 
   bool _hasFeedback(String? leadStatus) {
-    if (leadStatus == null || leadStatus.isEmpty) {
+    if (leadStatus == null || leadStatus.trim().isEmpty) {
       return false;
     }
 
@@ -240,13 +231,15 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
         return leads.where((lead) => _hasFeedback(lead.lead.leadStatus)).toList();
       case 'Follow Up':
         return leads.where((lead) => _isFollowUpLead(lead.lead)).toList();
-      default:
+      case 'Called':
         return leads.where((lead) =>
           (lead.callCount ?? 0) > 0 &&
           (lead.lastCallDuration ?? 0) > 0 &&
           !_hasFeedback(lead.lead.leadStatus) &&
           !_isFollowUpLead(lead.lead)
         ).toList();
+      default:
+        return leads; // Show all leads if no specific chip is selected
     }
   }
 

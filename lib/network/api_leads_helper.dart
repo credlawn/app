@@ -29,14 +29,15 @@ Future<List<LeadsModel>> fetchEmployeeLeadsFromApi(String userId, String sid) as
 
 
     if (response.statusCode == 200) {
+      print('Raw JSON response from server: ${response.body}');
       final Map<String, dynamic> jsonResponse = json.decode(response.body);
-      
 
       if (jsonResponse['message'] != null) {
         final List<dynamic> message = jsonResponse['message'];
         final List<LeadsModel> leads = message
             .map((item) => LeadsModel.fromJson(item))
             .toList();
+        print('Successfully parsed ${leads.length} leads.');
         return leads;
       } else {
         return Future.error('API Response is missing the "message" key.');

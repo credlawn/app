@@ -41,6 +41,8 @@ class LeadGroupChips extends StatelessWidget {
                   children: [
                     _buildLeadGroupChip('New Leads', Colors.green, FontAwesomeIcons.userPlus),
                     const SizedBox(width: 8),
+                    _buildLeadGroupChip('Called', Colors.teal, FontAwesomeIcons.phoneVolume),
+                    const SizedBox(width: 8),
                     _buildLeadGroupChip('CNR Leads', Colors.orange, FontAwesomeIcons.phoneSlash),
                     const SizedBox(width: 8),
                     _buildLeadGroupChip('Used Leads', Colors.purple, FontAwesomeIcons.checkCircle),
