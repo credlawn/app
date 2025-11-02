@@ -154,10 +154,13 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
 
 
       final apiLeads = await fetchEmployeeLeadsFromApi(currentUser.userId, currentUser.sid);
+      
+      
 
 
 
       final localActiveFrappeIds = await DatabaseService.instance.leadsRepository.getFrappeIdsOfActiveLeads();
+      
 
       final Set<String> apiFrappeIds = apiLeads.map((lead) => lead.frappeId).toSet();
 
@@ -170,10 +173,11 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
 
       for (final localFrappeId in localActiveFrappeIds) {
         if (!apiFrappeIds.contains(localFrappeId)) {
-          await DatabaseService.instance.leadsRepository.markLeadAsInactive(localFrappeId);
-
+          final result = await DatabaseService.instance.leadsRepository.markLeadAsInactive(localFrappeId);
+          
         }
       }
+      
 
 
       final leadsForDisplay = await getLeadsWithCallCounts();

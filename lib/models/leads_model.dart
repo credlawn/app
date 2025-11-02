@@ -24,6 +24,9 @@ class LeadsModel {
   final String syncError;
   final String followUpDate;
   final String followUpTime;
+  final String bankStatus;
+  final String bankStatusDate;
+  final int removeLead;
 
   LeadsModel({
     this.id,
@@ -50,6 +53,9 @@ class LeadsModel {
     required this.syncError,
     required this.followUpDate,
     required this.followUpTime,
+    required this.bankStatus,
+    required this.bankStatusDate,
+    required this.removeLead,
   });
 
   factory LeadsModel.fromJson(Map<String, dynamic> json) {
@@ -77,6 +83,9 @@ class LeadsModel {
       syncError: '',
       followUpDate: json['follow_up_date'] ?? '',
       followUpTime: json['follow_up_time'] ?? '',
+      bankStatus: json['bank_status'] ?? '',
+      bankStatusDate: json['bank_status_date'] ?? '',
+      removeLead: json['remove_lead'] ?? 0,
     );
   }
 
@@ -106,6 +115,9 @@ class LeadsModel {
       syncError: map['sync_error'] ?? '',
       followUpDate: map['follow_up_date'] ?? '',
       followUpTime: map['follow_up_time'] ?? '',
+      bankStatus: map['bank_status'] ?? '',
+      bankStatusDate: map['bank_status_date'] ?? '',
+      removeLead: 0, // This field is only from the API, not stored locally
     );
   }
 
@@ -134,6 +146,8 @@ class LeadsModel {
       'sync_error': syncError,
       'follow_up_date': followUpDate,
       'follow_up_time': followUpTime,
+      'bank_status': bankStatus,
+      'bank_status_date': bankStatusDate,
     };
   }
 
@@ -162,6 +176,9 @@ class LeadsModel {
     String? syncError,
     String? followUpDate,
     String? followUpTime,
+    String? bankStatus,
+    String? bankStatusDate,
+    int? removeLead,
   }) {
     return LeadsModel(
       id: id ?? this.id,
@@ -188,6 +205,9 @@ class LeadsModel {
       syncError: syncError ?? this.syncError,
       followUpDate: followUpDate ?? this.followUpDate,
       followUpTime: followUpTime ?? this.followUpTime,
+      bankStatus: bankStatus ?? this.bankStatus,
+      bankStatusDate: bankStatusDate ?? this.bankStatusDate,
+      removeLead: removeLead ?? this.removeLead,
     );
   }
 }

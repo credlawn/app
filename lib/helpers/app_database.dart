@@ -18,7 +18,7 @@ class AppDatabase {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 7, onCreate: _createDB, onUpgrade: _onUpgrade);
+    return await openDatabase(path, version: 8, onCreate: _createDB, onUpgrade: _onUpgrade);
   }
 
   Future _createDB(Database db, int version) async {
@@ -65,7 +65,9 @@ CREATE TABLE leads (
   last_synced_at $intType DEFAULT 0,
   sync_error $textType DEFAULT '',
   follow_up_date $textType DEFAULT '',
-  follow_up_time $textType DEFAULT ''
+  follow_up_time $textType DEFAULT '',
+  bank_status $textType DEFAULT '',
+  bank_status_date $textType DEFAULT ''
 )
 ''');
 
@@ -136,6 +138,10 @@ CREATE TABLE leads (
     }
     if (oldVersion < 7) {
       await db.execute('ALTER TABLE case_login ADD COLUMN sync_id TEXT UNIQUE');
+    }
+    if (oldVersion < 8) {
+      await db.execute('ALTER TABLE leads ADD COLUMN bank_status TEXT NOT NULL DEFAULT ""');
+      await db.execute('ALTER TABLE leads ADD COLUMN bank_status_date TEXT NOT NULL DEFAULT ""');
     }
   }
 

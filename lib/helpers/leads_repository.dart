@@ -39,6 +39,7 @@ class LeadsRepository {
   Future<List<LeadsModel>> getAllLeads() async {
     final db = await _appDatabase.database;
     final List<Map<String, dynamic>> maps = await db.query('leads');
+    
     return List.generate(maps.length, (i) {
       return LeadsModel.fromMap(maps[i]);
     });
@@ -55,6 +56,7 @@ class LeadsRepository {
 
   Future<int> markLeadAsInactive(String frappeId) async {
     final db = await _appDatabase.database;
+    
     return db.update(
       'leads',
       {'allocation_status': 'Inactive'},
@@ -64,8 +66,15 @@ class LeadsRepository {
   }
 
   Future<void> upsertLeadFromApi(LeadsModel apiLead) async {
+    if (apiLead.removeLead == 1) {
+      await deleteLead(apiLead.frappeId);
+      
+      return;
+    }
+
     final db = await _appDatabase.database;
     final existingLead = await getLeadByFrappeId(apiLead.frappeId);
+    
 
     if (existingLead != null) {
       final updatedLead = apiLead.copyWith(
@@ -82,6 +91,8 @@ class LeadsRepository {
         allocationStatus: 'Active',
         followUpDate: existingLead.followUpDate,
         followUpTime: existingLead.followUpTime,
+        bankStatus: apiLead.bankStatus, // Update from server
+        bankStatusDate: apiLead.bankStatusDate, // Update from server
       );
       await updateLead(updatedLead);
     } else {
@@ -134,6 +145,7 @@ class LeadsRepository {
       where: 'allocation_status = ?',
       whereArgs: ['Active'],
     );
+    
     return maps.map((map) => map['frappe_id'] as String).toList();
   }
 

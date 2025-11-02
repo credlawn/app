@@ -30,16 +30,16 @@ Future<List<LeadsModel>> fetchEmployeeLeadsFromApi(String userId, String sid) as
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> jsonResponse = json.decode(response.body);
+      
 
-      if (jsonResponse['message'] != null && jsonResponse['message'].isNotEmpty) {
-        final List<LeadsModel> leads = (jsonResponse['message'] as List)
+      if (jsonResponse['message'] != null) {
+        final List<dynamic> message = jsonResponse['message'];
+        final List<LeadsModel> leads = message
             .map((item) => LeadsModel.fromJson(item))
             .toList();
-
         return leads;
-
       } else {
-        return Future.error('API Response message is empty or null.');
+        return Future.error('API Response is missing the "message" key.');
       }
     } else {
       return Future.error('Failed to load leads from API: ${response.statusCode}');
@@ -89,8 +89,10 @@ Future<bool> syncLeadUpdateToServer(LeadsModel lead, String sid) async {
         'follow_up_time': lead.followUpTime,
       }),
     );
+    
 
     if (response.statusCode == 200) {
+      
 
       final Map<String, dynamic> jsonResponse = json.decode(response.body);
 
