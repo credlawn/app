@@ -27,6 +27,8 @@ class LeadsModel {
   final String bankStatus;
   final String bankStatusDate;
   final int removeLead;
+  final int? lastFeedbackId; // New field to store the ID of the last feedback
+  final int? lastFeedbackTimestamp; // New field to store the timestamp of the last feedback
 
   LeadsModel({
     this.id,
@@ -56,6 +58,8 @@ class LeadsModel {
     required this.bankStatus,
     required this.bankStatusDate,
     required this.removeLead,
+    this.lastFeedbackId, // Initialize new field
+    this.lastFeedbackTimestamp, // Initialize new field
   });
 
   factory LeadsModel.fromJson(Map<String, dynamic> json) {
@@ -86,6 +90,8 @@ class LeadsModel {
       bankStatus: json['bank_status'] ?? '',
       bankStatusDate: json['bank_status_date'] ?? '',
       removeLead: json['remove_lead'] ?? 0,
+      lastFeedbackId: null, // New field, not from API initially
+      lastFeedbackTimestamp: null, // New field, not from API initially
     );
   }
 
@@ -118,6 +124,8 @@ class LeadsModel {
       bankStatus: map['bank_status'] ?? '',
       bankStatusDate: map['bank_status_date'] ?? '',
       removeLead: 0, // This field is only from the API, not stored locally
+      lastFeedbackId: map['last_feedback_id'] as int?, // New field
+      lastFeedbackTimestamp: map['last_feedback_timestamp'] as int?, // New field
     );
   }
 
@@ -148,6 +156,8 @@ class LeadsModel {
       'follow_up_time': followUpTime,
       'bank_status': bankStatus,
       'bank_status_date': bankStatusDate,
+      'last_feedback_id': lastFeedbackId, // New field
+      'last_feedback_timestamp': lastFeedbackTimestamp, // New field
     };
   }
 
@@ -179,6 +189,8 @@ class LeadsModel {
     String? bankStatus,
     String? bankStatusDate,
     int? removeLead,
+    int? lastFeedbackId, // New field
+    int? lastFeedbackTimestamp, // New field
   }) {
     return LeadsModel(
       id: id ?? this.id,
@@ -208,6 +220,8 @@ class LeadsModel {
       bankStatus: bankStatus ?? this.bankStatus,
       bankStatusDate: bankStatusDate ?? this.bankStatusDate,
       removeLead: removeLead ?? this.removeLead,
+      lastFeedbackId: lastFeedbackId ?? this.lastFeedbackId, // New field
+      lastFeedbackTimestamp: lastFeedbackTimestamp ?? this.lastFeedbackTimestamp, // New field
     );
   }
 }

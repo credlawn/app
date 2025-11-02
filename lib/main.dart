@@ -20,6 +20,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:credlawn/models/fcm_log_model.dart';
+import 'package:credlawn/helpers/database_service.dart'; // Import DatabaseService
+import 'package:credlawn/helpers/app_lifecycle_handler.dart'; // Import AppLifecycleHandler
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -48,6 +50,7 @@ Future<String?> _getInitialNotificationPayload() async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await DatabaseService.instance.initialize(); // Initialize DatabaseService and its repositories
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/launcher_icon');
   const InitializationSettings initializationSettings = InitializationSettings(
@@ -140,6 +143,7 @@ void main() async {
   String? token = await messaging.getToken();
   await CallLogSyncManager.initialize();
   await CallLogSyncManager.syncCallLogs();
+  AppLifecycleHandler.initialize(); // Initialize app lifecycle handler
   final String? pendingFeedbackMobile = await AppStateManager.getPendingFeedbackMobile();
   var status = await Permission.phone.status;
   if (!status.isGranted) {

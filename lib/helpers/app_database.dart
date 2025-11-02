@@ -18,7 +18,7 @@ class AppDatabase {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 8, onCreate: _createDB, onUpgrade: _onUpgrade);
+    return await openDatabase(path, version: 12, onCreate: _createDB, onUpgrade: _onUpgrade);
   }
 
   Future _createDB(Database db, int version) async {
@@ -67,7 +67,9 @@ CREATE TABLE leads (
   follow_up_date $textType DEFAULT '',
   follow_up_time $textType DEFAULT '',
   bank_status $textType DEFAULT '',
-  bank_status_date $textType DEFAULT ''
+  bank_status_date $textType DEFAULT '',
+  last_feedback_id INTEGER,
+  last_feedback_timestamp INTEGER
 )
 ''');
 
@@ -88,6 +90,27 @@ CREATE TABLE case_login (
   modified $textType DEFAULT ''
 )
 ''');
+
+    // Create feedback table
+    await db.execute('''
+      CREATE TABLE feedback(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        lead_frappe_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        remarks TEXT,
+        arn_no TEXT,
+        follow_up_date TEXT,
+        follow_up_time TEXT,
+        timestamp INTEGER NOT NULL,
+        user_id TEXT,
+        mobile_no TEXT,
+        customer_name TEXT,
+        is_synced INTEGER DEFAULT 0,
+        sync_attempts INTEGER DEFAULT 0,
+        last_sync_attempt INTEGER DEFAULT 0,
+        server_id TEXT
+      )
+    ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -142,6 +165,41 @@ CREATE TABLE leads (
     if (oldVersion < 8) {
       await db.execute('ALTER TABLE leads ADD COLUMN bank_status TEXT NOT NULL DEFAULT ""');
       await db.execute('ALTER TABLE leads ADD COLUMN bank_status_date TEXT NOT NULL DEFAULT ""');
+    }
+    if (oldVersion < 9) {
+      // Create feedback table for existing databases
+      await db.execute('''
+        CREATE TABLE feedback(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          lead_frappe_id TEXT NOT NULL,
+          status TEXT NOT NULL,
+          remarks TEXT,
+          arn_no TEXT,
+          follow_up_date TEXT,
+          follow_up_time TEXT,
+          timestamp INTEGER NOT NULL,
+          user_id TEXT,
+          mobile_no TEXT,
+          customer_name TEXT
+        )
+      ''');
+    }
+    if (oldVersion < 10) {
+      // Add last_feedback_id and last_feedback_timestamp columns to leads table
+      await db.execute('ALTER TABLE leads ADD COLUMN last_feedback_id INTEGER');
+      await db.execute('ALTER TABLE leads ADD COLUMN last_feedback_timestamp INTEGER');
+    }
+    if (oldVersion < 11) {
+      // Add mobile_no and customer_name columns to feedback table
+      await db.execute('ALTER TABLE feedback ADD COLUMN mobile_no TEXT');
+      await db.execute('ALTER TABLE feedback ADD COLUMN customer_name TEXT');
+    }
+    if (oldVersion < 12) {
+      // Add sync tracking columns to feedback table
+      await db.execute('ALTER TABLE feedback ADD COLUMN is_synced INTEGER DEFAULT 0');
+      await db.execute('ALTER TABLE feedback ADD COLUMN sync_attempts INTEGER DEFAULT 0');
+      await db.execute('ALTER TABLE feedback ADD COLUMN last_sync_attempt INTEGER DEFAULT 0');
+      await db.execute('ALTER TABLE feedback ADD COLUMN server_id TEXT');
     }
   }
 

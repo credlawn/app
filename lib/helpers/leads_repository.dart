@@ -113,6 +113,8 @@ class LeadsRepository {
     String? syncError,
     String? followUpDate,
     String? followUpTime,
+    int? lastFeedbackId, // New parameter
+    int? lastFeedbackTimestamp, // New parameter
   }) async {
     final db = await _appDatabase.database;
     final Map<String, dynamic> fieldsToUpdate = {};
@@ -128,6 +130,8 @@ class LeadsRepository {
     if (syncError != null) fieldsToUpdate['sync_error'] = syncError;
     if (followUpDate != null) fieldsToUpdate['follow_up_date'] = followUpDate;
     if (followUpTime != null) fieldsToUpdate['follow_up_time'] = followUpTime;
+    if (lastFeedbackId != null) fieldsToUpdate['last_feedback_id'] = lastFeedbackId; // Update new field
+    if (lastFeedbackTimestamp != null) fieldsToUpdate['last_feedback_timestamp'] = lastFeedbackTimestamp; // Update new field
 
     return db.update(
       'leads',

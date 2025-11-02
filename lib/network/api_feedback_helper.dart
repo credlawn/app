@@ -3,16 +3,9 @@ import 'package:http/http.dart' as http;
 import 'package:credlawn/network/api_network.dart';
 import 'package:credlawn/helpers/session_manager.dart'; // Assuming session manager is needed for SID
 import 'package:credlawn/models/user.dart'; // Import User model
+import 'package:credlawn/models/feedback_model.dart'; // Import FeedbackModel
 
-Future<bool> saveCustomerFeedback({
-  required String mobileNo,
-  required String remarks,
-  String? status,
-  String? referenceNo,
-  required String userId,
-  String? followUpDate,
-  String? followUpTime,
-}) async {
+Future<bool> saveCustomerFeedback(FeedbackModel feedback) async {
   final User? user = await SessionManager.getSessionData();
   String? sid = user?.sid;
 
@@ -21,19 +14,20 @@ Future<bool> saveCustomerFeedback({
   }
 
   final Map<String, dynamic> body = {
-    'mobile_no': mobileNo,
-    'remarks': remarks,
-    'status': status,
-    'reference_no': referenceNo,
-    'user': userId,
+    'mobile_no': feedback.mobileNo ?? feedback.leadFrappeId, // Use mobileNo if available, otherwise use leadFrappeId
+    'remarks': feedback.remarks,
+    'status': feedback.status,
+    'reference_no': feedback.arnNo,
+    'user': feedback.userId,
+    'customer_name': feedback.customerName, // Add customer name to the API request
   };
 
-  if (followUpDate != null) {
-    body['follow_up_date'] = followUpDate;
+  if (feedback.followUpDate != null) {
+    body['follow_up_date'] = feedback.followUpDate;
   }
 
-  if (followUpTime != null) {
-    body['follow_up_time'] = followUpTime;
+  if (feedback.followUpTime != null) {
+    body['follow_up_time'] = feedback.followUpTime;
   }
 
   try {

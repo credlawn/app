@@ -7,6 +7,9 @@ import 'package:credlawn/helpers/ocr_helper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:credlawn/helpers/app_state_manager.dart';
 import 'package:credlawn/helpers/database_service.dart';
+import 'package:credlawn/models/feedback_model.dart'; // Import FeedbackModel
+import 'package:credlawn/helpers/session_manager.dart'; // Import SessionManager for userId
+import 'package:credlawn/helpers/feedback_sync_service.dart'; // Import FeedbackSyncService
 
 class FeedbackScreen extends StatefulWidget {
   final String mobileNo;
@@ -618,26 +621,63 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       return;
                     }
 
-                    final int rowsAffected = await DatabaseService.instance.leadsRepository.updateLeadLocalFields(
-                      lead.frappeId,
-                      leadStatus: selectedStatus,
-                      remarks: _remarksController.text,
-                      arnNo: selectedStatus == 'IP Approved' ? _referenceNoController.text : null,
-                      followUpDate: selectedStatus == 'Follow up' ? DateFormat('yyyy-MM-dd').format(selectedDate!) : null,
-                      followUpTime: selectedStatus == 'Follow up' ? selectedTime!.format(context) : null,
-                      isDirty: 1,
-                    );
+                    final currentUser = await SessionManager.getSessionData();
+                    final userId = currentUser?.userId;
 
-                    if (rowsAffected > 0) {
-                      AppStateManager.clearPendingFeedbackMobile();
-                      AppStateManager.notifyLeadDirty();
-                      CustomColor.showSuccessSnackBar(context, 'Feedback submitted successfully!');
-                      _remarksController.clear();
-                      _referenceNoController.clear();
-                      Navigator.of(context).pop(true);
-                    } else {
-                      CustomColor.showErrorSnackBar(context, 'Failed to submit feedback to local database.');
-                    }
+                      final newFeedback = FeedbackModel(
+                        leadFrappeId: lead.frappeId,
+                        status: selectedStatus!,
+                        remarks: _remarksController.text.isNotEmpty ? _remarksController.text : null,
+                        arnNo: selectedStatus == 'IP Approved' && _referenceNoController.text.isNotEmpty
+                            ? _referenceNoController.text
+                            : null,
+                        followUpDate: selectedStatus == 'Follow up' && selectedDate != null
+                            ? DateFormat('yyyy-MM-dd').format(selectedDate!)
+                            : null,
+                        followUpTime: selectedStatus == 'Follow up' && selectedTime != null
+                            ? selectedTime!.format(context)
+                            : null,
+                        timestamp: DateTime.now().millisecondsSinceEpoch,
+                        userId: userId,
+                        mobileNo: lead.mobileNo,
+                        customerName: lead.customerName,
+                      );
+
+                      final feedbackId = await DatabaseService.instance.feedbackRepository.insertFeedback(newFeedback);
+
+                      if (feedbackId > 0) {
+                        // Get the newly created feedback with ID
+                        final createdFeedback = await DatabaseService.instance.feedbackRepository.getFeedbackForLead(lead.frappeId);
+                        final currentFeedback = createdFeedback.firstWhere((f) => f.id == feedbackId);
+
+                        // Try to sync immediately
+                        await FeedbackSyncService.syncFeedback(currentFeedback);
+
+                        final int rowsAffected = await DatabaseService.instance.leadsRepository.updateLeadLocalFields(
+                          lead.frappeId,
+                          leadStatus: selectedStatus, // Keep this for filtering/display
+                          remarks: _remarksController.text, // Keep this for filtering/display
+                          arnNo: selectedStatus == 'IP Approved' ? _referenceNoController.text : null, // Keep this for filtering/display
+                          followUpDate: selectedStatus == 'Follow up' ? DateFormat('yyyy-MM-dd').format(selectedDate!) : null, // Keep this for filtering/display
+                          followUpTime: selectedStatus == 'Follow up' ? selectedTime!.format(context) : null, // Keep this for filtering/display
+                          isDirty: 1,
+                          lastFeedbackId: feedbackId,
+                          lastFeedbackTimestamp: newFeedback.timestamp,
+                        );
+
+                        if (rowsAffected > 0) {
+                          AppStateManager.clearPendingFeedbackMobile();
+                          AppStateManager.notifyLeadDirty();
+                          CustomColor.showSuccessSnackBar(context, 'Feedback submitted successfully!');
+                          _remarksController.clear();
+                          _referenceNoController.clear();
+                          Navigator.of(context).pop(true);
+                        } else {
+                          CustomColor.showErrorSnackBar(context, 'Failed to update lead with feedback info.');
+                        }
+                      } else {
+                        CustomColor.showErrorSnackBar(context, 'Failed to save feedback to local database.');
+                      }
                   },
                   child: Text('Submit', style: GoogleFonts.poppins(color: Colors.white)),
                 ),
@@ -1153,23 +1193,60 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
                         return;
                       }
 
-                      final int rowsAffected = await DatabaseService.instance.leadsRepository.updateLeadLocalFields(
-                        lead.frappeId,
-                        leadStatus: selectedStatus,
-                        remarks: _remarksController.text,
-                        arnNo: selectedStatus == 'IP Approved' ? _referenceNoController.text : null,
-                        followUpDate: selectedStatus == 'Follow up' ? DateFormat('yyyy-MM-dd').format(selectedDate!) : null,
-                        followUpTime: selectedStatus == 'Follow up' ? selectedTime!.format(context) : null,
-                        isDirty: 1,
+                      final currentUser = await SessionManager.getSessionData();
+                      final userId = currentUser?.userId;
+
+                      final newFeedback = FeedbackModel(
+                        leadFrappeId: lead.frappeId,
+                        status: selectedStatus!,
+                        remarks: _remarksController.text.isNotEmpty ? _remarksController.text : null,
+                        arnNo: selectedStatus == 'IP Approved' && _referenceNoController.text.isNotEmpty
+                            ? _referenceNoController.text
+                            : null,
+                        followUpDate: selectedStatus == 'Follow up' && selectedDate != null
+                            ? DateFormat('yyyy-MM-dd').format(selectedDate!)
+                            : null,
+                        followUpTime: selectedStatus == 'Follow up' && selectedTime != null
+                            ? selectedTime!.format(context)
+                            : null,
+                        timestamp: DateTime.now().millisecondsSinceEpoch,
+                        userId: userId,
+                        mobileNo: lead.mobileNo,
+                        customerName: lead.customerName,
                       );
 
-                      if (rowsAffected > 0) {
-                        AppStateManager.clearPendingFeedbackMobile();
-                        AppStateManager.notifyLeadDirty();
-                        CustomColor.showSuccessSnackBar(context, 'Feedback submitted successfully!');
-                        Navigator.of(context).pop(true);
+                      final feedbackId = await DatabaseService.instance.feedbackRepository.insertFeedback(newFeedback);
+
+                      if (feedbackId > 0) {
+                        // Get the newly created feedback with ID
+                        final createdFeedback = await DatabaseService.instance.feedbackRepository.getFeedbackForLead(lead.frappeId);
+                        final currentFeedback = createdFeedback.firstWhere((f) => f.id == feedbackId);
+
+                        // Try to sync immediately
+                        await FeedbackSyncService.syncFeedback(currentFeedback);
+
+                        final int rowsAffected = await DatabaseService.instance.leadsRepository.updateLeadLocalFields(
+                          lead.frappeId,
+                          leadStatus: selectedStatus, // Keep this for filtering/display
+                          remarks: _remarksController.text, // Keep this for filtering/display
+                          arnNo: selectedStatus == 'IP Approved' ? _referenceNoController.text : null, // Keep this for filtering/display
+                          followUpDate: selectedStatus == 'Follow up' ? DateFormat('yyyy-MM-dd').format(selectedDate!) : null, // Keep this for filtering/display
+                          followUpTime: selectedStatus == 'Follow up' ? selectedTime!.format(context) : null, // Keep this for filtering/display
+                          isDirty: 1,
+                          lastFeedbackId: feedbackId,
+                          lastFeedbackTimestamp: newFeedback.timestamp,
+                        );
+
+                        if (rowsAffected > 0) {
+                          AppStateManager.clearPendingFeedbackMobile();
+                          AppStateManager.notifyLeadDirty();
+                          CustomColor.showSuccessSnackBar(context, 'Feedback submitted successfully!');
+                          Navigator.of(context).pop(true);
+                        } else {
+                          CustomColor.showErrorSnackBar(context, 'Failed to update lead with feedback info.');
+                        }
                       } else {
-                        CustomColor.showErrorSnackBar(context, 'Failed to submit feedback to local database.');
+                        CustomColor.showErrorSnackBar(context, 'Failed to save feedback to local database.');
                       }
                     },
                     child: Text('Submit', style: GoogleFonts.poppins(color: Colors.white)),

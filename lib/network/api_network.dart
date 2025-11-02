@@ -2,7 +2,6 @@ class ApiNetwork {
 
   static const String baseUrl = 'https://cipl.me/';
 
-
   static const String login = '${baseUrl}api/method/login';
 
   static const String fetchProfile = '${baseUrl}api/resource/Employee';
@@ -33,7 +32,7 @@ class ApiNetwork {
   static const String deleteFollowUp = '${baseUrl}api/method/credlawn.api.delete_follow_up.delete_follow_up';
   static const String getUpcomingFollowUpsCount = '${baseUrl}api/method/credlawn.api.get_follow_ups.get_upcoming_follow_ups_count';
 
-
-  
+  // Feedback sync endpoint
+  static const String syncFeedback = '${baseUrl}api/method/credlawn.mobile.api.feedback_sync.sync_feedback_data';
 
 }
