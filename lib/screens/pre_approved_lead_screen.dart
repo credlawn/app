@@ -230,6 +230,12 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
   }
 
   void _callNumber(LeadsModel lead) async {
+    // If the current lead group is 'Called', bypass the feedback check
+    if (_selectedLeadGroup == 'Called') {
+      _initiateCall(lead);
+      return;
+    }
+
     final pendingLeads = _getPendingFeedbackLeads(_allLeads);
 
     if (pendingLeads.isEmpty) {
