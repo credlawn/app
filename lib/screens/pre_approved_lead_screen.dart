@@ -14,12 +14,15 @@ import 'package:credlawn/helpers/session_manager.dart'; // For SessionManager
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:credlawn/helpers/call_log_sync_manager.dart'; // Import for CallLogSyncManager
+import 'package:collection/collection.dart'; // Import for firstWhereOrNull
 
 import 'package:credlawn/screens/components/lead_list_item.dart';
 import 'package:credlawn/screens/components/lead_group_chips.dart';
 import 'package:credlawn/screens/components/lead_list.dart';
 import 'package:credlawn/screens/components/error_view.dart';
 import 'package:credlawn/screens/components/empty_view.dart';
+import 'package:credlawn/screens/components/feedback_dialog.dart'; // Import the new FeedbackBottomSheet
 
 class PreApprovedLeadsScreen extends StatefulWidget {
   final User user;
@@ -103,7 +106,55 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
   }
 
   void _callNumber(LeadsModel lead) async {
+    // Store the mobile number of the lead being called
+    AppStateManager.setPendingFeedbackMobile(lead.mobileNo);
+
     await FlutterPhoneDirectCaller.callNumber(lead.mobileNo);
+
+    // After the call, wait a bit for the call log to update
+    // Then refresh leads and check for feedback
+    Future.delayed(const Duration(seconds: 5), () async {
+      await _refreshLeads(); // This will trigger _fetchAndSyncLeads which updates call counts
+
+      // After refreshing leads, we need to get the LeadWithCallInfo to check call details
+      final leadsAfterRefresh = await getLeadsWithCallCounts();
+      final updatedLeadWithInfo = leadsAfterRefresh.firstWhereOrNull(
+          (l) => l.lead.mobileNo == lead.mobileNo);
+
+      if (updatedLeadWithInfo != null &&
+          updatedLeadWithInfo.callCount > 0 && // Call was made
+          (updatedLeadWithInfo.lastCallDuration ?? 0) > 0 && // Call connected
+          !_hasFeedback(updatedLeadWithInfo.lead.leadStatus)) { // No feedback submitted
+        _showFeedbackBottomSheet(updatedLeadWithInfo.lead);
+      } else {
+        AppStateManager.clearPendingFeedbackMobile();
+      }
+    });
+  }
+
+  void _showFeedbackBottomSheet(LeadsModel lead) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return FeedbackBottomSheet(
+          mobileNo: lead.mobileNo,
+          onCallAnyway: (mobile) {
+            Navigator.of(context).pop(); // Dismiss the bottom sheet
+            _callNumber(lead); // Re-initiate call with the full lead object
+          },
+        );
+      },
+    ).then((result) {
+      // When the bottom sheet is dismissed, refresh leads
+      if (result == true) { // Feedback was submitted
+        _refreshLeads();
+      }
+      AppStateManager.clearPendingFeedbackMobile();
+    });
   }
 
   void _openWhatsApp(LeadsModel lead) async {
@@ -174,11 +225,11 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
       final leadsForDisplay = await getLeadsWithCallCounts();
       print('Final data for UI: ${leadsForDisplay.map((l) => {'lead': l.lead.toMap(), 'callCount': l.callCount, 'lastCallDuration': l.lastCallDuration}).toList()}');
       return leadsForDisplay;
-    } catch (e) {
-
-
+    } on Exception catch (e) {
+      // Catch specific exceptions if needed, otherwise rethrow or handle generically
+      print('Error in _fetchAndSyncLeads: $e');
+      // If API fetch fails, still try to display local leads
       final leadsForDisplay = await getLeadsWithCallCounts();
-
       return leadsForDisplay;
     }
   }

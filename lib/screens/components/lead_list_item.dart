@@ -272,7 +272,50 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
         ),
       );
     }
+    else if (widget.leadWithInfo.callCount > 0 && (widget.leadWithInfo.lastCallDuration ?? 0) > 0 && !_hasFeedback(widget.leadWithInfo.lead.leadStatus)) {
+      // This is the "Called" state with pending feedback
+      return Padding(
+        padding: const EdgeInsets.only(left: 8.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                widget.leadWithInfo.callCount > 99 ? '99+' : '${widget.leadWithInfo.callCount}',
+                style: GoogleFonts.poppins(
+                  color: Colors.blue,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.teal, // Color for "Called" status
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Pending Feedback',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     else {
+      // Default case for leads that have been called but don't fit other categories
       return Padding(
         padding: const EdgeInsets.only(left: 8.0),
         child: Container(
@@ -295,7 +338,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
   }
 
   bool _hasFeedback(String? leadStatus) {
-    if (leadStatus == null || leadStatus.isEmpty) {
+    if (leadStatus == null || leadStatus.trim().isEmpty) {
       return false;
     }
 
@@ -371,7 +414,39 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                   icon: Icons.call,
                   backgroundColor: Colors.green,
                   iconColor: Colors.white,
-                  onPressed: () => _callNumber(widget.leadWithInfo.lead),
+                  onPressed: () {
+                    // Check if feedback is pending for this lead
+                    if (widget.leadWithInfo.callCount > 0 &&
+                        (widget.leadWithInfo.lastCallDuration ?? 0) > 0 &&
+                        !_hasFeedback(widget.leadWithInfo.lead.leadStatus)) {
+                      // Show feedback bottom sheet if feedback is pending
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                        ),
+                        builder: (context) {
+                          return FeedbackBottomSheet(
+                            mobileNo: widget.leadWithInfo.lead.mobileNo,
+                            onCallAnyway: (mobile) {
+                              Navigator.of(context).pop(); // Dismiss the bottom sheet
+                              _callNumber(widget.leadWithInfo.lead); // Re-initiate call
+                            },
+                          );
+                        },
+                      ).then((result) {
+                        if (result == true) { // Feedback was submitted
+                          // Trigger a refresh of the leads list in the parent screen
+                          // This will update the UI and remove the "Pending Feedback" badge
+                          widget.onNavigate(); // This will trigger _refreshLeads in PreApprovedLeadsScreen
+                        }
+                      });
+                    } else {
+                      // Otherwise, proceed with the call directly
+                      _callNumber(widget.leadWithInfo.lead);
+                    }
+                  },
                 ),
                 const SizedBox(width: 32), // Increased gap
                 _buildSmallActionButton(
@@ -407,7 +482,7 @@ _buildSmallActionButton(
       MaterialPageRoute<bool>(
         fullscreenDialog: true,
         builder: (BuildContext context) {
-          return FeedbackDialog(mobileNo: widget.leadWithInfo.lead.mobileNo);
+          return FeedbackScreen(mobileNo: widget.leadWithInfo.lead.mobileNo);
         },
       ),
     );
