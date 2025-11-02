@@ -16,6 +16,7 @@ class LeadListItem extends StatefulWidget {
   final bool isExpanded;
   final VoidCallback onTap;
   final VoidCallback onNavigate;
+  final Function(LeadsModel lead) onCallPressed; // New callback
 
   const LeadListItem({
     super.key,
@@ -23,6 +24,7 @@ class LeadListItem extends StatefulWidget {
     required this.isExpanded,
     required this.onTap,
     required this.onNavigate,
+    required this.onCallPressed, // Required for the new callback
   });
 
   @override
@@ -414,39 +416,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                   icon: Icons.call,
                   backgroundColor: Colors.green,
                   iconColor: Colors.white,
-                  onPressed: () {
-                    // Check if feedback is pending for this lead
-                    if (widget.leadWithInfo.callCount > 0 &&
-                        (widget.leadWithInfo.lastCallDuration ?? 0) > 0 &&
-                        !_hasFeedback(widget.leadWithInfo.lead.leadStatus)) {
-                      // Show feedback bottom sheet if feedback is pending
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                        ),
-                        builder: (context) {
-                          return FeedbackBottomSheet(
-                            mobileNo: widget.leadWithInfo.lead.mobileNo,
-                            onCallAnyway: (mobile) {
-                              Navigator.of(context).pop(); // Dismiss the bottom sheet
-                              _callNumber(widget.leadWithInfo.lead); // Re-initiate call
-                            },
-                          );
-                        },
-                      ).then((result) {
-                        if (result == true) { // Feedback was submitted
-                          // Trigger a refresh of the leads list in the parent screen
-                          // This will update the UI and remove the "Pending Feedback" badge
-                          widget.onNavigate(); // This will trigger _refreshLeads in PreApprovedLeadsScreen
-                        }
-                      });
-                    } else {
-                      // Otherwise, proceed with the call directly
-                      _callNumber(widget.leadWithInfo.lead);
-                    }
-                  },
+                  onPressed: () => widget.onCallPressed(widget.leadWithInfo.lead),
                 ),
                 const SizedBox(width: 32), // Increased gap
                 _buildSmallActionButton(

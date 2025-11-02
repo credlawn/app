@@ -105,31 +105,162 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
     });
   }
 
-  void _callNumber(LeadsModel lead) async {
-    // Store the mobile number of the lead being called
-    AppStateManager.setPendingFeedbackMobile(lead.mobileNo);
+  // Helper to identify leads that are "Called" but have no feedback
+  List<LeadWithCallInfo> _getPendingFeedbackLeads(List<LeadWithCallInfo> allLeads) {
+    return allLeads.where((lead) =>
+      (lead.callCount ?? 0) > 0 &&
+      (lead.lastCallDuration ?? 0) > 0 &&
+      !_hasFeedback(lead.lead.leadStatus) &&
+      !_isFollowUpLead(lead.lead)
+    ).toList();
+  }
 
+  void _showMultiplePendingFeedbackDialog(int count, LeadsModel originalLead) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          contentPadding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          title: Column(
+            children: [
+              Icon(Icons.feedback_outlined, color: CustomColor.MainColor, size: 48),
+              const SizedBox(height: 10),
+              Text(
+                'Pending Feedback',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 20,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          content: Text.rich(
+            TextSpan(
+              text: 'You have ',
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                color: Colors.grey.shade700,
+              ),
+              children: <TextSpan>[
+                TextSpan(
+                  text: '$count leads',
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.red.shade700,
+                  ),
+                ),
+                TextSpan(
+                  text: ' pending for feedback.',
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          actions: <Widget>[
+            Divider(color: Colors.grey.shade200, height: 10),
+            const SizedBox(height: 10),
+            TextButton(
+              style: TextButton.styleFrom(
+                minimumSize: const Size(double.infinity, 45),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                backgroundColor: CustomColor.MainColor.withOpacity(0.1),
+              ),
+              child: Text(
+                'Check Pending Leads',
+                style: GoogleFonts.poppins(color: CustomColor.MainColor, fontWeight: FontWeight.w600),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(); // Dismiss dialog
+                setState(() {
+                  _selectedLeadGroup = 'Called'; // Navigate to 'Called' chips
+                  _expandedLeadId = null; // Collapse any expanded item
+                });
+              },
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              style: TextButton.styleFrom(
+                minimumSize: const Size(double.infinity, 45),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                backgroundColor: Colors.green.withOpacity(0.1),
+              ),
+              child: Text(
+                'Call Anyway',
+                style: GoogleFonts.poppins(color: Colors.green.shade700, fontWeight: FontWeight.w600),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(); // Dismiss dialog
+                _initiateCall(originalLead); // Proceed with the original call
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _initiateCall(LeadsModel lead) async {
+    AppStateManager.setPendingFeedbackMobile(lead.mobileNo);
     await FlutterPhoneDirectCaller.callNumber(lead.mobileNo);
 
-    // After the call, wait a bit for the call log to update
-    // Then refresh leads and check for feedback
     Future.delayed(const Duration(seconds: 5), () async {
-      await _refreshLeads(); // This will trigger _fetchAndSyncLeads which updates call counts
-
-      // After refreshing leads, we need to get the LeadWithCallInfo to check call details
+      await _refreshLeads();
       final leadsAfterRefresh = await getLeadsWithCallCounts();
       final updatedLeadWithInfo = leadsAfterRefresh.firstWhereOrNull(
           (l) => l.lead.mobileNo == lead.mobileNo);
 
       if (updatedLeadWithInfo != null &&
-          updatedLeadWithInfo.callCount > 0 && // Call was made
-          (updatedLeadWithInfo.lastCallDuration ?? 0) > 0 && // Call connected
-          !_hasFeedback(updatedLeadWithInfo.lead.leadStatus)) { // No feedback submitted
+          updatedLeadWithInfo.callCount > 0 &&
+          (updatedLeadWithInfo.lastCallDuration ?? 0) > 0 &&
+          !_hasFeedback(updatedLeadWithInfo.lead.leadStatus)) {
         _showFeedbackBottomSheet(updatedLeadWithInfo.lead);
       } else {
         AppStateManager.clearPendingFeedbackMobile();
       }
     });
+  }
+
+  void _callNumber(LeadsModel lead) async {
+    final pendingLeads = _getPendingFeedbackLeads(_allLeads);
+
+    if (pendingLeads.isEmpty) {
+      _initiateCall(lead);
+    } else if (pendingLeads.length == 1) {
+      // Show feedback for the single pending lead, then proceed with original call
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (context) {
+          return FeedbackBottomSheet(
+            mobileNo: pendingLeads.first.lead.mobileNo,
+            onCallAnyway: (mobile) {
+              Navigator.of(context).pop();
+              _initiateCall(lead); // Proceed with the original call after dismissing
+            },
+          );
+        },
+      ).then((result) {
+        if (result == true) {
+          _refreshLeads();
+        }
+        AppStateManager.clearPendingFeedbackMobile();
+      });
+    } else {
+      // Show dialog for multiple pending leads
+      _showMultiplePendingFeedbackDialog(pendingLeads.length, lead);
+    }
   }
 
   void _showFeedbackBottomSheet(LeadsModel lead) {
@@ -390,6 +521,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
                       expandedLeadId: _expandedLeadId,
                       onExpandItem: _expandItem,
                       onNavigate: _closeExpandedItem,
+                      onCallPressed: _callNumber, // Pass the centralized call handler
                     )
                   else
                     Center(
