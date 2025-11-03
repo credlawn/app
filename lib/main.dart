@@ -27,6 +27,7 @@ import 'package:credlawn/helpers/app_lifecycle_handler.dart';
 import 'package:credlawn/helpers/background_sync_service.dart';
 import 'package:credlawn/api/server_api.dart';
 import 'package:credlawn/helpers/error_logger.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -273,22 +274,28 @@ class _MyAppState extends State<MyApp> {
         }
       }
     } catch (e) {
-      await ErrorLogger.logException(
-        context: 'MyApp._checkAppVersion',
-        exception: e,
-      );
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        navigatorKey.currentState?.push(
-          MaterialPageRoute(
-            fullscreenDialog: true,
-            builder: (context) => NoInternetScreen(),
-          ),
-        ).then((result) {
-          if (result != true) {
-            _checkAppVersion();
-          }
+      final connectivityResult = await Connectivity().checkConnectivity();
+      final hasInternet = connectivityResult != ConnectivityResult.none;
+
+      if (!hasInternet) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          navigatorKey.currentState?.push(
+            MaterialPageRoute(
+              fullscreenDialog: true,
+              builder: (context) => NoInternetScreen(),
+            ),
+          ).then((result) {
+            if (result != true) {
+              _checkAppVersion();
+            }
+          });
         });
-      });
+      } else {
+        await ErrorLogger.logException(
+          context: 'MyApp._checkAppVersion',
+          exception: e,
+        );
+      }
     }
   }
 }
