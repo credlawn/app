@@ -6,16 +6,18 @@ import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:credlawn/helpers/app_state_manager.dart';
 import 'package:credlawn/custom/custom_color.dart';
 import 'package:credlawn/helpers/lead_data_helper.dart';
-import 'package:credlawn/models/leads_model.dart'; // Use LeadsModel
-import 'package:credlawn/helpers/database_service.dart'; // Use DatabaseService
-import 'package:credlawn/network/api_leads_helper.dart'; // Use new API helper
-import 'package:credlawn/models/user.dart'; // For SessionManager
-import 'package:credlawn/helpers/session_manager.dart'; // For SessionManager
+import 'package:credlawn/models/leads_model.dart';
+import 'package:credlawn/helpers/database_service.dart';
+import 'package:credlawn/network/api_leads_helper.dart';
+import 'package:credlawn/models/user.dart';
+import 'package:credlawn/helpers/session_manager.dart';
+import 'package:credlawn/api/server_api.dart';
+import 'package:credlawn/helpers/error_logger.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:credlawn/helpers/call_log_sync_manager.dart'; // Import for CallLogSyncManager
-import 'package:collection/collection.dart'; // Import for firstWhereOrNull
+import 'package:credlawn/helpers/call_log_sync_manager.dart';
+import 'package:collection/collection.dart';
 
 import 'package:credlawn/screens/components/lead_list_item.dart';
 import 'package:credlawn/screens/components/lead_group_chips.dart';
@@ -105,7 +107,6 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
     });
   }
 
-  // Helper to identify leads that are "Called" but have no feedback
   List<LeadWithCallInfo> _getPendingFeedbackLeads(List<LeadWithCallInfo> allLeads) {
     return allLeads.where((lead) =>
       (lead.callCount ?? 0) > 0 &&
@@ -179,10 +180,10 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
                 style: GoogleFonts.poppins(color: CustomColor.MainColor, fontWeight: FontWeight.w600),
               ),
               onPressed: () {
-                Navigator.of(context).pop(); // Dismiss dialog
+                Navigator.of(context).pop();
                 setState(() {
-                  _selectedLeadGroup = 'Called'; // Navigate to 'Called' chips
-                  _expandedLeadId = null; // Collapse any expanded item
+                  _selectedLeadGroup = 'Called';
+                  _expandedLeadId = null;
                 });
               },
             ),
@@ -198,8 +199,8 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
                 style: GoogleFonts.poppins(color: Colors.green.shade700, fontWeight: FontWeight.w600),
               ),
               onPressed: () {
-                Navigator.of(context).pop(); // Dismiss dialog
-                _initiateCall(originalLead); // Proceed with the original call
+                Navigator.of(context).pop();
+                _initiateCall(originalLead);
               },
             ),
           ],
@@ -209,28 +210,60 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
   }
 
   void _initiateCall(LeadsModel lead) async {
-    AppStateManager.setPendingFeedbackMobile(lead.mobileNo);
-    await FlutterPhoneDirectCaller.callNumber(lead.mobileNo);
+    try {
+      final currentUser = await SessionManager.getSessionData();
+      await ErrorLogger.logError(
+        title: 'Call Initiated',
+        errorMessage: 'Initiating call to mobile: ${lead.mobileNo}, customer: ${lead.customerName}',
+        errorType: 'User Action',
+        userId: currentUser?.userId,
+      );
 
-    Future.delayed(const Duration(seconds: 5), () async {
-      await _refreshLeads();
-      final leadsAfterRefresh = await getLeadsWithCallCounts();
-      final updatedLeadWithInfo = leadsAfterRefresh.firstWhereOrNull(
-          (l) => l.lead.mobileNo == lead.mobileNo);
+      AppStateManager.setPendingFeedbackMobile(lead.mobileNo);
+      await FlutterPhoneDirectCaller.callNumber(lead.mobileNo);
 
-      if (updatedLeadWithInfo != null &&
-          updatedLeadWithInfo.callCount > 0 &&
-          (updatedLeadWithInfo.lastCallDuration ?? 0) > 0 &&
-          !_hasFeedback(updatedLeadWithInfo.lead.leadStatus)) {
-        _showFeedbackBottomSheet(updatedLeadWithInfo.lead);
-      } else {
-        AppStateManager.clearPendingFeedbackMobile();
-      }
-    });
+      Future.delayed(const Duration(seconds: 5), () async {
+        try {
+          await _refreshLeads();
+          final leadsAfterRefresh = await getLeadsWithCallCounts();
+          final updatedLeadWithInfo = leadsAfterRefresh.firstWhereOrNull(
+              (l) => l.lead.mobileNo == lead.mobileNo);
+
+          if (updatedLeadWithInfo != null &&
+              updatedLeadWithInfo.callCount > 0 &&
+              (updatedLeadWithInfo.lastCallDuration ?? 0) > 0 &&
+              !_hasFeedback(updatedLeadWithInfo.lead.leadStatus)) {
+            await ErrorLogger.logError(
+              title: 'Feedback Prompt Triggered',
+              errorMessage: 'Showing feedback prompt for mobile: ${lead.mobileNo} after call',
+              errorType: 'User Action',
+              userId: currentUser?.userId,
+            );
+            _showFeedbackBottomSheet(updatedLeadWithInfo.lead);
+          } else {
+            AppStateManager.clearPendingFeedbackMobile();
+          }
+        } catch (e) {
+          final currentUser = await SessionManager.getSessionData();
+          await ErrorLogger.logException(
+            context: 'PreApprovedLeadsScreen._initiateCall.delayedCallback',
+            exception: e,
+            userId: currentUser?.userId,
+          );
+          AppStateManager.clearPendingFeedbackMobile();
+        }
+      });
+    } catch (e) {
+      final currentUser = await SessionManager.getSessionData();
+      await ErrorLogger.logException(
+        context: 'PreApprovedLeadsScreen._initiateCall',
+        exception: e,
+        userId: currentUser?.userId,
+      );
+    }
   }
 
   void _callNumber(LeadsModel lead) async {
-    // If the current lead group is 'Called', bypass the feedback check
     if (_selectedLeadGroup == 'Called') {
       _initiateCall(lead);
       return;
@@ -241,7 +274,6 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
     if (pendingLeads.isEmpty) {
       _initiateCall(lead);
     } else if (pendingLeads.length == 1) {
-      // Show feedback for the single pending lead, then proceed with original call
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -253,7 +285,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
             mobileNo: pendingLeads.first.lead.mobileNo,
             onCallAnyway: (mobile) {
               Navigator.of(context).pop();
-              _initiateCall(lead); // Proceed with the original call after dismissing
+              _initiateCall(lead);
             },
           );
         },
@@ -264,7 +296,6 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
         AppStateManager.clearPendingFeedbackMobile();
       });
     } else {
-      // Show dialog for multiple pending leads
       _showMultiplePendingFeedbackDialog(pendingLeads.length, lead);
     }
   }
@@ -280,14 +311,13 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
         return FeedbackBottomSheet(
           mobileNo: lead.mobileNo,
           onCallAnyway: (mobile) {
-            Navigator.of(context).pop(); // Dismiss the bottom sheet
-            _callNumber(lead); // Re-initiate call with the full lead object
+            Navigator.of(context).pop();
+            _callNumber(lead);
           },
         );
       },
     ).then((result) {
-      // When the bottom sheet is dismissed, refresh leads
-      if (result == true) { // Feedback was submitted
+      if (result == true) {
         _refreshLeads();
       }
       AppStateManager.clearPendingFeedbackMobile();
@@ -295,29 +325,68 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
   }
 
   void _openWhatsApp(LeadsModel lead) async {
-    final mobileWithCode = '+91${lead.mobileNo}';
-    final String androidUrl = "whatsapp://send?phone=$mobileWithCode&text=https://cipl.me/tata";
-    final String iosUrl = "https://wa.me/$mobileWithCode?text=${Uri.parse('https://cipl.me/tata')}";
-
     try {
+      final mobileWithCode = '+91${lead.mobileNo}';
+      final String androidUrl = "whatsapp://send?phone=$mobileWithCode&text=${ServerApi.whatsAppMessageUrl}";
+      final String iosUrl = "https://wa.me/$mobileWithCode?text=${Uri.encodeComponent(ServerApi.whatsAppMessageUrl)}";
+
+      final currentUser = await SessionManager.getSessionData();
+      await ErrorLogger.logError(
+        title: 'WhatsApp Opened',
+        errorMessage: 'Opening WhatsApp for mobile: ${lead.mobileNo}',
+        errorType: 'User Action',
+        userId: currentUser?.userId,
+      );
+
       if (Platform.isIOS) {
-        await launchUrl(Uri.parse(iosUrl));
+        final success = await launchUrl(Uri.parse(iosUrl), mode: LaunchMode.externalApplication);
+        if (!success) {
+          await ErrorLogger.logError(
+            title: 'WhatsApp Launch Failed',
+            errorMessage: 'Failed to launch WhatsApp on iOS for mobile: ${lead.mobileNo}',
+            errorType: 'External App',
+            userId: currentUser?.userId,
+          );
+        }
       } else {
-        await launchUrl(Uri.parse(androidUrl));
+        final success = await launchUrl(Uri.parse(androidUrl), mode: LaunchMode.externalApplication);
+        if (!success) {
+          await ErrorLogger.logError(
+            title: 'WhatsApp Launch Failed',
+            errorMessage: 'Failed to launch WhatsApp on Android for mobile: ${lead.mobileNo}',
+            errorType: 'External App',
+            userId: currentUser?.userId,
+          );
+        }
       }
     } catch (e) {
-
+      final currentUser = await SessionManager.getSessionData();
+      await ErrorLogger.logException(
+        context: 'PreApprovedLeadsScreen._openWhatsApp',
+        exception: e,
+        userId: currentUser?.userId,
+      );
     }
   }
 
   Future<List<LeadWithCallInfo>> _fetchAndSyncLeads() async {
     final User? currentUser = await SessionManager.getSessionData();
     if (currentUser == null) {
+      await ErrorLogger.logError(
+        title: 'User Not Logged In',
+        errorMessage: 'Attempted to fetch leads without authentication',
+        errorType: 'Authentication',
+      );
       return Future.error('User not logged in');
     }
 
     try {
-
+      await ErrorLogger.logError(
+        title: 'Lead Sync Started',
+        errorMessage: 'Starting lead synchronization for user: ${currentUser.userId}',
+        errorType: 'Data Sync',
+        userId: currentUser.userId,
+      );
 
       final dirtyLeads = await DatabaseService.instance.leadsRepository.getAllLeads();
       for (final lead in dirtyLeads.where((l) => l.isDirty == 1)) {
@@ -329,17 +398,28 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
               isDirty: 0,
               lastSyncedAt: DateTime.now().millisecondsSinceEpoch,
             );
-
+            await ErrorLogger.logError(
+              title: 'Lead Sync Success',
+              errorMessage: 'Successfully synced lead: ${lead.frappeId}',
+              errorType: 'Data Sync',
+              userId: currentUser.userId,
+            );
           } else {
-
+            await ErrorLogger.logError(
+              title: 'Lead Sync Failed',
+              errorMessage: 'Failed to sync lead: ${lead.frappeId}',
+              errorType: 'Data Sync',
+              userId: currentUser.userId,
+            );
           }
         } catch (e) {
-
+          await ErrorLogger.logException(
+            context: 'PreApprovedLeadsScreen._fetchAndSyncLeads.syncLeadUpdate',
+            exception: e,
+            userId: currentUser.userId,
+          );
         }
       }
-
-
-
 
       final apiLeads = await fetchEmployeeLeadsFromApi(currentUser.userId, currentUser.sid);
       final Set<String> apiFrappeIds = apiLeads.map((lead) => lead.frappeId).toSet();
@@ -356,15 +436,23 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
           await DatabaseService.instance.leadsRepository.markLeadAsInactive(localLead.frappeId);
         }
       }
-      
-
 
       final leadsForDisplay = await getLeadsWithCallCounts();
-      print('Final data for UI: ${leadsForDisplay.map((l) => {'lead': l.lead.toMap(), 'callCount': l.callCount, 'lastCallDuration': l.lastCallDuration}).toList()}');
+      await ErrorLogger.logError(
+        title: 'Lead Sync Completed',
+        errorMessage: 'Successfully synced ${leadsForDisplay.length} leads for user: ${currentUser.userId}',
+        errorType: 'Data Sync',
+        userId: currentUser.userId,
+      );
+
       return leadsForDisplay;
     } on Exception catch (e) {
-      // Catch specific exceptions if needed, otherwise rethrow or handle generically
-      print('Error in _fetchAndSyncLeads: $e');
+      final currentUser = await SessionManager.getSessionData();
+      await ErrorLogger.logException(
+        context: 'PreApprovedLeadsScreen._fetchAndSyncLeads',
+        exception: e,
+        userId: currentUser?.userId,
+      );
       // If API fetch fails, still try to display local leads
       final leadsForDisplay = await getLeadsWithCallCounts();
       return leadsForDisplay;
@@ -427,7 +515,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
           !_isFollowUpLead(lead.lead)
         ).toList();
       default:
-        return leads; // Show all leads if no specific chip is selected
+        return leads;
     }
   }
 
@@ -527,7 +615,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
                       expandedLeadId: _expandedLeadId,
                       onExpandItem: _expandItem,
                       onNavigate: _closeExpandedItem,
-                      onCallPressed: _callNumber, // Pass the centralized call handler
+                      onCallPressed: _callNumber,
                     )
                   else
                     Center(
