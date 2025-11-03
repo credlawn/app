@@ -69,8 +69,6 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
 
   Future<void> _syncLeadsInBackground() async {
     await BackgroundSyncService.triggerSync();
-    // We might want a way to get a callback when the sync is done
-    // to refresh the UI. For now, we'll rely on the lifecycle refresh.
   }
 
   void _onDirtyLeadNotification() {
@@ -399,7 +397,11 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
   }
 
   Future<void> _refreshLeads() async {
-    await _syncLeadsInBackground();
+    // For pull-to-refresh, perform sync synchronously so UI updates with fresh data
+    final User? currentUser = await SessionManager.getSessionData();
+    if (currentUser != null) {
+      await BackgroundSyncService.syncLeads(currentUser);
+    }
     final newLeads = await getLeadsWithCallCounts();
     setState(() {
       _allLeads = newLeads;
