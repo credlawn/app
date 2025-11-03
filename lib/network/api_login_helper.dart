@@ -1,34 +1,42 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:credlawn/models/user.dart';
-import 'package:credlawn/network/api_network.dart';
+import 'package:credlawn/api/server_api.dart';
 import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/network/api_profile_helper.dart';
+import 'package:credlawn/helpers/error_logger.dart';
 
 Future<User?> apiLoginHelper(Map<String, dynamic> jsonResponse, String? cookies) async {
   var user = User(
     sid: _extractCookieValue(cookies, 'sid'),
     fullName: jsonResponse['full_name'] ?? '',
     userId: Uri.decodeComponent(_extractCookieValue(cookies, 'user_id') ?? ''),
-    userImage: ApiNetwork.baseUrl + (_extractCookieValue(cookies, 'user_image') ?? ''),
+    userImage: ServerApi.baseUrl + (_extractCookieValue(cookies, 'user_image') ?? ''),
   );
 
-  var profileData = await fetchProfileData(user.userId, user.sid);
-
-  user = user.copyWith(
-    employeeName: profileData.employeeName ?? '',
-    employeeCode: profileData.employeeCode ?? '',
-    joiningDate: profileData.joiningDate ?? '',
-    dateOfBirth: profileData.dateOfBirth ?? '',
-    gender: profileData.gender ?? '',
-    department: profileData.department ?? '',
-    designation: profileData.designation ?? '',
-    mobileNo: profileData.mobileNo ?? '',
-    email: profileData.email ?? '',
-    age: profileData.age ?? '',
-    tenure: profileData.tenure ?? '',
-    role: profileData.role ?? '',
-  );
+  try {
+    var profileData = await fetchProfileData(user.userId, user.sid);
+    user = user.copyWith(
+      employeeName: profileData.employeeName ?? '',
+      employeeCode: profileData.employeeCode ?? '',
+      joiningDate: profileData.joiningDate ?? '',
+      dateOfBirth: profileData.dateOfBirth ?? '',
+      gender: profileData.gender ?? '',
+      department: profileData.department ?? '',
+      designation: profileData.designation ?? '',
+      mobileNo: profileData.mobileNo ?? '',
+      email: profileData.email ?? '',
+      age: profileData.age ?? '',
+      tenure: profileData.tenure ?? '',
+      role: profileData.role ?? '',
+    );
+  } catch (e) {
+    await ErrorLogger.logException(
+      context: 'fetchProfileData in apiLoginHelper',
+      exception: e,
+      userId: user.userId,
+    );
+  }
 
   await SessionManager.saveSessionData(
     sid: user.sid,
@@ -65,9 +73,7 @@ Future<void> sendFcmTokenToServer({
   String? userId,
   String? sid,
 }) async {
-  var url = Uri.parse(ApiNetwork.saveFcmToken);
-
-  var body = {
+  final body = {
     'fcm_token': token,
     'device_id': deviceId,
   };
@@ -76,7 +82,7 @@ Future<void> sendFcmTokenToServer({
     body['user'] = userId;
   }
 
-  var headers = {
+  final headers = {
     "Content-Type": "application/json",
   };
 
@@ -85,12 +91,26 @@ Future<void> sendFcmTokenToServer({
   }
 
   try {
-    var response = await http.post(
-      url,
+    final response = await http.post(
+      ServerApi.saveFcmToken,
       headers: headers,
       body: json.encode(body),
     );
 
+    if (response.statusCode != 200) {
+      await ErrorLogger.logApiError(
+        endpoint: ServerApi.saveFcmToken.toString(),
+        method: 'POST',
+        statusCode: response.statusCode,
+        responseBody: response.body,
+        userId: userId,
+      );
+    }
   } catch (e) {
+    await ErrorLogger.logException(
+      context: 'sendFcmTokenToServer',
+      exception: e,
+      userId: userId,
+    );
   }
 }

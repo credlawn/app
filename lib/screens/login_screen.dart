@@ -1,7 +1,5 @@
 import 'package:credlawn/helpers/device_info_helper.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-// ignore_for_file: library_private_types_in_public_api, unused_field
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -11,8 +9,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:credlawn/custom/custom_color.dart';
-import 'package:credlawn/network/api_network.dart';
+import 'package:credlawn/api/server_api.dart';
 import 'package:credlawn/network/api_login_helper.dart';
+import 'package:credlawn/helpers/error_logger.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,10 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   String _message = '';
-
   bool viewPass = true;
-
-  final String _apiUrl = ApiNetwork.login;
 
   Future<void> _login() async {
     setState(() {
@@ -58,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse(_apiUrl),
+        ServerApi.login,
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
@@ -96,22 +92,46 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               );
             } else {
+              await ErrorLogger.logError(
+                title: 'User Data Fetch Failed',
+                errorMessage: 'apiLoginHelper returned null user after successful login',
+                errorType: 'Auth',
+                userId: email,
+              );
               setState(() {
                 _message = 'Error: Unable to fetch user data.';
               });
               CustomColor.showErrorSnackBar(context, 'Error: Unable to get user data.');
             }
+          } else {
+            await ErrorLogger.logError(
+              title: 'Login Missing Cookies',
+              errorMessage: 'Login successful but no cookies received from server',
+              errorType: 'Auth',
+              userId: email,
+            );
           }
         }
-
       } else {
+        await ErrorLogger.logApiError(
+          endpoint: ServerApi.login.toString(),
+          method: 'POST',
+          statusCode: response.statusCode,
+          responseBody: response.body,
+          userId: email,
+        );
         setState(() {
           _message = 'Login failed! Please check your credentials.';
         });
         CustomColor.showErrorSnackBar(context, 'Login failed! Please check your credentials.');
       }
-      
+
     } catch (e) {
+      await ErrorLogger.logException(
+        context: 'login',
+        exception: e,
+        userId: email,
+      );
       setState(() {
         _message = 'Error: Unable to connect to the server.';
       });

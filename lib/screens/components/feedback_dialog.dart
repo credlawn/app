@@ -672,6 +672,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                           followUpDate: updatedFollowUpDate,
                           followUpTime: updatedFollowUpTime,
                           isDirty: 1,
+                          lastSyncedAt: DateTime.now().millisecondsSinceEpoch,
                           lastFeedbackId: feedbackId,
                           lastFeedbackTimestamp: newFeedback.timestamp,
                         );
@@ -1256,6 +1257,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
                           followUpDate: updatedFollowUpDate,
                           followUpTime: updatedFollowUpTime,
                           isDirty: 1,
+                          lastSyncedAt: DateTime.now().millisecondsSinceEpoch,
                           lastFeedbackId: feedbackId,
                           lastFeedbackTimestamp: newFeedback.timestamp,
                         );

@@ -1,81 +1,41 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:credlawn/models/leads_model.dart';
-import 'package:credlawn/network/api_network.dart';
+import 'package:credlawn/api/server_api.dart';
 import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/models/user.dart';
+import 'package:credlawn/helpers/error_logger.dart';
 
 Future<List<LeadsModel>> fetchEmployeeLeadsFromApi(String userId, String sid) async {
-  final Map<String, dynamic> queryParams = {
-    'user_id': userId,
-  };
-
-  final Uri uri = Uri.https(
-    Uri.parse(ApiNetwork.baseUrl).host,
-    'api/method/credlawn.mobile.api.leads.get_employee_leads',
-    queryParams,
-  );
-
-  
-
+  final uri = ServerApi.getEmployeeLeads({'user_id': userId});
 
   try {
-    final response = await http.get(
-      uri,
-      headers: {'Cookie': 'sid=$sid'},
-    );
-
-
-
+    final response = await http.get(uri, headers: {'Cookie': 'sid=$sid'});
 
     if (response.statusCode == 200) {
-      print('Raw JSON response from server: ${response.body}');
-      final Map<String, dynamic> jsonResponse = json.decode(response.body);
-
+      final jsonResponse = json.decode(response.body);
       if (jsonResponse['message'] != null) {
-        final List<dynamic> message = jsonResponse['message'];
-        final List<LeadsModel> leads = message
+        final leads = (jsonResponse['message'] as List<dynamic>)
             .map((item) => LeadsModel.fromJson(item))
             .toList();
-        print('Successfully parsed ${leads.length} leads.');
         return leads;
-      } else {
-        return Future.error('API Response is missing the "message" key.');
       }
-    } else {
-      return Future.error('Failed to load leads from API: ${response.statusCode}');
+      return Future.error('API Response is missing the "message" key.');
     }
+    return Future.error('Failed to load leads from API: ${response.statusCode}');
   } catch (e) {
     return Future.error('Exception during API fetch: $e');
   }
-
-  return Future.error('No leads available from API');
 }
 
 Future<bool> syncLeadUpdateToServer(LeadsModel lead, String sid) async {
-  final User? user = await SessionManager.getSessionData();
-  String? csrfToken = user?.csrfToken;
-
-  if (csrfToken == null) {
-
-    return false;
-  }
-
-  final Uri uri = Uri.https(
-    Uri.parse(ApiNetwork.baseUrl).host,
-    'api/method/credlawn.mobile.api.leads.update_lead_status_and_details',
-  );
-
-  
+  final user = await SessionManager.getSessionData();
+  final uri = ServerApi.updateLeadStatus;
 
   try {
     final response = await http.post(
       uri,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': 'sid=$sid',
-        'X-Frappe-CSRF-Token': csrfToken,
-      },
+      headers: {'Content-Type': 'application/json', 'Cookie': 'sid=$sid'},
       body: json.encode({
         'frappe_id': lead.frappeId,
         'lead_status': lead.leadStatus,
@@ -85,64 +45,74 @@ Future<bool> syncLeadUpdateToServer(LeadsModel lead, String sid) async {
         'connected_calls': lead.connectedCalls,
         'total_duration': lead.totalDuration,
         'allocation_status': lead.allocationStatus,
-        'last_synced_at': lead.lastSyncedAt,
+        'last_synced_at': DateTime.fromMillisecondsSinceEpoch(lead.lastSyncedAt).toIso8601String(),
         'follow_up_date': lead.followUpDate,
         'follow_up_time': lead.followUpTime,
       }),
     );
-    
 
     if (response.statusCode == 200) {
-      
-
-      final Map<String, dynamic> jsonResponse = json.decode(response.body);
-
-
+      final jsonResponse = json.decode(response.body);
       return jsonResponse['message']?['status'] == 'success';
-        } else {
-          return false;
-        }
-      } catch (e) {
-        return false;
+    } else {
+      if (response.statusCode == 417 && response.body.contains('not found')) {
+        await ErrorLogger.logError(
+          title: 'Lead Not Found on Server',
+          errorMessage: 'Lead ${lead.frappeId} not found on server. May have been deleted or ID mismatch.',
+          errorType: 'Data Sync',
+          userId: user?.userId,
+        );
+      } else {
+        await ErrorLogger.logApiError(
+          endpoint: uri.toString(),
+          method: 'POST',
+          statusCode: response.statusCode,
+          responseBody: response.body,
+          userId: user?.userId,
+        );
       }
+      return false;
+    }
+  } catch (e) {
+    await ErrorLogger.logException(
+      context: 'syncLeadUpdateToServer',
+      exception: e,
+      userId: user?.userId,
+    );
+    return false;
+  }
 }
 
 Future<bool> markLeadInactiveOnServer(String frappeId, String sid) async {
-  final User? user = await SessionManager.getSessionData();
-  String? csrfToken = user?.csrfToken;
-
-  if (csrfToken == null) {
-
-    return false;
-  }
-
-  final Uri uri = Uri.https(
-    Uri.parse(ApiNetwork.baseUrl).host,
-    'api/method/credlawn.api.leads.mark_lead_inactive_on_server',
-  );
-
-  
+  final user = await SessionManager.getSessionData();
+  final uri = ServerApi.markLeadInactive;
 
   try {
     final response = await http.post(
       uri,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': 'sid=$sid',
-        'X-Frappe-CSRF-Token': csrfToken,
-      },
-      body: json.encode({
-        'frappe_id': frappeId,
-      }),
+      headers: {'Content-Type': 'application/json', 'Cookie': 'sid=$sid'},
+      body: json.encode({'frappe_id': frappeId}),
     );
 
     if (response.statusCode == 200) {
-      final Map<String, dynamic> jsonResponse = json.decode(response.body);
+      final jsonResponse = json.decode(response.body);
       return jsonResponse['status'] == 'success';
-        } else {
-          return false;
-        }
-      } catch (e) {
-        return false;
-      }
+    } else {
+      await ErrorLogger.logApiError(
+        endpoint: uri.toString(),
+        method: 'POST',
+        statusCode: response.statusCode,
+        responseBody: response.body,
+        userId: user?.userId,
+      );
+      return false;
+    }
+  } catch (e) {
+    await ErrorLogger.logException(
+      context: 'markLeadInactiveOnServer',
+      exception: e,
+      userId: user?.userId,
+    );
+    return false;
+  }
 }
