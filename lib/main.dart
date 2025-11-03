@@ -20,8 +20,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:credlawn/models/fcm_log_model.dart';
-import 'package:credlawn/helpers/database_service.dart'; // Import DatabaseService
-import 'package:credlawn/helpers/app_lifecycle_handler.dart'; // Import AppLifecycleHandler
+import 'package:credlawn/helpers/database_service.dart';
+import 'package:credlawn/helpers/app_lifecycle_handler.dart';
+import 'package:credlawn/helpers/background_sync_service.dart';
+import 'package:credlawn/api/server_api.dart';
+import 'package:credlawn/helpers/error_logger.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -49,8 +52,9 @@ Future<String?> _getInitialNotificationPayload() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  BackgroundSyncService.initialize();
   await Firebase.initializeApp();
-  await DatabaseService.instance.initialize(); // Initialize DatabaseService and its repositories
+  await DatabaseService.instance.initialize();
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/launcher_icon');
   const InitializationSettings initializationSettings = InitializationSettings(
@@ -143,7 +147,7 @@ void main() async {
   String? token = await messaging.getToken();
   await CallLogSyncManager.initialize();
   await CallLogSyncManager.syncCallLogs();
-  AppLifecycleHandler.initialize(); // Initialize app lifecycle handler
+  AppLifecycleHandler.initialize();
   final String? pendingFeedbackMobile = await AppStateManager.getPendingFeedbackMobile();
   var status = await Permission.phone.status;
   if (!status.isGranted) {
@@ -243,7 +247,7 @@ class _MyAppState extends State<MyApp> {
     try {
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
       String currentVersion = packageInfo.version;
-      final response = await http.get(Uri.parse('https://cipl.me/api/resource/Mobile App/latest'));
+      final response = await http.get(ServerApi.appVersion);
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
         if (data != null && data['data'] != null) {
@@ -265,12 +269,24 @@ class _MyAppState extends State<MyApp> {
             });
           }
         } else {
-          throw Exception('Invalid API response structure');
+          await ErrorLogger.logError(
+            title: 'App Version Check Failed',
+            errorMessage: 'Invalid API response structure',
+            errorType: 'App Update',
+          );
         }
       } else {
-        throw Exception('Failed to fetch latest version');
+        await ErrorLogger.logError(
+          title: 'App Version Check Failed',
+          errorMessage: 'HTTP ${response.statusCode}: ${response.body}',
+          errorType: 'App Update',
+        );
       }
     } catch (e) {
+      await ErrorLogger.logException(
+        context: 'MyApp._checkAppVersion',
+        exception: e,
+      );
       ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
         SnackBar(content: Text('Error checking app version. Please try again later.')),
       );

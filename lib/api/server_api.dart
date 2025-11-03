@@ -7,6 +7,7 @@ class ServerApi {
   // Resources
   static final Uri employee = Uri.parse('${baseUrl}api/resource/Employee');
   static final Uri appErrorLog = Uri.parse('${baseUrl}api/resource/App Error Log');
+  static final Uri appVersion = Uri.parse('${baseUrl}api/resource/Mobile App/latest');
 
   // Methods
   static final Uri saveFcmToken = Uri.parse('${baseUrl}api/method/credlawn.api.save_fcm_token.save_fcm_token');

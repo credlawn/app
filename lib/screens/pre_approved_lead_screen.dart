@@ -13,6 +13,7 @@ import 'package:credlawn/models/user.dart';
 import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/api/server_api.dart';
 import 'package:credlawn/helpers/error_logger.dart';
+import 'package:credlawn/helpers/background_sync_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -64,6 +65,12 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
       });
     }
     _syncLeadsInBackground();
+  }
+
+  Future<void> _syncLeadsInBackground() async {
+    await BackgroundSyncService.triggerSync();
+    // We might want a way to get a callback when the sync is done
+    // to refresh the UI. For now, we'll rely on the lifecycle refresh.
   }
 
   void _onDirtyLeadNotification() {
@@ -390,90 +397,6 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
 
     return await getLeadsWithCallCounts();
   }
-
-  Future<void> _syncLeadsInBackground() async {
-    final User? currentUser = await SessionManager.getSessionData();
-    if (currentUser == null) return;
-
-    try {
-      await ErrorLogger.logError(
-        title: 'Lead Sync Started',
-        errorMessage: 'Starting lead synchronization for user: ${currentUser.userId}',
-        errorType: 'Data Sync',
-        userId: currentUser.userId,
-      );
-
-      final dirtyLeads = await DatabaseService.instance.leadsRepository.getAllLeads();
-      for (final lead in dirtyLeads.where((l) => l.isDirty == 1)) {
-        try {
-          final bool success = await syncLeadUpdateToServer(lead, currentUser.sid);
-          if (success) {
-            await DatabaseService.instance.leadsRepository.updateLeadLocalFields(
-              lead.frappeId,
-              isDirty: 0,
-              lastSyncedAt: DateTime.now().millisecondsSinceEpoch,
-            );
-            await ErrorLogger.logError(
-              title: 'Lead Sync Success',
-              errorMessage: 'Successfully synced lead: ${lead.frappeId}',
-              errorType: 'Data Sync',
-              userId: currentUser.userId,
-            );
-          } else {
-            await ErrorLogger.logError(
-              title: 'Lead Sync Failed',
-              errorMessage: 'Failed to sync lead: ${lead.frappeId}',
-              errorType: 'Data Sync',
-              userId: currentUser.userId,
-            );
-          }
-        } catch (e) {
-          await ErrorLogger.logException(
-            context: 'PreApprovedLeadsScreen._syncLeadsInBackground.syncLeadUpdate',
-            exception: e,
-            userId: currentUser.userId,
-          );
-        }
-      }
-
-      final apiLeads = await fetchEmployeeLeadsFromApi(currentUser.userId, currentUser.sid);
-      final Set<String> apiFrappeIds = apiLeads.map((lead) => lead.frappeId).toSet();
-
-      for (final apiLead in apiLeads) {
-        await DatabaseService.instance.leadsRepository.upsertLeadFromApi(apiLead);
-      }
-
-      final allLocalLeads = await DatabaseService.instance.leadsRepository.getAllLeads();
-      for (final localLead in allLocalLeads) {
-        if (localLead.allocationStatus == 'Active' && !apiFrappeIds.contains(localLead.frappeId)) {
-          await DatabaseService.instance.leadsRepository.markLeadAsInactive(localLead.frappeId);
-        }
-      }
-
-      await ErrorLogger.logError(
-        title: 'Lead Sync Completed',
-        errorMessage: 'Successfully synced leads for user: ${currentUser.userId}',
-        errorType: 'Data Sync',
-        userId: currentUser.userId,
-      );
-
-      final newLeads = await getLeadsWithCallCounts();
-      if (mounted) {
-        setState(() {
-          _allLeads = newLeads;
-          _filterLeads();
-        });
-      }
-    } catch (e) {
-      await ErrorLogger.logException(
-        context: 'PreApprovedLeadsScreen._syncLeadsInBackground',
-        exception: e,
-        userId: currentUser.userId,
-      );
-    }
-  }
-
-
 
   Future<void> _refreshLeads() async {
     await _syncLeadsInBackground();

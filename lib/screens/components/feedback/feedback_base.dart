@@ -9,6 +9,7 @@ import 'package:credlawn/helpers/database_service.dart';
 import 'package:credlawn/models/feedback_model.dart';
 import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/helpers/feedback_sync_service.dart';
+import 'package:credlawn/helpers/background_sync_service.dart';
 import 'package:credlawn/helpers/error_logger.dart';
 import 'widgets/status_chips.dart';
 import 'widgets/follow_up_picker.dart';
@@ -394,10 +395,6 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
       final feedbackId = await DatabaseService.instance.feedbackRepository.insertFeedback(newFeedback);
 
       if (feedbackId > 0) {
-        final createdFeedback = await DatabaseService.instance.feedbackRepository.getFeedbackForLead(lead.frappeId);
-        final currentFeedback = createdFeedback.firstWhere((f) => f.id == feedbackId);
-
-        await FeedbackSyncService.syncFeedback(currentFeedback);
 
         String? updatedFollowUpDate = selectedStatus == 'Follow up'
             ? (selectedDate != null ? DateFormat('yyyy-MM-dd').format(selectedDate!) : null)
@@ -423,6 +420,7 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
         if (rowsAffected > 0) {
           AppStateManager.clearPendingFeedbackMobile();
           AppStateManager.notifyLeadDirty();
+          BackgroundSyncService.triggerSync(); // Trigger immediate background sync
           CustomColor.showSuccessSnackBar(context, 'Feedback submitted successfully!');
           await _logSubmissionSuccess();
           _remarksController.clear();
