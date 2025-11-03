@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:credlawn/custom/custom_color.dart';
@@ -289,6 +288,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                 }
                                 _remarksController.clear();
                                 _referenceNoController.clear();
+                                if (status == 'Follow up') {
+                                  selectedDate = null; // Clear follow-up date
+                                  selectedTime = null; // Clear follow-up time
+                                }
                               });
                             },
                             shape: RoundedRectangleBorder(
@@ -653,13 +656,21 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         // Try to sync immediately
                         await FeedbackSyncService.syncFeedback(currentFeedback);
 
+                        String? updatedFollowUpDate = selectedStatus == 'Follow up'
+                            ? (selectedDate != null ? DateFormat('yyyy-MM-dd').format(selectedDate!) : null)
+                            : (lead.leadStatus == 'Follow up' ? '' : lead.followUpDate);
+
+                        String? updatedFollowUpTime = selectedStatus == 'Follow up'
+                            ? (selectedTime != null ? selectedTime!.format(context) : null)
+                            : (lead.leadStatus == 'Follow up' ? '' : lead.followUpTime);
+
                         final int rowsAffected = await DatabaseService.instance.leadsRepository.updateLeadLocalFields(
                           lead.frappeId,
-                          leadStatus: selectedStatus, // Keep this for filtering/display
-                          remarks: _remarksController.text, // Keep this for filtering/display
-                          arnNo: selectedStatus == 'IP Approved' ? _referenceNoController.text : null, // Keep this for filtering/display
-                          followUpDate: selectedStatus == 'Follow up' ? DateFormat('yyyy-MM-dd').format(selectedDate!) : null, // Keep this for filtering/display
-                          followUpTime: selectedStatus == 'Follow up' ? selectedTime!.format(context) : null, // Keep this for filtering/display
+                          leadStatus: selectedStatus,
+                          remarks: _remarksController.text,
+                          arnNo: selectedStatus == 'IP Approved' ? _referenceNoController.text : null,
+                          followUpDate: updatedFollowUpDate,
+                          followUpTime: updatedFollowUpTime,
                           isDirty: 1,
                           lastFeedbackId: feedbackId,
                           lastFeedbackTimestamp: newFeedback.timestamp,
@@ -890,6 +901,10 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
                             }
                             _remarksController.clear();
                             _referenceNoController.clear();
+                            if (status == 'Follow up') {
+                              selectedDate = null; // Clear follow-up date
+                              selectedTime = null; // Clear follow-up time
+                            }
                           });
                         },
                         shape: RoundedRectangleBorder(
@@ -1225,13 +1240,21 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
                         // Try to sync immediately
                         await FeedbackSyncService.syncFeedback(currentFeedback);
 
+                        String? updatedFollowUpDate = selectedStatus == 'Follow up'
+                            ? (selectedDate != null ? DateFormat('yyyy-MM-dd').format(selectedDate!) : null)
+                            : (lead.leadStatus == 'Follow up' ? '' : lead.followUpDate);
+
+                        String? updatedFollowUpTime = selectedStatus == 'Follow up'
+                            ? (selectedTime != null ? selectedTime!.format(context) : null)
+                            : (lead.leadStatus == 'Follow up' ? '' : lead.followUpTime);
+
                         final int rowsAffected = await DatabaseService.instance.leadsRepository.updateLeadLocalFields(
                           lead.frappeId,
-                          leadStatus: selectedStatus, // Keep this for filtering/display
-                          remarks: _remarksController.text, // Keep this for filtering/display
-                          arnNo: selectedStatus == 'IP Approved' ? _referenceNoController.text : null, // Keep this for filtering/display
-                          followUpDate: selectedStatus == 'Follow up' ? DateFormat('yyyy-MM-dd').format(selectedDate!) : null, // Keep this for filtering/display
-                          followUpTime: selectedStatus == 'Follow up' ? selectedTime!.format(context) : null, // Keep this for filtering/display
+                          leadStatus: selectedStatus,
+                          remarks: _remarksController.text,
+                          arnNo: selectedStatus == 'IP Approved' ? _referenceNoController.text : null,
+                          followUpDate: updatedFollowUpDate,
+                          followUpTime: updatedFollowUpTime,
                           isDirty: 1,
                           lastFeedbackId: feedbackId,
                           lastFeedbackTimestamp: newFeedback.timestamp,
