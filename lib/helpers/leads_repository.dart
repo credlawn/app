@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:credlawn/helpers/app_database.dart';
+import 'package:credlawn/helpers/database_service.dart';
 import 'package:credlawn/models/leads_model.dart';
 
 class LeadsRepository {
@@ -165,5 +166,18 @@ class LeadsRepository {
     } else {
       return null;
     }
+  }
+
+  Future<void> updateCallStatisticsForLead(String frappeId, String mobileNo) async {
+    await DatabaseService.instance.callHistoryRepository.syncPhoneCallLogs();
+
+    final stats = await DatabaseService.instance.callHistoryRepository.calculateCallStatistics(mobileNo);
+
+    await updateLeadLocalFields(
+      frappeId,
+      attemptedCalls: stats['attempted'],
+      connectedCalls: stats['connected'],
+      totalDuration: stats['duration'],
+    );
   }
 }

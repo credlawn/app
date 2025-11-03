@@ -21,7 +21,7 @@ class CallHistoryRepository {
   Future<void> syncPhoneCallLogs() async {
     if (!await Permission.phone.isGranted) {
       if (await Permission.phone.request() != PermissionStatus.granted) {
-        return; // Permission not granted
+        return;
       }
     }
 
@@ -29,8 +29,18 @@ class CallHistoryRepository {
     final lastTimestampResult = await db.rawQuery('SELECT MAX(timestamp) as max_time FROM call_history');
     final lastTimestamp = lastTimestampResult.first['max_time'] as int? ?? 0;
 
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
+
+    int queryFromTimestamp;
+    if (lastTimestamp == 0 || lastTimestamp > now) {
+      queryFromTimestamp = oneWeekAgo;
+    } else {
+      queryFromTimestamp = lastTimestamp > oneWeekAgo ? lastTimestamp : oneWeekAgo;
+    }
+
     final Iterable<CallLogEntry> entries = await CallLog.query(
-      dateFrom: lastTimestamp,
+      dateFrom: queryFromTimestamp,
     );
 
     final User? currentUser = await SessionManager.getSessionData();
@@ -101,5 +111,36 @@ class CallHistoryRepository {
     return List.generate(maps.length, (i) {
       return CallLogModel.fromMap(maps[i]);
     });
+  }
+
+  Future<Map<String, int>> calculateCallStatistics(String mobileNo) async {
+    final db = await _appDatabase.database;
+    final normalizedNumber = CallHistoryRepository.normalizeNumber(mobileNo);
+
+    final sevenDaysAgo = DateTime.now().millisecondsSinceEpoch - (7 * 24 * 60 * 60 * 1000);
+
+    final attemptedResult = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM call_history WHERE normalized_number = ? AND call_type = ? AND timestamp >= ?',
+      [normalizedNumber, 'outgoing', sevenDaysAgo],
+    );
+    final attemptedCalls = (attemptedResult.first['count'] as int?) ?? 0;
+
+    final connectedResult = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM call_history WHERE normalized_number = ? AND duration > 0 AND timestamp >= ?',
+      [normalizedNumber, sevenDaysAgo],
+    );
+    final connectedCalls = (connectedResult.first['count'] as int?) ?? 0;
+
+    final durationResult = await db.rawQuery(
+      'SELECT SUM(duration) as total FROM call_history WHERE normalized_number = ? AND duration > 0 AND timestamp >= ?',
+      [normalizedNumber, sevenDaysAgo],
+    );
+    final totalDuration = (durationResult.first['total'] as int?) ?? 0;
+
+    return {
+      'attempted': attemptedCalls,
+      'connected': connectedCalls,
+      'duration': totalDuration,
+    };
   }
 }

@@ -383,6 +383,7 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
       final feedbackId = await DatabaseService.instance.feedbackRepository.insertFeedback(newFeedback);
 
       if (feedbackId > 0) {
+        await DatabaseService.instance.leadsRepository.updateCallStatisticsForLead(lead.frappeId, lead.mobileNo);
 
         String? updatedFollowUpDate = selectedStatus == 'Follow up'
             ? (selectedDate != null ? DateFormat('yyyy-MM-dd').format(selectedDate!) : null)
