@@ -18,7 +18,7 @@ class BackgroundSyncService {
     try {
       await syncLeads(currentUser);
     } catch (e) {
-      // Silent fail for background sync errors
+      
     }
   }
 
@@ -26,14 +26,6 @@ class BackgroundSyncService {
 
   static Future<void> syncLeads(User currentUser) async {
     try {
-      await ErrorLogger.logError(
-        title: 'Background Lead Sync Started',
-        errorMessage: 'Starting lead synchronization for user: ${currentUser.userId}',
-        errorType: 'Data Sync',
-        userId: currentUser.userId,
-      );
-
-      // 1. Sync dirty leads from local to server
       final dirtyLeads = await DatabaseService.instance.leadsRepository.getAllLeads();
       for (final lead in dirtyLeads.where((l) => l.isDirty == 1)) {
         try {
@@ -53,15 +45,24 @@ class BackgroundSyncService {
             );
           }
         } catch (e) {
-          await ErrorLogger.logException(
-            context: 'BackgroundSyncService.syncLeads.syncLeadUpdate',
-            exception: e,
-            userId: currentUser.userId,
-          );
+          final errorMessage = e.toString();
+          if (errorMessage.contains('CONCURRENCY_ERROR') ||
+              errorMessage.contains('Document has been modified after you have opened it')) {
+            await DatabaseService.instance.leadsRepository.updateLeadLocalFields(
+              lead.frappeId,
+              isDirty: 0,
+              lastSyncedAt: DateTime.now().millisecondsSinceEpoch,
+            );
+          } else {
+            await ErrorLogger.logException(
+              context: 'BackgroundSyncService.syncLeads.syncLeadUpdate',
+              exception: e,
+              userId: currentUser.userId,
+            );
+          }
         }
       }
 
-      // 2. Fetch latest leads from API and update local DB
       final apiLeads = await fetchEmployeeLeadsFromApi(currentUser.userId, currentUser.sid);
       final Set<String> apiFrappeIds = apiLeads.map((lead) => lead.frappeId).toSet();
 
@@ -69,7 +70,6 @@ class BackgroundSyncService {
         await DatabaseService.instance.leadsRepository.upsertLeadFromApi(apiLead);
       }
 
-      // 3. Mark leads as inactive if they are no longer in the API response
       final allLocalLeads = await DatabaseService.instance.leadsRepository.getAllLeads();
       for (final localLead in allLocalLeads) {
         if (localLead.allocationStatus == 'Active' && !apiFrappeIds.contains(localLead.frappeId)) {
@@ -77,12 +77,6 @@ class BackgroundSyncService {
         }
       }
 
-      await ErrorLogger.logError(
-        title: 'Background Lead Sync Completed',
-        errorMessage: 'Successfully synced leads for user: ${currentUser.userId}',
-        errorType: 'Data Sync',
-        userId: currentUser.userId,
-      );
     } catch (e) {
       await ErrorLogger.logException(
         context: 'BackgroundSyncService.syncLeads',

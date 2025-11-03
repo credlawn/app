@@ -55,31 +55,38 @@ Future<bool> syncLeadUpdateToServer(LeadsModel lead, String sid) async {
       final jsonResponse = json.decode(response.body);
       return jsonResponse['message']?['status'] == 'success';
     } else {
-      if (response.statusCode == 417 && response.body.contains('not found')) {
-        await ErrorLogger.logError(
-          title: 'Lead Not Found on Server',
-          errorMessage: 'Lead ${lead.frappeId} not found on server. May have been deleted or ID mismatch.',
-          errorType: 'Data Sync',
-          userId: user?.userId,
-        );
-      } else {
-        await ErrorLogger.logApiError(
-          endpoint: uri.toString(),
-          method: 'POST',
-          statusCode: response.statusCode,
-          responseBody: response.body,
-          userId: user?.userId,
-        );
+      if (response.statusCode == 417) {
+        if (response.body.contains('not found')) {
+          await ErrorLogger.logError(
+            title: 'Lead Not Found on Server',
+            errorMessage: 'Lead ${lead.frappeId} not found on server. May have been deleted or ID mismatch.',
+            errorType: 'Data Sync',
+            userId: user?.userId,
+          );
+        } else if (response.body.contains('Document has been modified after you have opened it') ||
+                   response.body.contains('TimestampMismatchError')) {
+          throw Exception('CONCURRENCY_ERROR: Document has been modified after you have opened it');
+        }
       }
+
+      await ErrorLogger.logApiError(
+        endpoint: uri.toString(),
+        method: 'POST',
+        statusCode: response.statusCode,
+        responseBody: response.body,
+        userId: user?.userId,
+      );
       return false;
     }
   } catch (e) {
-    await ErrorLogger.logException(
-      context: 'syncLeadUpdateToServer',
-      exception: e,
-      userId: user?.userId,
-    );
-    return false;
+    if (!e.toString().contains('CONCURRENCY_ERROR')) {
+      await ErrorLogger.logException(
+        context: 'syncLeadUpdateToServer',
+        exception: e,
+        userId: user?.userId,
+      );
+    }
+    rethrow;
   }
 }
 

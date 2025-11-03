@@ -326,19 +326,7 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
     }
   }
 
-  Future<void> _logSubmissionSuccess() async {
-    try {
-      final currentUser = await SessionManager.getSessionData();
-      await ErrorLogger.logError(
-        title: 'Feedback Submitted Successfully',
-        errorMessage: 'Status: $selectedStatus, Mobile: ${widget.mobileNo}',
-        errorType: 'User Action',
-        userId: currentUser?.userId,
-      );
-    } catch (e) {
-      // Silent fail for logging
-    }
-  }
+
 
   Future<void> submitFeedback() async {
     // Validation
@@ -422,7 +410,6 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
           AppStateManager.notifyLeadDirty();
           BackgroundSyncService.triggerSync(); // Trigger immediate background sync
           CustomColor.showSuccessSnackBar(context, 'Feedback submitted successfully!');
-          await _logSubmissionSuccess();
           _remarksController.clear();
           _referenceNoController.clear();
           onFeedbackSubmitted(true);

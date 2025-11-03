@@ -1,6 +1,7 @@
 import 'package:credlawn/helpers/device_info_helper.dart';
 import 'package:credlawn/network/api_login_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:credlawn/screens/login_screen.dart';
 import 'package:credlawn/screens/home_screen.dart';
 import 'package:credlawn/screens/app_update_screen.dart';
@@ -16,6 +17,7 @@ import 'package:credlawn/screens/customer_details_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:credlawn/screens/permission_denied_screen.dart';
 import 'package:credlawn/screens/notification_detail_screen.dart';
+import 'package:credlawn/screens/no_internet_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -268,93 +270,25 @@ class _MyAppState extends State<MyApp> {
               );
             });
           }
-        } else {
-          await ErrorLogger.logError(
-            title: 'App Version Check Failed',
-            errorMessage: 'Invalid API response structure',
-            errorType: 'App Update',
-          );
         }
-      } else {
-        await ErrorLogger.logError(
-          title: 'App Version Check Failed',
-          errorMessage: 'HTTP ${response.statusCode}: ${response.body}',
-          errorType: 'App Update',
-        );
       }
     } catch (e) {
       await ErrorLogger.logException(
         context: 'MyApp._checkAppVersion',
         exception: e,
       );
-      _showNoInternetDialog();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(
+            fullscreenDialog: true,
+            builder: (context) => NoInternetScreen(),
+          ),
+        ).then((result) {
+          if (result != true) {
+            _checkAppVersion();
+          }
+        });
+      });
     }
-  }
-
-  void _showNoInternetDialog() {
-    showDialog(
-      context: navigatorKey.currentContext!,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: [
-              Icon(Icons.wifi_off, color: Colors.orange.shade600, size: 28),
-              const SizedBox(width: 12),
-              Text(
-                'No Internet Connection',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          content: Text(
-            'Unable to check for app updates. Please check your internet connection and try again.',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey.shade700,
-              height: 1.5,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                'Skip',
-                style: GoogleFonts.poppins(
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _checkAppVersion(); // Retry the version check
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade600,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                'Retry',
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 }

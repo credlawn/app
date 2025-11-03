@@ -16,19 +16,7 @@ class StatusChips extends StatelessWidget {
     required this.statusOptions,
   });
 
-  Future<void> _logStatusChange(String status) async {
-    try {
-      final currentUser = await SessionManager.getSessionData();
-      await ErrorLogger.logError(
-        title: 'Feedback Status Changed',
-        errorMessage: 'User changed feedback status to: $status',
-        errorType: 'User Action',
-        userId: currentUser?.userId,
-      );
-    } catch (e) {
-      // Silent fail for logging
-    }
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -134,11 +122,6 @@ class StatusChips extends StatelessWidget {
               FocusScope.of(context).unfocus();
               final newStatus = selected ? status : null;
               onStatusChanged(newStatus);
-
-              // Log status change for analytics
-              if (newStatus != null) {
-                await _logStatusChange(newStatus);
-              }
             },
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(18.0),
