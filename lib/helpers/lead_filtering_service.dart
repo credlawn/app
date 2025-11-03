@@ -58,7 +58,7 @@ class LeadFilteringService {
         }
         return filteredLeads;
 
-      case 'Used Leads':
+      case 'Failed':
         return leads.where((lead) =>
           ['Customer Denied', 'Docs Not Available', 'Already Carded', 'Recently Applied'].contains(lead.lead.leadStatus)
         ).toList();

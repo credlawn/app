@@ -519,7 +519,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
               },
             ),
             if (_filteredLeads.isNotEmpty)
-              if (_selectedLeadGroup == 'Login' || _selectedLeadGroup == 'Used Leads') ...[
+              if (_selectedLeadGroup == 'Login' || _selectedLeadGroup == 'Failed') ...[
                 Builder(
                   builder: (context) {
                     final groupedLeads = groupBy(_filteredLeads, (LeadWithCallInfo lead) {

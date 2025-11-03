@@ -149,8 +149,8 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
     required VoidCallback onPressed,
   }) {
     return Container(
-      width: 36,
-      height: 36,
+      width: 40,
+      height: 40,
       decoration: BoxDecoration(
         color: backgroundColor,
         shape: BoxShape.circle,
@@ -174,7 +174,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
   Widget _buildStatusBadge() {
     if (_hasFeedback(widget.leadWithInfo.lead.leadStatus)) {
       return Padding(
-        padding: const EdgeInsets.only(left: 8.0),
+        padding: const EdgeInsets.only(left: 4.0),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -197,7 +197,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.purple,
+                color: widget.leadWithInfo.lead.leadStatus == 'IP Approved' ? Colors.green : widget.leadWithInfo.lead.leadStatus == 'IP Decline' ? Colors.red : widget.leadWithInfo.lead.leadStatus == 'Customer Denied' ? Colors.red.shade600 : widget.leadWithInfo.lead.leadStatus == 'Docs Not Available' ? Colors.orange.shade600 : widget.leadWithInfo.lead.leadStatus == 'Already Carded' ? Colors.purple.shade600 : widget.leadWithInfo.lead.leadStatus == 'Recently Applied' ? Colors.blue.shade600 : Colors.purple,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -215,7 +215,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
     }
     else if (widget.leadWithInfo.callCount == 0) {
       return Padding(
-        padding: const EdgeInsets.only(left: 8.0),
+        padding: const EdgeInsets.only(left: 4.0),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
@@ -235,7 +235,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
     }
     else if (widget.leadWithInfo.lastCallDuration == 0) {
       return Padding(
-        padding: const EdgeInsets.only(left: 8.0),
+        padding: const EdgeInsets.only(left: 4.0),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -276,7 +276,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
     }
     else if (widget.leadWithInfo.callCount > 0 && (widget.leadWithInfo.lastCallDuration ?? 0) > 0 && !_hasFeedback(widget.leadWithInfo.lead.leadStatus)) {
       return Padding(
-        padding: const EdgeInsets.only(left: 8.0),
+        padding: const EdgeInsets.only(left: 4.0),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -317,7 +317,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
     }
     else {
       return Padding(
-        padding: const EdgeInsets.only(left: 8.0),
+        padding: const EdgeInsets.only(left: 4.0),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
@@ -360,10 +360,9 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
     return InkWell(
       onTap: widget.onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.only(left: 8, right: 4, top: 12, bottom: 12),
         child: Row(
           children: [
-            const SizedBox(width: 12),
             Expanded(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -391,7 +390,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
 
   Widget _buildExpandedSection() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -426,8 +425,8 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                 const SizedBox(width: 32),
                 _buildSmallActionButton(
                   icon: Icons.info_outline,
-                  backgroundColor: Colors.purple.withOpacity(0.1),
-                  iconColor: Colors.purple,
+                  backgroundColor: Colors.blue,
+                  iconColor: Colors.white,
                   onPressed: () {
                     widget.onNavigate();
                     Navigator.of(context).push(
@@ -442,8 +441,8 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                 const SizedBox(width: 32),
 _buildSmallActionButton(
   icon: Icons.feedback,
-  backgroundColor: Colors.orange.withOpacity(0.1),
-  iconColor: Colors.orange,
+  backgroundColor: Colors.orange,
+  iconColor: Colors.white,
   onPressed: () {
     widget.onNavigate();
     Navigator.of(context).push(
@@ -459,8 +458,8 @@ _buildSmallActionButton(
                 const SizedBox(width: 32),
                 _buildSmallActionButton(
                   icon: Icons.history,
-                  backgroundColor: Colors.grey.shade600.withOpacity(0.1),
-                  iconColor: Colors.grey.shade600,
+                  backgroundColor: Colors.grey.shade600,
+                  iconColor: Colors.white,
                   onPressed: () {
                     widget.onNavigate();
                     Navigator.of(context).push(
