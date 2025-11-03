@@ -20,7 +20,7 @@ class LeadsModel {
   final int totalDuration;
   final String allocationStatus;
   final int isDirty;
-  final int lastSyncedAt;
+  final int lastModifiedAt;
   final String syncError;
   final String followUpDate;
   final String followUpTime;
@@ -51,7 +51,7 @@ class LeadsModel {
     required this.totalDuration,
     required this.allocationStatus,
     required this.isDirty,
-    required this.lastSyncedAt,
+    required this.lastModifiedAt,
     required this.syncError,
     required this.followUpDate,
     required this.followUpTime,
@@ -83,7 +83,7 @@ class LeadsModel {
       totalDuration: json['total_duration'] ?? 0,
       allocationStatus: json['allocation_status'] ?? 'Active',
       isDirty: 0,
-      lastSyncedAt: DateTime.now().millisecondsSinceEpoch,
+      lastModifiedAt: DateTime.now().millisecondsSinceEpoch,
       syncError: '',
       followUpDate: json['follow_up_date'] ?? '',
       followUpTime: json['follow_up_time'] ?? '',
@@ -117,7 +117,7 @@ class LeadsModel {
       totalDuration: map['total_duration'] ?? 0,
       allocationStatus: map['allocation_status'] ?? 'Active',
       isDirty: map['is_dirty'] ?? 0,
-      lastSyncedAt: map['last_synced_at'] ?? 0,
+      lastModifiedAt: map['last_modified_at'] ?? 0,
       syncError: map['sync_error'] ?? '',
       followUpDate: map['follow_up_date'] ?? '',
       followUpTime: map['follow_up_time'] ?? '',
@@ -150,7 +150,7 @@ class LeadsModel {
       'total_duration': totalDuration,
       'allocation_status': allocationStatus,
       'is_dirty': isDirty,
-      'last_synced_at': lastSyncedAt,
+      'last_modified_at': lastModifiedAt,
       'sync_error': syncError,
       'follow_up_date': followUpDate,
       'follow_up_time': followUpTime,
@@ -182,7 +182,7 @@ class LeadsModel {
     int? totalDuration,
     String? allocationStatus,
     int? isDirty,
-    int? lastSyncedAt,
+    int? lastModifiedAt,
     String? syncError,
     String? followUpDate,
     String? followUpTime,
@@ -213,7 +213,7 @@ class LeadsModel {
       totalDuration: totalDuration ?? this.totalDuration,
       allocationStatus: allocationStatus ?? this.allocationStatus,
       isDirty: isDirty ?? this.isDirty,
-      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
       syncError: syncError ?? this.syncError,
       followUpDate: followUpDate ?? this.followUpDate,
       followUpTime: followUpTime ?? this.followUpTime,

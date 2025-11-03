@@ -36,7 +36,7 @@ def get_employee_leads(user_id):
             "connected_calls",
             "total_duration",
             "allocation_status",
-            "last_synced_at", # Assuming this is also on Frappe for server-side tracking
+            "last_modified_at", # Assuming this is also on Frappe for server-side tracking
             "follow_up_date", # New field
             "follow_up_time", # New field
         ],
@@ -45,7 +45,7 @@ def get_employee_leads(user_id):
     return leads
 
 @frappe.whitelist(allow_guest=False)
-def update_lead_status_and_details(frappe_id, lead_status, remarks, arn_no, attempted_calls, connected_calls, total_duration, allocation_status, last_synced_at, follow_up_date, follow_up_time):
+def update_lead_status_and_details(frappe_id, lead_status, remarks, arn_no, attempted_calls, connected_calls, total_duration, allocation_status, last_modified_at, follow_up_date, follow_up_time):
     """
     Updates a specific lead's status and other details in the 'Leads' DocType.
     This is for syncing changes from the mobile app to the server.
@@ -64,7 +64,7 @@ def update_lead_status_and_details(frappe_id, lead_status, remarks, arn_no, atte
         doc.connected_calls = connected_calls
         doc.total_duration = total_duration
         doc.allocation_status = allocation_status # 'Active' or 'Inactive'
-        doc.last_synced_at = frappe.utils.get_datetime(last_synced_at) # Convert timestamp to datetime
+        doc.last_modified_at = frappe.utils.get_datetime(last_modified_at) # Convert timestamp to datetime
         doc.follow_up_date = follow_up_date
         doc.follow_up_time = follow_up_time
 

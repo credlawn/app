@@ -87,7 +87,7 @@ class LeadsRepository {
         connectedCalls: existingLead.connectedCalls,
         totalDuration: existingLead.totalDuration,
         isDirty: existingLead.isDirty,
-        lastSyncedAt: existingLead.lastSyncedAt,
+        lastModifiedAt: existingLead.lastModifiedAt,
         syncError: existingLead.syncError,
         allocationStatus: 'Active',
         followUpDate: existingLead.followUpDate,
@@ -110,7 +110,7 @@ class LeadsRepository {
     int? totalDuration,
     String? allocationStatus,
     int? isDirty,
-    int? lastSyncedAt,
+    int? lastModifiedAt,
     String? syncError,
     String? followUpDate,
     String? followUpTime,
@@ -127,7 +127,7 @@ class LeadsRepository {
     if (totalDuration != null) fieldsToUpdate['total_duration'] = totalDuration;
     if (allocationStatus != null) fieldsToUpdate['allocation_status'] = allocationStatus;
     if (isDirty != null) fieldsToUpdate['is_dirty'] = isDirty;
-    if (lastSyncedAt != null) fieldsToUpdate['last_synced_at'] = lastSyncedAt;
+    if (lastModifiedAt != null) fieldsToUpdate['last_modified_at'] = lastModifiedAt;
     if (syncError != null) fieldsToUpdate['sync_error'] = syncError;
     if (followUpDate != null) fieldsToUpdate['follow_up_date'] = followUpDate;
     if (followUpTime != null) fieldsToUpdate['follow_up_time'] = followUpTime;

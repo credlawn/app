@@ -34,7 +34,7 @@ class BackgroundSyncService {
             await DatabaseService.instance.leadsRepository.updateLeadLocalFields(
               lead.frappeId,
               isDirty: 0,
-              lastSyncedAt: DateTime.now().millisecondsSinceEpoch,
+              lastModifiedAt: DateTime.now().millisecondsSinceEpoch,
             );
           } else {
             await ErrorLogger.logError(
@@ -51,7 +51,7 @@ class BackgroundSyncService {
             await DatabaseService.instance.leadsRepository.updateLeadLocalFields(
               lead.frappeId,
               isDirty: 0,
-              lastSyncedAt: DateTime.now().millisecondsSinceEpoch,
+              lastModifiedAt: DateTime.now().millisecondsSinceEpoch,
             );
           } else {
             await ErrorLogger.logException(

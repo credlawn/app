@@ -45,7 +45,7 @@ Future<bool> syncLeadUpdateToServer(LeadsModel lead, String sid) async {
         'connected_calls': lead.connectedCalls,
         'total_duration': lead.totalDuration,
         'allocation_status': lead.allocationStatus,
-        'last_synced_at': DateTime.fromMillisecondsSinceEpoch(lead.lastSyncedAt).toIso8601String(),
+        'last_modified_at': DateTime.fromMillisecondsSinceEpoch(lead.lastModifiedAt).toIso8601String(),
         'follow_up_date': lead.followUpDate,
         'follow_up_time': lead.followUpTime,
       }),

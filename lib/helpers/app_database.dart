@@ -18,7 +18,7 @@ class AppDatabase {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 12, onCreate: _createDB, onUpgrade: _onUpgrade);
+    return await openDatabase(path, version: 13, onCreate: _createDB, onUpgrade: _onUpgrade);
   }
 
   Future _createDB(Database db, int version) async {
@@ -62,7 +62,7 @@ CREATE TABLE leads (
   total_duration $intType DEFAULT 0,
   allocation_status $textType DEFAULT 'Active',
   is_dirty $intType DEFAULT 0,
-  last_synced_at $intType DEFAULT 0,
+  last_modified_at $intType DEFAULT 0,
   sync_error $textType DEFAULT '',
   follow_up_date $textType DEFAULT '',
   follow_up_time $textType DEFAULT '',
@@ -143,7 +143,7 @@ CREATE TABLE leads (
   total_duration $intType DEFAULT 0,
   allocation_status $textType DEFAULT 'Active',
   is_dirty $intType DEFAULT 0,
-  last_synced_at $intType DEFAULT 0,
+  last_modified_at $intType DEFAULT 0,
   sync_error $textType DEFAULT '',
   follow_up_date $textType DEFAULT '',
   follow_up_time $textType DEFAULT ''
@@ -200,6 +200,12 @@ CREATE TABLE leads (
       await db.execute('ALTER TABLE feedback ADD COLUMN sync_attempts INTEGER DEFAULT 0');
       await db.execute('ALTER TABLE feedback ADD COLUMN last_sync_attempt INTEGER DEFAULT 0');
       await db.execute('ALTER TABLE feedback ADD COLUMN server_id TEXT');
+    }
+    if (oldVersion < 13) {
+      // Rename last_synced_at to last_modified_at
+      await db.execute('ALTER TABLE leads ADD COLUMN last_modified_at INTEGER DEFAULT 0');
+      await db.execute('UPDATE leads SET last_modified_at = last_synced_at WHERE last_synced_at IS NOT NULL');
+      await db.execute('ALTER TABLE leads DROP COLUMN last_synced_at');
     }
   }
 

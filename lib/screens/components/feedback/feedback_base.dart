@@ -401,7 +401,7 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
           followUpDate: updatedFollowUpDate,
           followUpTime: updatedFollowUpTime,
           isDirty: 1,
-          lastSyncedAt: DateTime.now().millisecondsSinceEpoch,
+          lastModifiedAt: DateTime.now().millisecondsSinceEpoch,
           lastFeedbackId: feedbackId,
           lastFeedbackTimestamp: newFeedback.timestamp,
         );
