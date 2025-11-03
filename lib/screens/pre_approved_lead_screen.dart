@@ -36,7 +36,6 @@ class PreApprovedLeadsScreen extends StatefulWidget {
 }
 
 class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with WidgetsBindingObserver {
-  late Future<List<LeadWithCallInfo>> _leadsFuture;
   String? _expandedLeadId;
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
@@ -48,12 +47,23 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _leadsFuture = _fetchAndSyncLeads();
+    _loadInitialData();
     _searchController.addListener(() {
       _filterLeads();
     });
 
     AppStateManager.dirtyLeadNotifier.addListener(_onDirtyLeadNotification);
+  }
+
+  void _loadInitialData() async {
+    final leads = await _loadLocalLeads();
+    if (mounted) {
+      setState(() {
+        _allLeads = leads;
+        _filterLeads();
+      });
+    }
+    _syncLeadsInBackground();
   }
 
   void _onDirtyLeadNotification() {
@@ -97,14 +107,14 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
   }
 
   void _filterLeads() {
+    final groupFiltered = _getFilteredLeadsByGroup(_allLeads);
     final query = _searchController.text.toLowerCase();
-    setState(() {
-      _filteredLeads = _allLeads.where((leadWithInfo) {
-        final nameMatches = leadWithInfo.lead.customerName.toLowerCase().contains(query);
-        final mobileMatches = leadWithInfo.lead.mobileNo.toLowerCase().contains(query);
-        return nameMatches || mobileMatches;
-      }).toList();
-    });
+    _filteredLeads = groupFiltered.where((leadWithInfo) {
+      if (query.isEmpty) return true;
+      final nameMatches = leadWithInfo.lead.customerName.toLowerCase().contains(query);
+      final mobileMatches = leadWithInfo.lead.mobileNo.toLowerCase().contains(query);
+      return nameMatches || mobileMatches;
+    }).toList();
   }
 
   List<LeadWithCallInfo> _getPendingFeedbackLeads(List<LeadWithCallInfo> allLeads) {
@@ -317,9 +327,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
         );
       },
     ).then((result) {
-      if (result == true) {
-        _refreshLeads();
-      }
+      AppStateManager.dirtyLeadNotifier.value = true;
       AppStateManager.clearPendingFeedbackMobile();
     });
   }
@@ -369,7 +377,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
     }
   }
 
-  Future<List<LeadWithCallInfo>> _fetchAndSyncLeads() async {
+  Future<List<LeadWithCallInfo>> _loadLocalLeads() async {
     final User? currentUser = await SessionManager.getSessionData();
     if (currentUser == null) {
       await ErrorLogger.logError(
@@ -379,6 +387,13 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
       );
       return Future.error('User not logged in');
     }
+
+    return await getLeadsWithCallCounts();
+  }
+
+  Future<void> _syncLeadsInBackground() async {
+    final User? currentUser = await SessionManager.getSessionData();
+    if (currentUser == null) return;
 
     try {
       await ErrorLogger.logError(
@@ -414,7 +429,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
           }
         } catch (e) {
           await ErrorLogger.logException(
-            context: 'PreApprovedLeadsScreen._fetchAndSyncLeads.syncLeadUpdate',
+            context: 'PreApprovedLeadsScreen._syncLeadsInBackground.syncLeadUpdate',
             exception: e,
             userId: currentUser.userId,
           );
@@ -424,12 +439,10 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
       final apiLeads = await fetchEmployeeLeadsFromApi(currentUser.userId, currentUser.sid);
       final Set<String> apiFrappeIds = apiLeads.map((lead) => lead.frappeId).toSet();
 
-      // Upsert all leads from the server first
       for (final apiLead in apiLeads) {
         await DatabaseService.instance.leadsRepository.upsertLeadFromApi(apiLead);
       }
 
-      // Now, get the full list of local leads and mark the inactive ones
       final allLocalLeads = await DatabaseService.instance.leadsRepository.getAllLeads();
       for (final localLead in allLocalLeads) {
         if (localLead.allocationStatus == 'Active' && !apiFrappeIds.contains(localLead.frappeId)) {
@@ -437,32 +450,37 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
         }
       }
 
-      final leadsForDisplay = await getLeadsWithCallCounts();
       await ErrorLogger.logError(
         title: 'Lead Sync Completed',
-        errorMessage: 'Successfully synced ${leadsForDisplay.length} leads for user: ${currentUser.userId}',
+        errorMessage: 'Successfully synced leads for user: ${currentUser.userId}',
         errorType: 'Data Sync',
         userId: currentUser.userId,
       );
 
-      return leadsForDisplay;
-    } on Exception catch (e) {
-      final currentUser = await SessionManager.getSessionData();
+      final newLeads = await getLeadsWithCallCounts();
+      if (mounted) {
+        setState(() {
+          _allLeads = newLeads;
+          _filterLeads();
+        });
+      }
+    } catch (e) {
       await ErrorLogger.logException(
-        context: 'PreApprovedLeadsScreen._fetchAndSyncLeads',
+        context: 'PreApprovedLeadsScreen._syncLeadsInBackground',
         exception: e,
-        userId: currentUser?.userId,
+        userId: currentUser.userId,
       );
-      // If API fetch fails, still try to display local leads
-      final leadsForDisplay = await getLeadsWithCallCounts();
-      return leadsForDisplay;
     }
   }
 
+
+
   Future<void> _refreshLeads() async {
+    await _syncLeadsInBackground();
+    final newLeads = await getLeadsWithCallCounts();
     setState(() {
-      _allLeads = [];
-      _leadsFuture = _fetchAndSyncLeads();
+      _allLeads = newLeads;
+      _filterLeads();
     });
   }
 
@@ -575,66 +593,43 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: _buildAppBar(),
-      body: FutureBuilder<List<LeadWithCallInfo>>(
-        future: _leadsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: SpinKitCircle(color: CustomColor.MainColor, size: 50));
-          } else if (snapshot.hasError) {
-            return ErrorView(
-              errorMessage: 'Error: ${snapshot.error}',
-              onRetry: _refreshLeads,
-            );
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return EmptyView(
-              message: 'No leads available.',
-              onRefresh: _refreshLeads,
-            );
-          } else {
-            _allLeads = snapshot.data!;
-            _filteredLeads = _allLeads;
-
-            final filteredLeads = _getFilteredLeadsByGroup(_filteredLeads);
-
-            return RefreshIndicator(
-              onRefresh: _refreshLeads,
-              child: ListView(
-                padding: const EdgeInsets.only(top: 8),
-                children: [
-                  LeadGroupChips(
-                    selectedGroup: _selectedLeadGroup,
-                    onGroupSelected: (group) {
-                      setState(() {
-                        _selectedLeadGroup = group;
-                      });
-                    },
-                  ),
-                  if (filteredLeads.isNotEmpty)
-                    LeadList(
-                      leads: filteredLeads,
-                      expandedLeadId: _expandedLeadId,
-                      onExpandItem: _expandItem,
-                      onNavigate: _closeExpandedItem,
-                      onCallPressed: _callNumber,
-                    )
-                  else
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 32.0),
-                        child: Text(
-                          'No leads available in this category.',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
+      body: RefreshIndicator(
+        onRefresh: _refreshLeads,
+        child: ListView(
+          padding: const EdgeInsets.only(top: 8),
+          children: [
+            LeadGroupChips(
+              selectedGroup: _selectedLeadGroup,
+              onGroupSelected: (group) {
+                setState(() {
+                  _selectedLeadGroup = group;
+                  _filterLeads();
+                });
+              },
+            ),
+            if (_filteredLeads.isNotEmpty)
+              LeadList(
+                leads: _filteredLeads,
+                expandedLeadId: _expandedLeadId,
+                onExpandItem: _expandItem,
+                onNavigate: _closeExpandedItem,
+                onCallPressed: _callNumber,
+              )
+            else
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 32.0),
+                  child: Text(
+                    'No leads available in this category.',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      color: Colors.grey,
                     ),
-                ],
+                  ),
+                ),
               ),
-            );
-          }
-        },
+          ],
+        ),
       ),
     );
   }
