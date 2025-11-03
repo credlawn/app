@@ -22,7 +22,7 @@ import 'package:credlawn/screens/components/lead_group_chips.dart';
 import 'package:credlawn/screens/components/lead_list.dart';
 import 'package:credlawn/screens/components/error_view.dart';
 import 'package:credlawn/screens/components/empty_view.dart';
-import 'package:credlawn/screens/components/feedback_dialog.dart'; // Import the new FeedbackBottomSheet
+import 'package:credlawn/screens/components/feedback/feedback_bottom_sheet.dart';
 
 class PreApprovedLeadsScreen extends StatefulWidget {
   final User user;

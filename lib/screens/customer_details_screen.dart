@@ -7,7 +7,7 @@ import 'package:credlawn/network/api_error_logger_helper.dart';
 import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/screens/pre_approved_lead_screen.dart';
 import 'package:credlawn/screens/login_screen.dart';
-import 'package:credlawn/screens/components/feedback_dialog.dart'; // This file now contains FeedbackScreen
+import 'package:credlawn/screens/components/feedback/feedback_screen.dart';
 
 import 'package:credlawn/screens/components/customer_info_cards.dart';
 import 'package:credlawn/screens/components/login_links_section.dart';

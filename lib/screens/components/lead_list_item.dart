@@ -4,11 +4,11 @@ import 'package:credlawn/helpers/lead_data_helper.dart';
 import 'package:credlawn/models/leads_model.dart';
 import 'package:credlawn/screens/customer_details_screen.dart';
 import 'package:credlawn/screens/call_history_screen.dart';
+import 'package:credlawn/screens/components/feedback/feedback_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
-import 'package:credlawn/screens/components/feedback_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LeadListItem extends StatefulWidget {
@@ -16,7 +16,7 @@ class LeadListItem extends StatefulWidget {
   final bool isExpanded;
   final VoidCallback onTap;
   final VoidCallback onNavigate;
-  final Function(LeadsModel lead) onCallPressed; // New callback
+  final Function(LeadsModel lead) onCallPressed;
 
   const LeadListItem({
     super.key,
@@ -24,7 +24,7 @@ class LeadListItem extends StatefulWidget {
     required this.isExpanded,
     required this.onTap,
     required this.onNavigate,
-    required this.onCallPressed, // Required for the new callback
+    required this.onCallPressed,
   });
 
   @override
@@ -275,7 +275,6 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
       );
     }
     else if (widget.leadWithInfo.callCount > 0 && (widget.leadWithInfo.lastCallDuration ?? 0) > 0 && !_hasFeedback(widget.leadWithInfo.lead.leadStatus)) {
-      // This is the "Called" state with pending feedback
       return Padding(
         padding: const EdgeInsets.only(left: 8.0),
         child: Row(
@@ -300,7 +299,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.teal, // Color for "Called" status
+                color: Colors.teal,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -317,7 +316,6 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
       );
     }
     else {
-      // Default case for leads that have been called but don't fit other categories
       return Padding(
         padding: const EdgeInsets.only(left: 8.0),
         child: Container(
@@ -408,9 +406,9 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(top: 24.0, bottom: 8.0), // Gap above the row
+            padding: const EdgeInsets.only(top: 24.0, bottom: 8.0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center, // Center the row of icons
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _buildSmallActionButton(
                   icon: Icons.call,
@@ -418,14 +416,14 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                   iconColor: Colors.white,
                   onPressed: () => widget.onCallPressed(widget.leadWithInfo.lead),
                 ),
-                const SizedBox(width: 32), // Increased gap
+                const SizedBox(width: 32),
                 _buildSmallActionButton(
                   icon: FontAwesomeIcons.whatsapp,
                   backgroundColor: Colors.green,
                   iconColor: Colors.white,
                   onPressed: () => _openWhatsApp(widget.leadWithInfo.lead),
                 ),
-                const SizedBox(width: 32), // Increased gap
+                const SizedBox(width: 32),
                 _buildSmallActionButton(
                   icon: Icons.info_outline,
                   backgroundColor: Colors.purple.withOpacity(0.1),
@@ -441,7 +439,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                     );
                   },
                 ),
-                const SizedBox(width: 32), // Increased gap
+                const SizedBox(width: 32),
 _buildSmallActionButton(
   icon: Icons.feedback,
   backgroundColor: Colors.orange.withOpacity(0.1),
@@ -458,7 +456,7 @@ _buildSmallActionButton(
     );
   },
 ),
-                const SizedBox(width: 32), // Increased gap
+                const SizedBox(width: 32),
                 _buildSmallActionButton(
                   icon: Icons.history,
                   backgroundColor: Colors.grey.shade600.withOpacity(0.1),
