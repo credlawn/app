@@ -26,6 +26,7 @@ import 'package:credlawn/screens/components/lead_list.dart';
 import 'package:credlawn/screens/components/error_view.dart';
 import 'package:credlawn/screens/components/empty_view.dart';
 import 'package:credlawn/screens/components/feedback/feedback_bottom_sheet.dart';
+import 'package:credlawn/helpers/lead_filtering_service.dart';
 
 class PreApprovedLeadsScreen extends StatefulWidget {
   final User user;
@@ -61,8 +62,8 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
     if (mounted) {
       setState(() {
         _allLeads = leads;
-        _filterLeads();
       });
+      await _filterLeads();
     }
     _syncLeadsInBackground();
   }
@@ -111,8 +112,8 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
     });
   }
 
-  void _filterLeads() {
-    final groupFiltered = _getFilteredLeadsByGroup(_allLeads);
+  Future<void> _filterLeads() async {
+    final groupFiltered = await LeadFilteringService.getFilteredLeadsByGroup(_allLeads, _selectedLeadGroup);
     final query = _searchController.text.toLowerCase();
     _filteredLeads = groupFiltered.where((leadWithInfo) {
       if (query.isEmpty) return true;
@@ -431,36 +432,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
     return lead.leadStatus == 'Follow up' && lead.followUpDate != null;
   }
 
-  List<LeadWithCallInfo> _getFilteredLeadsByGroup(List<LeadWithCallInfo> leads) {
-    switch (_selectedLeadGroup) {
-      case 'New Leads':
-        return leads.where((lead) =>
-          lead.callCount == 0 &&
-          !_hasFeedback(lead.lead.leadStatus) &&
-          !_isFollowUpLead(lead.lead)
-        ).toList();
-      case 'CNR Leads':
-        return leads.where((lead) =>
-          (lead.lastCallDuration ?? 0) == 0 &&
-          (lead.callCount ?? 0) > 0 &&
-          !_hasFeedback(lead.lead.leadStatus) &&
-          !_isFollowUpLead(lead.lead)
-        ).toList();
-      case 'Used Leads':
-        return leads.where((lead) => _hasFeedback(lead.lead.leadStatus)).toList();
-      case 'Follow Up':
-        return leads.where((lead) => _isFollowUpLead(lead.lead)).toList();
-      case 'Called':
-        return leads.where((lead) =>
-          (lead.callCount ?? 0) > 0 &&
-          (lead.lastCallDuration ?? 0) > 0 &&
-          !_hasFeedback(lead.lead.leadStatus) &&
-          !_isFollowUpLead(lead.lead)
-        ).toList();
-      default:
-        return leads;
-    }
-  }
+
 
   AppBar _buildAppBar() {
     if (_isSearching) {
@@ -525,11 +497,12 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
           children: [
             LeadGroupChips(
               selectedGroup: _selectedLeadGroup,
-              onGroupSelected: (group) {
+              onGroupSelected: (group) async {
                 setState(() {
                   _selectedLeadGroup = group;
-                  _filterLeads();
                 });
+                await _filterLeads();
+                setState(() {}); // Trigger rebuild with filtered results
               },
             ),
             if (_filteredLeads.isNotEmpty)

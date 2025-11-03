@@ -59,6 +59,7 @@ class CallHistoryRepository {
       });
     }
     await batch.commit(noResult: true);
+    await checkAndDeactivatePoorPerformers();
   }
 
   Future<int> getCallCount(String mobileNo) async {
@@ -142,5 +143,60 @@ class CallHistoryRepository {
       'connected': connectedCalls,
       'duration': totalDuration,
     };
+  }
+
+  Future<bool> hasRecentSuccessfulCall(String mobileNo, int days) async {
+    final db = await _appDatabase.database;
+    final normalizedNumber = CallHistoryRepository.normalizeNumber(mobileNo);
+    final timeAgo = DateTime.now().millisecondsSinceEpoch - (days * 24 * 60 * 60 * 1000);
+
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM call_history WHERE normalized_number = ? AND duration > 0 AND timestamp >= ?',
+      [normalizedNumber, timeAgo],
+    );
+    return ((result.first['count'] as int?) ?? 0) > 0;
+  }
+
+  Future<int> countRecentFailedCalls(String mobileNo, int lastN) async {
+    final db = await _appDatabase.database;
+    final normalizedNumber = CallHistoryRepository.normalizeNumber(mobileNo);
+
+    final result = await db.rawQuery(
+      'SELECT call_type, duration FROM call_history WHERE normalized_number = ? ORDER BY timestamp DESC LIMIT ?',
+      [normalizedNumber, lastN],
+    );
+
+    return result.where((row) =>
+      row['call_type'] == 'outgoing' && (row['duration'] as int? ?? 0) == 0
+    ).length;
+  }
+
+  Future<void> checkAndDeactivatePoorPerformers() async {
+    final db = await _appDatabase.database;
+    final activeLeads = await db.query('leads', where: 'allocation_status = ?', whereArgs: ['Active']);
+
+    for (final lead in activeLeads) {
+      final mobileNo = lead['mobile_no'] as String;
+
+      final hasRecentSuccess = await hasRecentSuccessfulCall(mobileNo, 3);
+      final recentFailedCount = await countRecentFailedCalls(mobileNo, hasRecentSuccess ? 4 : 3);
+
+      final shouldDeactivate = !hasRecentSuccess && recentFailedCount >= 3 ||
+                             hasRecentSuccess && recentFailedCount >= 4;
+
+      if (shouldDeactivate) {
+        await db.update(
+          'leads',
+          {
+            'lead_status': 'CNR',
+            'allocation_status': 'Inactive',
+            'is_dirty': 1,
+            'last_modified_at': DateTime.now().millisecondsSinceEpoch,
+          },
+          where: 'frappe_id = ?',
+          whereArgs: [lead['frappe_id']],
+        );
+      }
+    }
   }
 }
