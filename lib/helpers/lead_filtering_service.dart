@@ -59,7 +59,14 @@ class LeadFilteringService {
         return filteredLeads;
 
       case 'Used Leads':
-        return leads.where((lead) => _hasFeedback(lead.lead.leadStatus)).toList();
+        return leads.where((lead) =>
+          ['Customer Denied', 'Docs Not Available', 'Already Carded', 'Recently Applied'].contains(lead.lead.leadStatus)
+        ).toList();
+
+      case 'Login':
+        return leads.where((lead) =>
+          lead.lead.leadStatus == 'IP Approved' || lead.lead.leadStatus == 'IP Decline'
+        ).toList();
 
       case 'Follow Up':
         return leads.where((lead) => _isFollowUpLead(lead.lead)).toList();

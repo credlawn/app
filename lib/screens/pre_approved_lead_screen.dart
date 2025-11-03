@@ -19,6 +19,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:credlawn/helpers/call_log_sync_manager.dart';
 import 'package:collection/collection.dart';
+import 'package:intl/intl.dart';
 
 import 'package:credlawn/screens/components/lead_list_item.dart';
 import 'package:credlawn/screens/components/lead_group_chips.dart';
@@ -432,7 +433,19 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
     return lead.leadStatus == 'Follow up' && lead.followUpDate != null;
   }
 
+  String _formatDateHeader(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
 
+    if (date == today) {
+      return 'Today';
+    } else if (date == yesterday) {
+      return 'Yesterday';
+    } else {
+      return DateFormat('EEEE, d MMMM').format(date);
+    }
+  }
 
   AppBar _buildAppBar() {
     if (_isSearching) {
@@ -506,13 +519,61 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
               },
             ),
             if (_filteredLeads.isNotEmpty)
-              LeadList(
-                leads: _filteredLeads,
-                expandedLeadId: _expandedLeadId,
-                onExpandItem: _expandItem,
-                onNavigate: _closeExpandedItem,
-                onCallPressed: _callNumber,
-              )
+              if (_selectedLeadGroup == 'Login' || _selectedLeadGroup == 'Used Leads') ...[
+                Builder(
+                  builder: (context) {
+                    final groupedLeads = groupBy(_filteredLeads, (LeadWithCallInfo lead) {
+                      DateTime date;
+                      if (lead.lead.lastFeedbackTimestamp != null) {
+                        date = DateTime.fromMillisecondsSinceEpoch(lead.lead.lastFeedbackTimestamp!);
+                      } else {
+                        try {
+                          date = DateTime.parse(lead.lead.allocationDate);
+                        } catch (e) {
+                          date = DateTime.now();
+                        }
+                      }
+                      return DateTime(date.year, date.month, date.day);
+                    });
+                    final sortedDates = groupedLeads.keys.toList()..sort((a, b) => b.compareTo(a));
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: sortedDates.length,
+                      itemBuilder: (context, index) {
+                        final date = sortedDates[index];
+                        final leadsForDate = groupedLeads[date]!;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                              child: Text(
+                                _formatDateHeader(date),
+                                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+                              ),
+                            ),
+                            LeadList(
+                              leads: leadsForDate,
+                              expandedLeadId: _expandedLeadId,
+                              onExpandItem: _expandItem,
+                              onNavigate: _closeExpandedItem,
+                              onCallPressed: _callNumber,
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
+              ] else
+                LeadList(
+                  leads: _filteredLeads,
+                  expandedLeadId: _expandedLeadId,
+                  onExpandItem: _expandItem,
+                  onNavigate: _closeExpandedItem,
+                  onCallPressed: _callNumber,
+                )
             else
               Center(
                 child: Padding(
