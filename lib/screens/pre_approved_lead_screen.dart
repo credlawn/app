@@ -237,7 +237,6 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
         userId: currentUser?.userId,
       );
 
-      AppStateManager.setPendingFeedbackMobile(lead.mobileNo);
       await FlutterPhoneDirectCaller.callNumber(lead.mobileNo);
 
       Future.delayed(const Duration(seconds: 5), () async {

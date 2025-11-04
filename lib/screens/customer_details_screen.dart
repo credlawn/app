@@ -94,10 +94,6 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        if (widget.isAutoOpenedAfterCall) {
-          _showFeedback();
-          return false;
-        }
         return true;
       },
       child: Scaffold(

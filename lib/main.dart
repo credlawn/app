@@ -216,9 +216,7 @@ class _MyAppState extends State<MyApp> {
         colorScheme: ColorScheme.light(primary: Colors.blue, secondary: Colors.blueAccent),
         buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary), dialogTheme: DialogThemeData(backgroundColor: Colors.white),
       ),
-      home: widget.pendingFeedbackMobile != null
-          ? CustomerDetailsScreen(mobileNo: widget.pendingFeedbackMobile!, isAutoOpenedAfterCall: true)
-          : FutureBuilder<User?>(
+      home: FutureBuilder<User?>(
               future: _checkSession(context),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
