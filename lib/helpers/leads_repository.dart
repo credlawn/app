@@ -78,12 +78,11 @@ class LeadsRepository {
     
 
     if (existingLead != null) {
-      // If the lead is dirty, prioritize local status over server status to prevent race conditions.
       final statusToKeep = existingLead.isDirty == 1 ? existingLead.leadStatus : apiLead.leadStatus;
 
       final updatedLead = apiLead.copyWith(
         id: existingLead.id,
-        leadStatus: statusToKeep, // Use the explicitly determined status
+        leadStatus: statusToKeep,
         remarks: existingLead.remarks,
         arnNo: existingLead.arnNo,
         attemptedCalls: existingLead.attemptedCalls,
@@ -95,8 +94,8 @@ class LeadsRepository {
         allocationStatus: 'Active',
         followUpDate: existingLead.followUpDate,
         followUpTime: existingLead.followUpTime,
-        bankStatus: apiLead.bankStatus, // Update from server
-        bankStatusDate: apiLead.bankStatusDate, // Update from server
+        bankStatus: apiLead.bankStatus,
+        bankStatusDate: apiLead.bankStatusDate,
       );
       await updateLead(updatedLead);
     } else {
@@ -117,8 +116,8 @@ class LeadsRepository {
     String? syncError,
     String? followUpDate,
     String? followUpTime,
-    int? lastFeedbackId, // New parameter
-    int? lastFeedbackTimestamp, // New parameter
+    int? lastFeedbackId,
+    int? lastFeedbackTimestamp,
   }) async {
     final db = await _appDatabase.database;
     final Map<String, dynamic> fieldsToUpdate = {};
@@ -134,8 +133,8 @@ class LeadsRepository {
     if (syncError != null) fieldsToUpdate['sync_error'] = syncError;
     if (followUpDate != null) fieldsToUpdate['follow_up_date'] = followUpDate;
     if (followUpTime != null) fieldsToUpdate['follow_up_time'] = followUpTime;
-    if (lastFeedbackId != null) fieldsToUpdate['last_feedback_id'] = lastFeedbackId; // Update new field
-    if (lastFeedbackTimestamp != null) fieldsToUpdate['last_feedback_timestamp'] = lastFeedbackTimestamp; // Update new field
+    if (lastFeedbackId != null) fieldsToUpdate['last_feedback_id'] = lastFeedbackId;
+    if (lastFeedbackTimestamp != null) fieldsToUpdate['last_feedback_timestamp'] = lastFeedbackTimestamp;
 
     return db.update(
       'leads',
@@ -185,16 +184,13 @@ class LeadsRepository {
   }
 
   Future<void> updateLeadStatusAfterCall(String frappeId, String mobileNo) async {
-    // First, update the basic call statistics
     await updateCallStatisticsForLead(frappeId, mobileNo);
 
-    // Next, determine the new lead status based on recent call history
     final lead = await getLeadByFrappeId(frappeId);
     if (lead == null) return;
 
     final currentStatus = lead.leadStatus;
 
-    // Do not change status if lead has a final approval/decline status.
     const finalFeedbackStatuses = ['IP Approved', 'IP Decline'];
     if (finalFeedbackStatuses.contains(currentStatus)) {
       return;
@@ -226,7 +222,6 @@ class LeadsRepository {
       finalNewStatus = 'Called';
     }
 
-    // Only update if the status has actually changed
     if (finalNewStatus != null && finalNewStatus != currentStatus) {
       await updateLeadLocalFields(
         frappeId,
@@ -245,7 +240,6 @@ class LeadsRepository {
       final lead = LeadsModel.fromMap(leadMap);
       final currentStatus = lead.leadStatus;
 
-      // Do not change status if lead has a final approval/decline status.
       const finalFeedbackStatuses = ['IP Approved', 'IP Decline', 'Customer Denied', 'Docs Not Available', 'Already Carded', 'Recently Applied'];
       if (finalFeedbackStatuses.contains(currentStatus)) {
         continue;
@@ -277,7 +271,6 @@ class LeadsRepository {
         finalNewStatus = 'Called';
       }
 
-      // Only update if the status has actually changed
       if (finalNewStatus != null && finalNewStatus != currentStatus) {
         await updateLeadLocalFields(
           lead.frappeId,
