@@ -172,12 +172,75 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
   }
 
   Widget _buildStatusBadge() {
-    if (_hasFeedback(widget.leadWithInfo.lead.leadStatus)) {
-      return Padding(
-        padding: const EdgeInsets.only(left: 4.0),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+    final status = widget.leadWithInfo.lead.leadStatus;
+    final callCount = widget.leadWithInfo.callCount;
+
+    String text = '';
+    Color backgroundColor = Colors.grey;
+    Color textColor = Colors.white;
+
+    switch (status) {
+      case 'New':
+        text = 'New';
+        backgroundColor = Colors.green;
+        break;
+      case 'Called':
+        text = 'Called';
+        backgroundColor = Colors.teal;
+        break;
+      case 'CNR':
+        text = 'CNR';
+        backgroundColor = Colors.orange;
+        break;
+      case 'Inactive':
+        text = 'Inactive';
+        backgroundColor = Colors.red.shade400;
+        break;
+      case 'IP Approved':
+        text = 'IP Approved';
+        backgroundColor = Colors.green.shade600;
+        break;
+      case 'IP Decline':
+        text = 'IP Decline';
+        backgroundColor = Colors.red.shade700;
+        break;
+      case 'Customer Denied':
+        text = 'Customer Denied';
+        backgroundColor = Colors.red.shade600;
+        break;
+      case 'Docs Not Available':
+        text = 'Docs Not Available';
+        backgroundColor = Colors.orange.shade600;
+        break;
+      case 'Already Carded':
+        text = 'Already Carded';
+        backgroundColor = Colors.purple.shade600;
+        break;
+      case 'Recently Applied':
+        text = 'Recently Applied';
+        backgroundColor = Colors.blue.shade600;
+        break;
+      case 'Follow up':
+        text = 'Follow Up';
+        backgroundColor = Colors.cyan.shade700;
+        break;
+      default:
+        if (callCount == 0) {
+          text = 'New';
+          backgroundColor = Colors.green;
+        }
+        // If status is null or empty, we don't show a specific status badge,
+        // but we might still show the call count.
+        break;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 4.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Always show call count if not a new lead
+          if (status != 'New' && callCount > 0)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
@@ -185,7 +248,7 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                widget.leadWithInfo.callCount > 99 ? '99+' : '${widget.leadWithInfo.callCount}',
+                callCount > 99 ? '99+' : '$callCount',
                 style: GoogleFonts.poppins(
                   color: Colors.blue,
                   fontSize: 12,
@@ -193,148 +256,28 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: widget.leadWithInfo.lead.leadStatus == 'IP Approved' ? Colors.green : widget.leadWithInfo.lead.leadStatus == 'IP Decline' ? Colors.red : widget.leadWithInfo.lead.leadStatus == 'Customer Denied' ? Colors.red.shade600 : widget.leadWithInfo.lead.leadStatus == 'Docs Not Available' ? Colors.orange.shade600 : widget.leadWithInfo.lead.leadStatus == 'Already Carded' ? Colors.purple.shade600 : widget.leadWithInfo.lead.leadStatus == 'Recently Applied' ? Colors.blue.shade600 : Colors.purple,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                widget.leadWithInfo.lead.leadStatus ?? '',
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
+          if (text.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  text,
+                  style: GoogleFonts.poppins(
+                    color: textColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
-          ],
-        ),
-      );
-    }
-    else if (widget.leadWithInfo.callCount == 0) {
-      return Padding(
-        padding: const EdgeInsets.only(left: 4.0),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.green,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            'New',
-            style: GoogleFonts.poppins(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      );
-    }
-    else if (widget.leadWithInfo.lastCallDuration == 0) {
-      return Padding(
-        padding: const EdgeInsets.only(left: 4.0),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                widget.leadWithInfo.callCount > 99 ? '99+' : '${widget.leadWithInfo.callCount}',
-                style: GoogleFonts.poppins(
-                  color: Colors.blue,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.orange,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                'CNR',
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    else if (widget.leadWithInfo.callCount > 0 && (widget.leadWithInfo.lastCallDuration ?? 0) > 0 && !_hasFeedback(widget.leadWithInfo.lead.leadStatus)) {
-      return Padding(
-        padding: const EdgeInsets.only(left: 4.0),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                widget.leadWithInfo.callCount > 99 ? '99+' : '${widget.leadWithInfo.callCount}',
-                style: GoogleFonts.poppins(
-                  color: Colors.blue,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.teal,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                'Pending Feedback',
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    else {
-      return Padding(
-        padding: const EdgeInsets.only(left: 4.0),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.blue.shade100,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            widget.leadWithInfo.callCount > 99 ? '99+' : '${widget.leadWithInfo.callCount}',
-            style: GoogleFonts.poppins(
-              color: Colors.blue,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      );
-    }
+        ],
+      ),
+    );
   }
 
   bool _hasFeedback(String? leadStatus) {

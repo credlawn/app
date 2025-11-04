@@ -28,6 +28,7 @@ import 'package:credlawn/screens/components/error_view.dart';
 import 'package:credlawn/screens/components/empty_view.dart';
 import 'package:credlawn/screens/components/feedback/feedback_bottom_sheet.dart';
 import 'package:credlawn/helpers/lead_filtering_service.dart';
+import 'dart:convert'; // Import for jsonEncode
 
 class PreApprovedLeadsScreen extends StatefulWidget {
   final User user;
@@ -241,6 +242,9 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
 
       Future.delayed(const Duration(seconds: 5), () async {
         try {
+          // Update call statistics and determine lead status
+          await DatabaseService.instance.leadsRepository.updateLeadStatusAfterCall(lead.frappeId, lead.mobileNo);
+
           await _refreshLeads();
           final leadsAfterRefresh = await getLeadsWithCallCounts();
           final updatedLeadWithInfo = leadsAfterRefresh.firstWhereOrNull(
@@ -405,8 +409,15 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
       await BackgroundSyncService.syncLeads(currentUser);
     }
     final newLeads = await getLeadsWithCallCounts();
+
+    // Recalculate all lead statuses based on the latest call history
+    await DatabaseService.instance.leadsRepository.recalculateAllLeadStatuses();
+
+    // Fetch the leads again to get the updated statuses
+    final finalLeads = await getLeadsWithCallCounts();
+
     setState(() {
-      _allLeads = newLeads;
+      _allLeads = finalLeads;
       _filterLeads();
     });
   }

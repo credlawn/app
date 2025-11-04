@@ -78,9 +78,12 @@ class LeadsRepository {
     
 
     if (existingLead != null) {
+      // If the lead is dirty, prioritize local status over server status to prevent race conditions.
+      final statusToKeep = existingLead.isDirty == 1 ? existingLead.leadStatus : apiLead.leadStatus;
+
       final updatedLead = apiLead.copyWith(
         id: existingLead.id,
-        leadStatus: existingLead.leadStatus,
+        leadStatus: statusToKeep, // Use the explicitly determined status
         remarks: existingLead.remarks,
         arnNo: existingLead.arnNo,
         attemptedCalls: existingLead.attemptedCalls,
@@ -179,5 +182,110 @@ class LeadsRepository {
       connectedCalls: stats['connected'],
       totalDuration: stats['duration'],
     );
+  }
+
+  Future<void> updateLeadStatusAfterCall(String frappeId, String mobileNo) async {
+    // First, update the basic call statistics
+    await updateCallStatisticsForLead(frappeId, mobileNo);
+
+    // Next, determine the new lead status based on recent call history
+    final lead = await getLeadByFrappeId(frappeId);
+    if (lead == null) return;
+
+    final currentStatus = lead.leadStatus;
+
+    // Do not change status if lead has a final approval/decline status.
+    const finalFeedbackStatuses = ['IP Approved', 'IP Decline'];
+    if (finalFeedbackStatuses.contains(currentStatus)) {
+      return;
+    }
+
+    final last3Calls = await DatabaseService.instance.callHistoryRepository.getLastNCallDurations(mobileNo, 3);
+
+    String? potentialNewStatus;
+    if (last3Calls.length >= 3 && last3Calls.every((d) => d <= 5)) {
+      potentialNewStatus = 'Inactive';
+    } else if (last3Calls.isNotEmpty) {
+      if (last3Calls.first <= 5) {
+        potentialNewStatus = 'CNR';
+      } else {
+        potentialNewStatus = 'Called';
+      }
+    }
+
+    String? finalNewStatus;
+    if (potentialNewStatus == 'Inactive') {
+      if (currentStatus == 'CNR') {
+        finalNewStatus = 'Inactive';
+      }
+    } else if (potentialNewStatus == 'CNR') {
+      if (currentStatus == 'New' || currentStatus == 'CNR' || currentStatus.isEmpty) {
+        finalNewStatus = 'CNR';
+      }
+    } else if (potentialNewStatus == 'Called') {
+      finalNewStatus = 'Called';
+    }
+
+    // Only update if the status has actually changed
+    if (finalNewStatus != null && finalNewStatus != currentStatus) {
+      await updateLeadLocalFields(
+        frappeId,
+        leadStatus: finalNewStatus,
+        isDirty: 1,
+        lastModifiedAt: DateTime.now().millisecondsSinceEpoch,
+      );
+    }
+  }
+
+  Future<void> recalculateAllLeadStatuses() async {
+    final db = await _appDatabase.database;
+    final activeLeads = await db.query('leads', where: 'allocation_status = ?', whereArgs: ['Active']);
+
+    for (final leadMap in activeLeads) {
+      final lead = LeadsModel.fromMap(leadMap);
+      final currentStatus = lead.leadStatus;
+
+      // Do not change status if lead has a final approval/decline status.
+      const finalFeedbackStatuses = ['IP Approved', 'IP Decline', 'Customer Denied', 'Docs Not Available', 'Already Carded', 'Recently Applied'];
+      if (finalFeedbackStatuses.contains(currentStatus)) {
+        continue;
+      }
+
+      final last3Calls = await DatabaseService.instance.callHistoryRepository.getLastNCallDurations(lead.mobileNo, 3);
+
+      String? potentialNewStatus;
+      if (last3Calls.length >= 3 && last3Calls.every((d) => d <= 5)) {
+        potentialNewStatus = 'Inactive';
+      } else if (last3Calls.isNotEmpty) {
+        if (last3Calls.first <= 5) {
+          potentialNewStatus = 'CNR';
+        } else {
+          potentialNewStatus = 'Called';
+        }
+      }
+
+      String? finalNewStatus;
+      if (potentialNewStatus == 'Inactive') {
+        if (currentStatus == 'CNR') {
+          finalNewStatus = 'Inactive';
+        }
+      } else if (potentialNewStatus == 'CNR') {
+        if (currentStatus == 'New' || currentStatus == 'CNR' || currentStatus.isEmpty) {
+          finalNewStatus = 'CNR';
+        }
+      } else if (potentialNewStatus == 'Called') {
+        finalNewStatus = 'Called';
+      }
+
+      // Only update if the status has actually changed
+      if (finalNewStatus != null && finalNewStatus != currentStatus) {
+        await updateLeadLocalFields(
+          lead.frappeId,
+          leadStatus: finalNewStatus,
+          isDirty: 1,
+          lastModifiedAt: DateTime.now().millisecondsSinceEpoch,
+        );
+      }
+    }
   }
 }

@@ -59,7 +59,6 @@ class CallHistoryRepository {
       });
     }
     await batch.commit(noResult: true);
-    await checkAndDeactivatePoorPerformers();
   }
 
   Future<int> getCallCount(String mobileNo) async {
@@ -157,6 +156,22 @@ class CallHistoryRepository {
     return ((result.first['count'] as int?) ?? 0) > 0;
   }
 
+  Future<List<int>> getLastNCallDurations(String mobileNo, int n) async {
+    final db = await _appDatabase.database;
+    final normalizedNumber = CallHistoryRepository.normalizeNumber(mobileNo);
+
+    final result = await db.query(
+      'call_history',
+      columns: ['duration'],
+      where: 'normalized_number = ?',
+      whereArgs: [normalizedNumber],
+      orderBy: 'timestamp DESC',
+      limit: n,
+    );
+
+    return result.map((row) => row['duration'] as int? ?? 0).toList();
+  }
+
   Future<int> countRecentFailedCalls(String mobileNo, int lastN) async {
     final db = await _appDatabase.database;
     final normalizedNumber = CallHistoryRepository.normalizeNumber(mobileNo);
@@ -169,33 +184,5 @@ class CallHistoryRepository {
     return result.where((row) =>
       row['call_type'] == 'outgoing' && (row['duration'] as int? ?? 0) == 0
     ).length;
-  }
-
-  Future<void> checkAndDeactivatePoorPerformers() async {
-    final db = await _appDatabase.database;
-    final activeLeads = await db.query('leads', where: 'allocation_status = ?', whereArgs: ['Active']);
-
-    for (final lead in activeLeads) {
-      final mobileNo = lead['mobile_no'] as String;
-
-      final hasRecentSuccess = await hasRecentSuccessfulCall(mobileNo, 3);
-      final recentFailedCount = await countRecentFailedCalls(mobileNo, hasRecentSuccess ? 4 : 3);
-
-      final shouldDeactivate = !hasRecentSuccess && recentFailedCount >= 3 ||
-                             hasRecentSuccess && recentFailedCount >= 4;
-
-      if (shouldDeactivate) {
-        await db.update(
-          'leads',
-          {
-            
-            'is_dirty': 1,
-            'last_modified_at': DateTime.now().millisecondsSinceEpoch,
-          },
-          where: 'frappe_id = ?',
-          whereArgs: [lead['frappe_id']],
-        );
-      }
-    }
   }
 }

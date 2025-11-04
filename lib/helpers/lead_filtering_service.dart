@@ -9,62 +9,16 @@ class LeadFilteringService {
   ) async {
     switch (selectedGroup) {
     case 'New Leads':
-      return leads.where((lead) =>
-        lead.callCount == 0 &&
-        !_hasFeedback(lead.lead.leadStatus) &&
-        !_isFollowUpLead(lead.lead)
-      ).toList();
+      return leads.where((lead) => lead.lead.leadStatus == 'New').toList();
 
       case 'CNR':
-      return leads.where((lead) =>
-        lead.callCount > 0 &&
-        lead.callCount < 3 &&
-        !_hasFeedback(lead.lead.leadStatus) &&
-        !_isFollowUpLead(lead.lead)
-      ).toList();
+      return leads.where((lead) => lead.lead.leadStatus == 'CNR').toList();
 
       case 'Inactive':
-        final filteredLeads = <LeadWithCallInfo>[];
-        for (final lead in leads) {
-          if (_hasFeedback(lead.lead.leadStatus) || _isFollowUpLead(lead.lead)) {
-            continue;
-          }
-
-          final hasRecentSuccess = await DatabaseService.instance.callHistoryRepository
-              .hasRecentSuccessfulCall(lead.lead.mobileNo, 3);
-          final recentFailedCount = await DatabaseService.instance.callHistoryRepository
-              .countRecentFailedCalls(lead.lead.mobileNo, hasRecentSuccess ? 4 : 3);
-
-          final shouldInclude = lead.callCount > 0 && (
-            !hasRecentSuccess && recentFailedCount >= 3 ||
-            hasRecentSuccess && recentFailedCount >= 4
-          );
-
-          if (shouldInclude) {
-            filteredLeads.add(lead);
-          }
-        }
-        return filteredLeads;
+        return leads.where((lead) => lead.lead.leadStatus == 'Inactive').toList();
 
       case 'Called':
-        final filteredLeads = <LeadWithCallInfo>[];
-        for (final lead in leads) {
-          if (_hasFeedback(lead.lead.leadStatus) || _isFollowUpLead(lead.lead)) {
-            continue;
-          }
-
-          final hasRecentSuccess = await DatabaseService.instance.callHistoryRepository
-              .hasRecentSuccessfulCall(lead.lead.mobileNo, 3);
-          if (!hasRecentSuccess) continue;
-
-          final recentFailedCount = await DatabaseService.instance.callHistoryRepository
-              .countRecentFailedCalls(lead.lead.mobileNo, 3);
-
-          if (recentFailedCount < 3) {
-            filteredLeads.add(lead);
-          }
-        }
-        return filteredLeads;
+        return leads.where((lead) => lead.lead.leadStatus == 'Called').toList();
 
       case 'Failed':
         return leads.where((lead) =>
