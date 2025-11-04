@@ -188,8 +188,7 @@ class CallHistoryRepository {
         await db.update(
           'leads',
           {
-            'lead_status': 'CNR',
-            'allocation_status': 'Inactive',
+            
             'is_dirty': 1,
             'last_modified_at': DateTime.now().millisecondsSinceEpoch,
           },

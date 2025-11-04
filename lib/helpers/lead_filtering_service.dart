@@ -8,14 +8,22 @@ class LeadFilteringService {
     String selectedGroup
   ) async {
     switch (selectedGroup) {
-      case 'New Leads':
-        return leads.where((lead) =>
-          lead.callCount == 0 &&
-          !_hasFeedback(lead.lead.leadStatus) &&
-          !_isFollowUpLead(lead.lead)
-        ).toList();
+    case 'New Leads':
+      return leads.where((lead) =>
+        lead.callCount == 0 &&
+        !_hasFeedback(lead.lead.leadStatus) &&
+        !_isFollowUpLead(lead.lead)
+      ).toList();
 
-      case 'CNR Leads':
+      case 'CNR':
+      return leads.where((lead) =>
+        lead.callCount > 0 &&
+        lead.callCount < 3 &&
+        !_hasFeedback(lead.lead.leadStatus) &&
+        !_isFollowUpLead(lead.lead)
+      ).toList();
+
+      case 'Inactive':
         final filteredLeads = <LeadWithCallInfo>[];
         for (final lead in leads) {
           if (_hasFeedback(lead.lead.leadStatus) || _isFollowUpLead(lead.lead)) {
