@@ -48,15 +48,18 @@ class CallHistoryRepository {
 
     final batch = db.batch();
     for (final entry in entries) {
-      if (entry.number == null || entry.number!.isEmpty) continue;
-      batch.insert('call_history', {
-        'phone_number': entry.number!,
-        'normalized_number': CallHistoryRepository.normalizeNumber(entry.number!),
-        'duration': entry.duration ?? 0,
-        'call_type': entry.callType?.toString().split('.').last ?? 'UNKNOWN',
-        'timestamp': entry.timestamp ?? 0,
-        'user': currentUserId,
-      });
+      // Only insert entries that are strictly newer than the last timestamp to prevent duplicates
+      if (entry.timestamp != null && entry.timestamp! > lastTimestamp) {
+        if (entry.number == null || entry.number!.isEmpty) continue;
+        batch.insert('call_history', {
+          'phone_number': entry.number!,
+          'normalized_number': CallHistoryRepository.normalizeNumber(entry.number!),
+          'duration': entry.duration ?? 0,
+          'call_type': entry.callType?.toString().split('.').last ?? 'UNKNOWN',
+          'timestamp': entry.timestamp ?? 0,
+          'user': currentUserId,
+        });
+      }
     }
     await batch.commit(noResult: true);
   }

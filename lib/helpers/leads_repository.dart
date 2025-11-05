@@ -238,6 +238,10 @@ class LeadsRepository {
 
     for (final leadMap in activeLeads) {
       final lead = LeadsModel.fromMap(leadMap);
+      
+      // First, update the basic call statistics for this lead
+      await updateCallStatisticsForLead(lead.frappeId, lead.mobileNo);
+
       final currentStatus = lead.leadStatus;
 
       const finalFeedbackStatuses = ['IP Approved', 'IP Decline', 'Customer Denied', 'Docs Not Available', 'Already Carded', 'Recently Applied'];
