@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:credlawn/models/geofence_config.dart';
 import 'package:credlawn/screens/attendance_list_widget.dart'; // Added this import
+import 'package:credlawn/screens/attendance_filter_widget.dart'; // Added filter widget import
 // Added GoogleFonts import
 import 'package:credlawn/models/today_attendance_status.dart'; // Added this import
 
@@ -35,6 +36,30 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   String _currentStep = '';
   double _progressValue = 0.0;
   bool _canCancel = true;
+
+  // Filter state
+  DateTime? _filterStartDate;
+  DateTime? _filterEndDate;
+
+  void _showFilterBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AttendanceFilterWidget(
+        initialStartDate: _filterStartDate,
+        initialEndDate: _filterEndDate,
+        onFilterApplied: (startDate, endDate) {
+          setState(() {
+            _filterStartDate = startDate;
+            _filterEndDate = endDate;
+          });
+          // Refresh the attendance list with new filters
+          _attendanceListKey.currentState?.refreshDataWithFilter(startDate, endDate);
+        },
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -455,15 +480,30 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 16.0),
-                                child: Text(
-                                  'Recent Attendance',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
-                                  ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                                child: Row(
+                                  children: [
+                                    const Text(
+                                      'Recent Attendance',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                      IconButton(
+                                      onPressed: _showFilterBottomSheet,
+                                      icon: Icon(
+                                        Icons.filter_list,
+                                        color: _filterStartDate != null || _filterEndDate != null
+                                            ? const Color(0xFF2563EB)
+                                            : Colors.grey.shade600,
+                                      ),
+                                      tooltip: 'Filter Attendance',
+                                    ),
+                                  ],
                                 ),
                               ),
                               AttendanceListWidget(

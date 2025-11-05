@@ -89,6 +89,38 @@ class AttendanceListWidgetState extends State<AttendanceListWidget> {
     _loadInitialData();
   }
 
+  void refreshDataWithFilter(DateTime? startDate, DateTime? endDate) {
+    _loadFilteredData(startDate, endDate);
+  }
+
+  Future<void> _loadFilteredData(DateTime? startDate, DateTime? endDate) async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final records = await ApiAttendanceHelper.getAttendanceRecords(
+        fromDate: startDate != null ? DateFormat('yyyy-MM-dd').format(startDate) : null,
+        toDate: endDate != null ? DateFormat('yyyy-MM-dd').format(endDate) : null,
+        limit: _pageSize,
+        offset: 0,
+      );
+
+      setState(() {
+        _records = records.reversed.toList(); // Reverse to show newest first
+        _currentPage = 1;
+        _hasMoreData = records.length >= _pageSize;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
   String getDisplayStatus(AttendanceRecord record) {
     final DateTime recordDate = DateTime.parse(record.date);
     final DateTime today = DateTime.now();
