@@ -4,7 +4,14 @@ import 'package:credlawn/models/attendance_record_model.dart';
 import 'package:intl/intl.dart'; // Added intl import
 
 class AttendanceListWidget extends StatefulWidget {
-  const AttendanceListWidget({super.key});
+  final DateTime? officeStartTime;
+  final DateTime? officeEndTime;
+
+  const AttendanceListWidget({
+    super.key,
+    this.officeStartTime,
+    this.officeEndTime,
+  });
 
   @override
   State<AttendanceListWidget> createState() => AttendanceListWidgetState();
@@ -86,18 +93,23 @@ class AttendanceListWidgetState extends State<AttendanceListWidget> {
                 final String formattedOutTime = formatTime(record.outTime);
 
                 // Define office times for comparison
-                final TimeOfDay officeInTimeLimit = const TimeOfDay(hour: 10, minute: 16);
-                final TimeOfDay officeOutTimeLimit = const TimeOfDay(hour: 18, minute: 31);
+                final TimeOfDay? officeInTimeLimit = widget.officeStartTime != null
+                    ? TimeOfDay.fromDateTime(widget.officeStartTime!)
+                    : null;
+                final TimeOfDay? officeOutTimeLimit = widget.officeEndTime != null
+                    ? TimeOfDay.fromDateTime(widget.officeEndTime!)
+                    : null;
 
                 Color inTimeColor = Colors.black; // Default color
                 Color outTimeColor = Colors.black; // Default color
 
                 // Determine In Time color
-                if (record.inTime != 'N/A') {
+                if (officeInTimeLimit != null && record.inTime != 'N/A') {
                   try {
                     final DateTime parsedInTime = DateFormat('HH:mm:ss').parse(record.inTime);
                     final TimeOfDay actualInTime = TimeOfDay.fromDateTime(parsedInTime);
-                    if (actualInTime.hour < officeInTimeLimit.hour || (actualInTime.hour == officeInTimeLimit.hour && actualInTime.minute <= officeInTimeLimit.minute)) {
+                    if (actualInTime.hour < officeInTimeLimit.hour ||
+                        (actualInTime.hour == officeInTimeLimit.hour && actualInTime.minute <= officeInTimeLimit.minute)) {
                       inTimeColor = Colors.green;
                     } else {
                       inTimeColor = Colors.red;
@@ -106,11 +118,12 @@ class AttendanceListWidgetState extends State<AttendanceListWidget> {
                 }
 
                 // Determine Out Time color
-                if (record.outTime != 'N/A') {
+                if (officeOutTimeLimit != null && record.outTime != 'N/A') {
                   try {
                     final DateTime parsedOutTime = DateFormat('HH:mm:ss').parse(record.outTime);
                     final TimeOfDay actualOutTime = TimeOfDay.fromDateTime(parsedOutTime);
-                    if (actualOutTime.hour < officeOutTimeLimit.hour || (actualOutTime.hour == officeOutTimeLimit.hour && actualOutTime.minute < officeOutTimeLimit.minute)) {
+                    if (actualOutTime.hour < officeOutTimeLimit.hour ||
+                        (actualOutTime.hour == officeOutTimeLimit.hour && actualOutTime.minute < officeOutTimeLimit.minute)) {
                       outTimeColor = Colors.red;
                     } else {
                       outTimeColor = Colors.green;

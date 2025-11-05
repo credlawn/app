@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:credlawn/custom/custom_color.dart';
 import 'package:credlawn/network/api_attendance_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -23,6 +24,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   final GlobalKey<AttendanceListWidgetState> _attendanceListKey = GlobalKey<AttendanceListWidgetState>(); // Key for AttendanceListWidget
   bool _isButtonLoading = false;
   bool _isScreenLoading = true;
+  String _loadingMessage = '';
   TodayAttendanceStatus? _todayAttendanceStatus; // Changed type to TodayAttendanceStatus
   GeofenceConfig? _geofenceConfig; // New state variable for geofence
   DateTime? _officeStartTime;
@@ -131,6 +133,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         filePath: fileUrl,
       );
 
+      HapticFeedback.vibrate();
       CustomColor.showSuccessSnackBar(context, 'Attendance marked successfully!');
       if (mounted) {
         // After successful punch, re-fetch status and refresh list
@@ -296,8 +299,37 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 32),
-                        AttendanceListWidget(key: _attendanceListKey), // Assign key to AttendanceListWidget
+                        if (_officeStartTime != null && _officeEndTime != null)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Card(
+                              elevation: 2,
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.access_time, color: Colors.blue),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Office Hours: ${DateFormat('hh:mm a').format(_officeStartTime!)} - ${DateFormat('hh:mm a').format(_officeEndTime!)}',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.blue,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+                        AttendanceListWidget(
+                          key: _attendanceListKey,
+                          officeStartTime: _officeStartTime,
+                          officeEndTime: _officeEndTime,
+                        ), // Assign key to AttendanceListWidget
                       ],
                     ),
                   ),
