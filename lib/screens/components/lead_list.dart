@@ -9,6 +9,7 @@ class LeadList extends StatelessWidget {
   final Function(String) onExpandItem;
   final VoidCallback onNavigate;
   final Function(LeadsModel lead) onCallPressed; // New callback
+  final String selectedLeadGroup;
 
   const LeadList({
     super.key,
@@ -17,6 +18,7 @@ class LeadList extends StatelessWidget {
     required this.onExpandItem,
     required this.onNavigate,
     required this.onCallPressed, // Required for the new callback
+    required this.selectedLeadGroup,
   });
 
   @override
@@ -38,6 +40,7 @@ class LeadList extends StatelessWidget {
                   onTap: () => onExpandItem(leadWithInfo.lead.mobileNo),
                   onNavigate: onNavigate,
                   onCallPressed: onCallPressed, // Pass the callback down
+                  selectedLeadGroup: selectedLeadGroup,
                 ),
                 if (leadWithInfo != leads.last)
                   Container(

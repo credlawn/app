@@ -17,6 +17,7 @@ class LeadListItem extends StatefulWidget {
   final VoidCallback onTap;
   final VoidCallback onNavigate;
   final Function(LeadsModel lead) onCallPressed;
+  final String selectedLeadGroup;
 
   const LeadListItem({
     super.key,
@@ -25,6 +26,7 @@ class LeadListItem extends StatefulWidget {
     required this.onTap,
     required this.onNavigate,
     required this.onCallPressed,
+    required this.selectedLeadGroup,
   });
 
   @override
@@ -382,41 +384,43 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
                   },
                 ),
                 const SizedBox(width: 32),
-                if (!['IP Approved', 'IP Decline', 'CNR'].contains(widget.leadWithInfo.lead.leadStatus)) ...[
+                if (widget.selectedLeadGroup != 'New Leads') ...[
+                  if (!['IP Approved', 'IP Decline', 'CNR'].contains(widget.leadWithInfo.lead.leadStatus)) ...[
+                    _buildSmallActionButton(
+                      icon: Icons.feedback,
+                      backgroundColor: Colors.orange,
+                      iconColor: Colors.white,
+                      onPressed: () {
+                        widget.onNavigate();
+                        Navigator.of(context).push(
+                          MaterialPageRoute<bool>(
+                            fullscreenDialog: true,
+                            builder: (BuildContext context) {
+                              return FeedbackScreen(mobileNo: widget.leadWithInfo.lead.mobileNo);
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 32),
+                  ],
                   _buildSmallActionButton(
-                    icon: Icons.feedback,
-                    backgroundColor: Colors.orange,
+                    icon: Icons.history,
+                    backgroundColor: Colors.grey.shade600,
                     iconColor: Colors.white,
                     onPressed: () {
                       widget.onNavigate();
                       Navigator.of(context).push(
-                        MaterialPageRoute<bool>(
-                          fullscreenDialog: true,
-                          builder: (BuildContext context) {
-                            return FeedbackScreen(mobileNo: widget.leadWithInfo.lead.mobileNo);
-                          },
+                        MaterialPageRoute(
+                          builder: (context) => CallHistoryScreen(
+                            customerName: widget.leadWithInfo.lead.customerName,
+                            mobileNo: widget.leadWithInfo.lead.mobileNo,
+                          ),
                         ),
                       );
                     },
                   ),
-                  const SizedBox(width: 32),
                 ],
-                _buildSmallActionButton(
-                  icon: Icons.history,
-                  backgroundColor: Colors.grey.shade600,
-                  iconColor: Colors.white,
-                  onPressed: () {
-                    widget.onNavigate();
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => CallHistoryScreen(
-                          customerName: widget.leadWithInfo.lead.customerName,
-                          mobileNo: widget.leadWithInfo.lead.mobileNo,
-                        ),
-                      ),
-                    );
-                  },
-                ),
               ],
             ),
           ),

@@ -28,6 +28,7 @@ import 'package:credlawn/screens/components/error_view.dart';
 import 'package:credlawn/screens/components/empty_view.dart';
 import 'package:credlawn/screens/components/feedback/feedback_bottom_sheet.dart';
 import 'package:credlawn/helpers/lead_filtering_service.dart';
+import 'package:credlawn/screens/customer_details_screen.dart';
 import 'dart:convert'; // Import for jsonEncode
 
 class PreApprovedLeadsScreen extends StatefulWidget {
@@ -235,6 +236,13 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
         errorMessage: 'Initiating call to mobile: ${lead.mobileNo}, customer: ${lead.customerName}',
         errorType: 'User Action',
         userId: currentUser?.userId,
+      );
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CustomerDetailsScreen(mobileNo: lead.mobileNo),
+        ),
       );
 
       await FlutterPhoneDirectCaller.callNumber(lead.mobileNo);
@@ -569,6 +577,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
                               onExpandItem: _expandItem,
                               onNavigate: _closeExpandedItem,
                               onCallPressed: _callNumber,
+                              selectedLeadGroup: _selectedLeadGroup,
                             ),
                           ],
                         );
@@ -583,6 +592,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
                   onExpandItem: _expandItem,
                   onNavigate: _closeExpandedItem,
                   onCallPressed: _callNumber,
+                  selectedLeadGroup: _selectedLeadGroup,
                 )
             else
               Center(
