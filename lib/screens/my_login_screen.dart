@@ -192,6 +192,68 @@ if (!exists) {
     return dataSynced;
   }
 
+  Color _getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'ip approved':
+        return Colors.green;
+      case 'already carded':
+        return Colors.orange;
+      case 'ip decline':
+      case 'customer denied':
+        return Colors.red;
+      case 'docs not available':
+      case 'recently applied':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Widget _buildDetailRow({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: iconColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -199,66 +261,253 @@ if (!exists) {
       appBar: AppBar(
         elevation: 0.5,
         backgroundColor: CustomColor.MainColor,
-        title: Text('My Login', style: GoogleFonts.poppins(color: Colors.white)),
-actions: [],
+        title: Text('My Login', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+        actions: [],
       ),
       body: Stack(
         children: [
           RefreshIndicator(
-onRefresh: () async {
-  final bool synced = await _syncDirtyCaseLogins();
-  await _syncCaseLoginsFromServer();
-  setState(() {
-    _caseLoginsFuture = _fetchCaseLogins();
-  });
-  if (mounted) {
-    if (synced) {
-      CustomColor.showSuccessSnackBar(context, 'Data Updated Successfully');
-    } else {
-      CustomColor.showInfoSnackBar(context, 'Everything up to date.');
-    }
-  }
-},
+            onRefresh: () async {
+              final bool synced = await _syncDirtyCaseLogins();
+              await _syncCaseLoginsFromServer();
+              setState(() {
+                _caseLoginsFuture = _fetchCaseLogins();
+              });
+              if (mounted) {
+                if (synced) {
+                  CustomColor.showSuccessSnackBar(context, 'Data Updated Successfully');
+                } else {
+                  CustomColor.showInfoSnackBar(context, 'Everything up to date.');
+                }
+              }
+            },
             child: FutureBuilder<List<CaseLoginModel>>(
               future: _caseLoginsFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator(color: CustomColor.MainColor));
                 } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                        const SizedBox(height: 16),
+                        Text('Error: ${snapshot.error}', style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[700])),
+                      ],
+                    ),
+                  );
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No case logins available.'));
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.login, size: 64, color: Colors.grey[400]),
+                        const SizedBox(height: 16),
+                        Text('No case logins available.', style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[600])),
+                        const SizedBox(height: 8),
+                        Text('Pull down to refresh', style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[500])),
+                      ],
+                    ),
+                  );
                 } else {
                   final caseLogins = snapshot.data!;
+
+                  // Sort by login date descending
+                  caseLogins.sort((a, b) {
+                    final dateA = a.loginDate ?? '';
+                    final dateB = b.loginDate ?? '';
+                    return dateB.compareTo(dateA);
+                  });
+
+                  // Group by date
+                  final Map<String, List<CaseLoginModel>> groupedLogins = {};
+                  for (final login in caseLogins) {
+                    final date = login.loginDate?.split(' ')?.first ?? 'Unknown Date';
+                    if (!groupedLogins.containsKey(date)) {
+                      groupedLogins[date] = [];
+                    }
+                    groupedLogins[date]!.add(login);
+                  }
+
+                  // Sort dates descending
+                  final sortedDates = groupedLogins.keys.toList()..sort((a, b) => b.compareTo(a));
+
                   return ListView.builder(
-                    itemCount: caseLogins.length,
-                    itemBuilder: (context, index) {
-                      final caseLogin = caseLogins[index];
-  return Card(
-    margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-    elevation: 2,
-    child: Padding(
-      padding: const EdgeInsets.all(10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('ID: ${caseLogin.id}', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-          Text('Frappe ID: ${caseLogin.frappeId}', style: GoogleFonts.poppins()),
-          Text('Sync ID: ${caseLogin.syncId}', style: GoogleFonts.poppins()),
-          Text('Customer Name: ${caseLogin.customerName}', style: GoogleFonts.poppins()),
-          Text('Mobile No: ${caseLogin.mobileNo}', style: GoogleFonts.poppins()),
-          Text('Login Date: ${caseLogin.loginDate}', style: GoogleFonts.poppins()),
-          Text('IP Status: ${caseLogin.ipStatus}', style: GoogleFonts.poppins()),
-          Text('ARN No: ${caseLogin.arnNo}', style: GoogleFonts.poppins()),
-          Text('Remarks: ${caseLogin.remarks}', style: GoogleFonts.poppins()),
-          Text('User: ${caseLogin.user}', style: GoogleFonts.poppins()),
-          Text('Is Dirty: ${caseLogin.isDirty}', style: GoogleFonts.poppins()),
-          Text('Sync Error: ${caseLogin.syncError}', style: GoogleFonts.poppins()),
-          Text('Modified: ${caseLogin.modified}', style: GoogleFonts.poppins()),
-        ],
-      ),
-    ),
-  );
+                    itemCount: sortedDates.length,
+                    itemBuilder: (context, dateIndex) {
+                      final date = sortedDates[dateIndex];
+                      final dayLogins = groupedLogins[date]!;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Date Header
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: CustomColor.MainColor.withOpacity(0.1),
+                              border: Border(
+                                bottom: BorderSide(color: CustomColor.MainColor.withOpacity(0.2), width: 1),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.calendar_today, size: 20, color: CustomColor.MainColor),
+                                const SizedBox(width: 8),
+                                Text(
+                                  date,
+                                  style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                    color: CustomColor.MainColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Login Cards for this date
+                          ...dayLogins.map((caseLogin) {
+                            return Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.08),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                                border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                              ),
+                              child: ExpansionTile(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                trailing: Icon(
+                                  Icons.expand_more,
+                                  color: CustomColor.MainColor,
+                                ),
+                                title: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 20,
+                                      backgroundColor: CustomColor.MainColor.withOpacity(0.1),
+                                      child: Text(
+                                        (caseLogin.customerName ?? 'N')[0].toUpperCase(),
+                                        style: GoogleFonts.poppins(
+                                          fontWeight: FontWeight.w600,
+                                          color: CustomColor.MainColor,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            caseLogin.customerName ?? 'N/A',
+                                            style: GoogleFonts.poppins(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 16,
+                                              color: Colors.black87,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Row(
+                                            children: [
+                                              Icon(Icons.phone, size: 14, color: Colors.grey[600]),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                caseLogin.mobileNo ?? 'N/A',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 12,
+                                                  color: Colors.grey[600],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: _getStatusColor(caseLogin.ipStatus),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        caseLogin.ipStatus ?? 'N/A',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 11,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                                    child: Column(
+                                      children: [
+                                        const Divider(height: 24),
+                                        if (caseLogin.arnNo?.isNotEmpty ?? false) ...[
+                                          _buildDetailRow(
+                                            icon: Icons.badge,
+                                            iconColor: Colors.purple[600]!,
+                                            title: 'ARN Number',
+                                            value: caseLogin.arnNo!,
+                                          ),
+                                          const SizedBox(height: 12),
+                                        ],
+                                        if (caseLogin.remarks?.isNotEmpty ?? false) ...[
+                                          _buildDetailRow(
+                                            icon: Icons.notes,
+                                            iconColor: Colors.teal[600]!,
+                                            title: 'Remarks',
+                                            value: caseLogin.remarks!,
+                                          ),
+                                          const SizedBox(height: 12),
+                                        ],
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[50],
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Login Date: ${caseLogin.loginDate?.split(' ')?.first ?? 'N/A'}',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 12,
+                                                  color: Colors.grey[700],
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+                      );
                     },
                   );
                 }
@@ -266,8 +515,11 @@ onRefresh: () async {
             ),
           ),
           if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
+            Container(
+              color: Colors.black.withOpacity(0.1),
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
             ),
         ],
       ),

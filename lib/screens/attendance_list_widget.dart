@@ -391,7 +391,7 @@ class AttendanceListWidgetState extends State<AttendanceListWidget> {
             case 'Working':
               return Colors.blue.shade600; // Blue color for working
             case 'Pending':
-              return Colors.blue.shade600; // Blue color for pending (same as working)
+              return Colors.orange.shade600; // Blue color for pending (same as working)
             default:
               return Colors.grey.shade600;
           }
