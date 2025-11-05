@@ -241,14 +241,47 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
 
     try {
-      return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.best,
-        forceAndroidLocationManager: Platform.isAndroid ? true : false,
-        timeLimit: const Duration(seconds: 10),
+      // Try to get fresh location with high accuracy first
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.bestForNavigation,
+        forceAndroidLocationManager: true, // Always force fresh location
+        timeLimit: const Duration(seconds: 15),
       );
+
+      // Validate location freshness and accuracy
+      if (!_isLocationValid(position)) {
+        // If location is stale or inaccurate, try again with forced refresh
+        await Future.delayed(const Duration(milliseconds: 500)); // Small delay
+        position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.bestForNavigation,
+          forceAndroidLocationManager: true,
+          timeLimit: const Duration(seconds: 10),
+        );
+
+        // Check again
+        if (!_isLocationValid(position)) {
+          return Future.error('Unable to get accurate current location. Please ensure GPS is enabled and try again.');
+        }
+      }
+
+      return position;
     } catch (e) {
-      return Future.error('Failed to get fresh location: $e');
+      return Future.error('Failed to get fresh location: ${e.toString().replaceAll('Exception: ', '')}');
     }
+  }
+
+  // Helper method to validate location freshness and accuracy
+  bool _isLocationValid(Position position) {
+    final now = DateTime.now();
+    final locationTime = position.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
+
+    // Check if location is recent (within last 30 seconds)
+    final isRecent = now.difference(locationTime).inSeconds < 30;
+
+    // Check if accuracy is acceptable (within 50 meters)
+    final isAccurate = position.accuracy <= 50.0;
+
+    return isRecent && isAccurate;
   }
 
   @override
