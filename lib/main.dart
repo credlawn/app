@@ -28,6 +28,7 @@ import 'package:credlawn/helpers/background_sync_service.dart';
 import 'package:credlawn/api/server_api.dart';
 import 'package:credlawn/helpers/error_logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -248,6 +249,15 @@ class _MyAppState extends State<MyApp> {
     try {
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
       String currentVersion = packageInfo.version;
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? storedVersion = prefs.getString('appVersion');
+
+      if (storedVersion != currentVersion) {
+        await SessionManager.logout();
+        await prefs.setString('appVersion', currentVersion);
+      }
+
       final response = await http.get(ServerApi.appVersion);
       if (response.statusCode == 200) {
         var data = json.decode(response.body);

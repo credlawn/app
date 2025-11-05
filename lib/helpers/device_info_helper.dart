@@ -1,15 +1,16 @@
 
-import 'dart:io';
-import 'package:device_info_plus/device_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 Future<String?> getDeviceId() async {
-  var deviceInfo = DeviceInfoPlugin();
-  if (Platform.isIOS) {
-    var iosDeviceInfo = await deviceInfo.iosInfo;
-    return iosDeviceInfo.identifierForVendor; // unique ID for vendor
-  } else if(Platform.isAndroid) {
-    var androidDeviceInfo = await deviceInfo.androidInfo;
-    return androidDeviceInfo.id; // unique ID for Android
+  final prefs = await SharedPreferences.getInstance();
+  String? deviceId = prefs.getString('device_id');
+
+  if (deviceId == null) {
+    var uuid = Uuid();
+    deviceId = uuid.v4();
+    await prefs.setString('device_id', deviceId);
   }
-  return null;
+
+  return deviceId;
 }
