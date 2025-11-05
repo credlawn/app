@@ -96,16 +96,30 @@ class AttendanceListWidgetState extends State<AttendanceListWidget> {
                         recordDate.month == today.month &&
                         recordDate.day == today.day;
 
-    // If both check-in and check-out are missing, show "Absent"
-    if (record.inTime == 'N/A' && record.outTime == 'N/A') {
-      return 'Absent';
+    // Check if it's a holiday
+    if (record.holidayName != null && record.holidayName!.isNotEmpty) {
+      return record.holidayName!;
+    }
+
+    // If both check-in and check-out are missing
+    if ((record.inTime == null || record.inTime == 'N/A') &&
+        (record.outTime == null || record.outTime == 'N/A')) {
+      // For current date, show "Pending" instead of "Absent"
+      return isToday ? 'Pending' : 'Absent';
     }
 
     // If either check-in or check-out is missing
-    if (record.inTime == 'N/A' || record.outTime == 'N/A') {
+    if ((record.inTime == null || record.inTime == 'N/A') ||
+        (record.outTime == null || record.outTime == 'N/A')) {
       // For current date, if check-in is done, show "Working"
-      if (isToday && record.inTime != 'N/A' && record.outTime == 'N/A') {
+      if (isToday && record.inTime != null && record.inTime != 'N/A' &&
+          (record.outTime == null || record.outTime == 'N/A')) {
         return 'Working';
+      }
+      // For past dates, if check-in is done but check-out missing, show "Pending"
+      if (!isToday && record.inTime != null && record.inTime != 'N/A' &&
+          (record.outTime == null || record.outTime == 'N/A')) {
+        return 'Pending';
       }
       // Otherwise show "Incomplete"
       return 'Incomplete';
@@ -116,8 +130,8 @@ class AttendanceListWidgetState extends State<AttendanceListWidget> {
       final TimeOfDay officeStart = TimeOfDay.fromDateTime(widget.officeStartTime!);
       final TimeOfDay officeEnd = TimeOfDay.fromDateTime(widget.officeEndTime!);
 
-      final DateTime checkInTime = DateFormat('HH:mm:ss').parse(record.inTime);
-      final DateTime checkOutTime = DateFormat('HH:mm:ss').parse(record.outTime);
+      final DateTime checkInTime = DateFormat('HH:mm:ss').parse(record.inTime!);
+      final DateTime checkOutTime = DateFormat('HH:mm:ss').parse(record.outTime!);
       final TimeOfDay checkIn = TimeOfDay.fromDateTime(checkInTime);
       final TimeOfDay checkOut = TimeOfDay.fromDateTime(checkOutTime);
 
@@ -135,8 +149,8 @@ class AttendanceListWidgetState extends State<AttendanceListWidget> {
       }
     }
 
-    // Return Present for on-time complete attendance, or original status
-    return record.status == 'Present' || record.status == 'Absent' ? record.status : 'Present';
+    // Return Present for on-time complete attendance
+    return 'Present';
   }
 
   @override
@@ -268,8 +282,8 @@ class AttendanceListWidgetState extends State<AttendanceListWidget> {
         final String dayName = DateFormat('EEEE').format(recordDate);
 
         // Time Formatting
-        String formatTime(String time) {
-          if (time == 'N/A') return '--:--';
+        String formatTime(String? time) {
+          if (time == null || time == 'N/A') return '--:--';
           try {
             final DateTime parsedTime = DateFormat('HH:mm:ss').parse(time);
             return DateFormat('hh:mm a').format(parsedTime);
@@ -291,9 +305,9 @@ class AttendanceListWidgetState extends State<AttendanceListWidget> {
 
         // Determine colors
         Color getInTimeColor() {
-          if (officeInTimeLimit == null || record.inTime == 'N/A') return Colors.grey.shade600;
+          if (officeInTimeLimit == null || record.inTime == null || record.inTime == 'N/A') return Colors.grey.shade600;
           try {
-            final DateTime parsedInTime = DateFormat('HH:mm:ss').parse(record.inTime);
+            final DateTime parsedInTime = DateFormat('HH:mm:ss').parse(record.inTime!);
             final TimeOfDay actualInTime = TimeOfDay.fromDateTime(parsedInTime);
             if (actualInTime.hour < officeInTimeLimit.hour ||
                 (actualInTime.hour == officeInTimeLimit.hour && actualInTime.minute <= officeInTimeLimit.minute)) {
@@ -307,9 +321,9 @@ class AttendanceListWidgetState extends State<AttendanceListWidget> {
         }
 
         Color getOutTimeColor() {
-          if (officeOutTimeLimit == null || record.outTime == 'N/A') return Colors.grey.shade600;
+          if (officeOutTimeLimit == null || record.outTime == null || record.outTime == 'N/A') return Colors.grey.shade600;
           try {
-            final DateTime parsedOutTime = DateFormat('HH:mm:ss').parse(record.outTime);
+            final DateTime parsedOutTime = DateFormat('HH:mm:ss').parse(record.outTime!);
             final TimeOfDay actualOutTime = TimeOfDay.fromDateTime(parsedOutTime);
             if (actualOutTime.hour >= officeOutTimeLimit.hour &&
                 actualOutTime.minute >= officeOutTimeLimit.minute) {
@@ -323,6 +337,11 @@ class AttendanceListWidgetState extends State<AttendanceListWidget> {
         }
 
         Color getStatusColor() {
+          // Check if it's a holiday first
+          if (record.holidayName != null && record.holidayName!.isNotEmpty) {
+            return Colors.green.shade600; // Green color for holidays
+          }
+
           final displayStatus = getDisplayStatus(record);
           switch (displayStatus) {
             case 'Present':
@@ -339,12 +358,19 @@ class AttendanceListWidgetState extends State<AttendanceListWidget> {
               return Colors.orange.shade700; // Orange color for incomplete
             case 'Working':
               return Colors.blue.shade600; // Blue color for working
+            case 'Pending':
+              return Colors.blue.shade600; // Blue color for pending (same as working)
             default:
               return Colors.grey.shade600;
           }
         }
 
         IconData? getStatusIcon() {
+          // Check if it's a holiday first
+          if (record.holidayName != null && record.holidayName!.isNotEmpty) {
+            return Icons.celebration; // Celebration icon for holidays
+          }
+
           final displayStatus = getDisplayStatus(record);
           switch (displayStatus) {
             case 'Present':
@@ -359,6 +385,8 @@ class AttendanceListWidgetState extends State<AttendanceListWidget> {
               return Icons.cancel;
             case 'Working':
               return null; // No icon for Working status
+            case 'Pending':
+              return null; // No icon for Pending status (same as Working)
             case 'Incomplete':
               return Icons.warning; // Warning icon for incomplete
             default:

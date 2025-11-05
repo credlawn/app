@@ -165,11 +165,11 @@ class ApiAttendanceHelper {
       bool hasCheckedOut = false;
       String? lastLogType; 
       if (todaySummary.isNotEmpty) {
-        final record = todaySummary.first; 
-        if (record.inTime != 'N/A') {
+        final record = todaySummary.first;
+        if (record.inTime != null && record.inTime != 'N/A') {
           hasCheckedIn = true;
         }
-        if (record.outTime != 'N/A') {
+        if (record.outTime != null && record.outTime != 'N/A') {
           hasCheckedOut = true;
         }
         
