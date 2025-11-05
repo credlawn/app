@@ -3,9 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:credlawn/custom/custom_color.dart';
-import 'package:credlawn/fragments/calling_data_fragment.dart';
-import 'package:credlawn/fragments/cards_fragment.dart';
 import 'package:credlawn/fragments/dashboard_fragment.dart';
+import 'package:credlawn/fragments/cards_fragment.dart';
+import 'package:credlawn/fragments/hr_fragment.dart';
 import 'package:credlawn/models/user.dart';
 import 'drawer_home_screen.dart'; // Import drawer
 import 'package:credlawn/helpers/call_log_sync_manager.dart';
@@ -26,22 +26,22 @@ class _HomeScreenState extends State<HomeScreen> {
   late int _navBar;
   late List<Widget> _fragment; // Declare fragments as a late list
 
-  String title = 'HR';
+  String title = 'Dashboard';
 
   @override
   void initState() {
     super.initState();
     _navBar = widget.selectedTab;
-    title = _navBar == 0 ? 'HR' : (_navBar == 1 ? 'Cards' : 'Dashboard');
+    title = _navBar == 0 ? 'Cards' : (_navBar == 1 ? 'HR' : 'Dashboard');
   }
 
   @override
   Widget build(BuildContext context) {
     // Initialize the fragments here where widget.user is accessible
     _fragment = [
-      const DashboardFragment(),
       CardsFragment(user: widget.user),
-      CallingDataFragment(user: widget.user), // Now this works correctly
+      const HrFragment(),
+      DashboardFragment(user: widget.user),
     ];
 
     return Scaffold(
@@ -104,15 +104,15 @@ class _HomeScreenState extends State<HomeScreen> {
         items: [
           BottomNavigationBarItem(
             icon: _navBar == 0
-                ? const Icon(Icons.business)
-                : const Icon(Icons.business),
-            label: 'HR',
-          ),
-          BottomNavigationBarItem(
-            icon: _navBar == 1
                 ? const Icon(Icons.credit_card)
                 : const Icon(Icons.credit_card),
             label: 'Cards',
+          ),
+          BottomNavigationBarItem(
+            icon: _navBar == 1
+                ? const Icon(Icons.business)
+                : const Icon(Icons.business),
+            label: 'HR',
           ),
           BottomNavigationBarItem(
             icon: _navBar == 2
@@ -126,9 +126,9 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             _navBar = value;
             title = _navBar == 0
-                ? 'HR'
+                ? 'Cards'
                 : _navBar == 1
-                    ? 'Cards'
+                    ? 'HR'
                     : 'Dashboard';
           });
         },

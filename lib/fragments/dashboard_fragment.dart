@@ -1,132 +1,267 @@
+import 'package:credlawn/network/api_fcm_log_helper.dart';
+import 'package:credlawn/screens/follow_up_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:credlawn/helpers/session_manager.dart';
-import 'package:credlawn/models/user.dart';
-import 'package:credlawn/screens/cards.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../screens/attendance_screen.dart'; 
+import '../models/user.dart';
+import '../network/api_follow_up_helper.dart';
+import '../screens/pre_approved_lead_screen.dart';
+import '../screens/new_card_login_screen.dart';
+import '../screens/my_login_screen.dart';
+
+import '../screens/fcm_log_screen.dart';
 
 class DashboardFragment extends StatefulWidget {
-  const DashboardFragment({super.key});
+  final User user;
+
+  const DashboardFragment({super.key, required this.user});
 
   @override
   State<DashboardFragment> createState() => _DashboardFragmentState();
 }
 
 class _DashboardFragmentState extends State<DashboardFragment> {
-  User? _user;
-  List<Map<String, dynamic>> _dashboardItems = [];
+  int _followUpCount = 0;
+  int _unreadNotificationCount = 0;
+  
+  final List<Map<String, dynamic>> _leadsSection = [
+    {
+      'icon': Icons.phone_forwarded,
+      'title': 'Pre Approved',
+      'color': Color(0xFF10B981),
+      'background': Color(0xFFFFFFFF),
+    },
+    {
+      'icon': Icons.calendar_today,
+      'title': 'Follow-up',
+      'color': Color(0xFF8B5CF6),
+      'background': Color(0xFFFFFFFF),
+    },
+  ];
+
+  final List<Map<String, dynamic>> _loginSection = [
+    {
+      'icon': Icons.calendar_month,
+      'title': 'My Login',
+      'color': Color(0xFFF59E0B),
+      'background': Color(0xFFFFFFFF),
+    },
+    {
+      'icon': Icons.login,
+      'title': 'New Login',
+      'color': Color(0xFF3B82F6),
+      'background': Color(0xFFFFFFFF),
+    },
+  ];
+
+  final List<Map<String, dynamic>> _systemSection = [
+    {
+      'icon': Icons.notifications,
+      'title': 'Notifications',
+      'color': Color(0xFFEC4899),
+      'background': Color(0xFFFFFFFF),
+    },
+  ];
 
   @override
   void initState() {
     super.initState();
-    _loadUserDataAndBuildDashboard();
+    _fetchFollowUpCount();
+    _fetchUnreadNotificationCount();
   }
 
-  Future<void> _loadUserDataAndBuildDashboard() async {
-    _user = await SessionManager.getSessionData();
-    _buildDashboardItems();
-    setState(() {});
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (ModalRoute.of(context)?.isCurrent == true) {
+      _fetchFollowUpCount();
+      _fetchUnreadNotificationCount();
+    }
   }
 
-  void _buildDashboardItems() {
-    final allItems = [
-      {
-        'icon': Icons.how_to_reg,
-        'title': 'Attendance',
-        'count': '',
-        'color': Colors.green,
-        'screen': const AttendanceScreen(),
-      },
-      {
-        'icon': Icons.card_travel,
-        'title': 'Cards',
-        'count': '2',
-        'color': Colors.green,
-        'screen': const CardsScreen(),
-      },
-      
-    ];
+  Future<void> _fetchFollowUpCount() async {
+    final count = await getUpcomingFollowUpsCount();
+    setState(() {
+      _followUpCount = count;
+    });
+  }
 
-    _dashboardItems = allItems.where((item) {
-      if (item['title'] == 'Cards') {
-        return _user?.role == 'Manager';
-      }
-      return true;
-    }).toList();
+  Future<void> _fetchUnreadNotificationCount() async {
+    final count = await getUnreadFcmLogsCount();
+    setState(() {
+      _unreadNotificationCount = count;
+    });
+  }
+
+  void _navigateToScreen(String title) {
+    final Map<String, Widget> screenMap = {
+      'Pre Approved': PreApprovedLeadsScreen(user: widget.user),
+      'Follow-up': FollowUpScreen(),
+      'My Login': const MyLoginScreen(), // Added My Login screen
+      'New Login': const NewCardLoginScreen(),
+      'Notifications': const FcmLogScreen(),
+    };
+
+    if (screenMap.containsKey(title)) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => screenMap[title]!),
+      );
+    }
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, top: 16, bottom: 12),
+      child: Text(
+        title,
+        style: GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey[700],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDashboardItem(Map<String, dynamic> item, int notificationCount) {
+    return Container(
+      decoration: BoxDecoration(
+        color: item['background'],
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.15),
+            blurRadius: 8,
+            spreadRadius: 1,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _navigateToScreen(item['title']),
+          borderRadius: BorderRadius.circular(12),
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: item['color'].withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        item['icon'],
+                        size: 22,
+                        color: item['color'],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      item['title'],
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                    ),
+                  ],
+                ),
+              ),
+              if (notificationCount > 0)
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFEF4444),
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.red.withOpacity(0.3),
+                          blurRadius: 3,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    constraints: BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    child: Text(
+                      notificationCount > 99 ? '99+' : notificationCount.toString(),
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSection(List<Map<String, dynamic>> items, String sectionTitle) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(sectionTitle),
+        GridView.builder(
+          physics: NeverScrollableScrollPhysics(),
+          shrinkWrap: true,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.0,
+          ),
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final item = items[index];
+            int notificationCount = 0;
+            if (item['title'] == 'Follow-up') {
+              notificationCount = _followUpCount;
+            } else if (item['title'] == 'Notifications') {
+              notificationCount = _unreadNotificationCount;
+            }
+            return _buildDashboardItem(item, notificationCount);
+          },
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, 
-      body: AlignedGridView.count(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
-        itemCount: _dashboardItems.length,
-        crossAxisCount: 3,
-        mainAxisSpacing: 6,
-        crossAxisSpacing: 6,
-        itemBuilder: (context, index) {
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => _dashboardItems[index]['screen'],
-                ),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 20.0),
-              decoration: BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withAlpha(80),
-                    blurRadius: 1.5,
-                    spreadRadius: 1.5,
-                  )
-                ],
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8.0),
-                border: Border.all(
-                  color: Colors.grey.shade200,
-                ),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    _dashboardItems[index]['icon'],
-                    size: 30.0, 
-                    color: _dashboardItems[index]['color'],
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        textAlign: TextAlign.center,
-                        _dashboardItems[index]['title'],
-                        style: GoogleFonts.poppins(
-                          fontSize: 12, 
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        textAlign: TextAlign.center,
-                        _dashboardItems[index]['count'],
-                        style: GoogleFonts.poppins(
-                          fontSize: 12, 
-                          fontWeight: FontWeight.w700,
-                          color: _dashboardItems[index]['color'],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+      backgroundColor: Color(0xFFF8FAFC),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSection(_leadsSection, "Leads Management"),
+            SizedBox(height: 20),
+            _buildSection(_loginSection, "Login Data"),
+            SizedBox(height: 20),
+            _buildSection(_systemSection, "System"),
+          ],
+        ),
       ),
     );
   }
