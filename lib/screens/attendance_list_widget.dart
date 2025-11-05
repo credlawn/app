@@ -18,179 +18,580 @@ class AttendanceListWidget extends StatefulWidget {
 }
 
 class AttendanceListWidgetState extends State<AttendanceListWidget> {
-  late Future<List<AttendanceRecord>> _attendanceRecordsFuture;
+  List<AttendanceRecord> _records = [];
+  bool _isLoading = false;
+  bool _isLoadingMore = false;
+  bool _hasMoreData = true;
+  int _currentPage = 0;
+  static const int _pageSize = 20;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _attendanceRecordsFuture = _fetchRecords();
+    _loadInitialData();
   }
 
-  Future<List<AttendanceRecord>> _fetchRecords() {
-    return ApiAttendanceHelper.getAttendanceRecords();
+  Future<void> _loadInitialData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final records = await ApiAttendanceHelper.getAttendanceRecords(
+        limit: _pageSize,
+        offset: 0,
+      );
+
+      setState(() {
+        _records = records.reversed.toList(); // Reverse to show newest first
+        _currentPage = 1;
+        _hasMoreData = records.length >= _pageSize;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadMoreData() async {
+    if (_isLoadingMore || !_hasMoreData) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    try {
+      final records = await ApiAttendanceHelper.getAttendanceRecords(
+        limit: _pageSize,
+        offset: _currentPage * _pageSize,
+      );
+
+      setState(() {
+        _records.addAll(records);
+        _currentPage++;
+        _hasMoreData = records.length >= _pageSize;
+        _isLoadingMore = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoadingMore = false;
+      });
+    }
   }
 
   void refreshData() {
-    setState(() {
-      _attendanceRecordsFuture = _fetchRecords();
-    });
+    _loadInitialData();
+  }
+
+  String getDisplayStatus(AttendanceRecord record) {
+    final DateTime recordDate = DateTime.parse(record.date);
+    final DateTime today = DateTime.now();
+    final bool isToday = recordDate.year == today.year &&
+                        recordDate.month == today.month &&
+                        recordDate.day == today.day;
+
+    // If both check-in and check-out are missing, show "Absent"
+    if (record.inTime == 'N/A' && record.outTime == 'N/A') {
+      return 'Absent';
+    }
+
+    // If either check-in or check-out is missing
+    if (record.inTime == 'N/A' || record.outTime == 'N/A') {
+      // For current date, if check-in is done, show "Working"
+      if (isToday && record.inTime != 'N/A' && record.outTime == 'N/A') {
+        return 'Working';
+      }
+      // Otherwise show "Incomplete"
+      return 'Incomplete';
+    }
+
+    // For complete records, check timing against office hours
+    if (widget.officeStartTime != null && widget.officeEndTime != null) {
+      final TimeOfDay officeStart = TimeOfDay.fromDateTime(widget.officeStartTime!);
+      final TimeOfDay officeEnd = TimeOfDay.fromDateTime(widget.officeEndTime!);
+
+      final DateTime checkInTime = DateFormat('HH:mm:ss').parse(record.inTime);
+      final DateTime checkOutTime = DateFormat('HH:mm:ss').parse(record.outTime);
+      final TimeOfDay checkIn = TimeOfDay.fromDateTime(checkInTime);
+      final TimeOfDay checkOut = TimeOfDay.fromDateTime(checkOutTime);
+
+      final bool isLate = (checkIn.hour > officeStart.hour) ||
+                         (checkIn.hour == officeStart.hour && checkIn.minute > officeStart.minute);
+      final bool isEarly = (checkOut.hour < officeEnd.hour) ||
+                          (checkOut.hour == officeEnd.hour && checkOut.minute < officeEnd.minute);
+
+      if (isLate && isEarly) {
+        return 'Early-Late';
+      } else if (isLate) {
+        return 'Late Come';
+      } else if (isEarly) {
+        return 'Early Left';
+      }
+    }
+
+    // Return Present for on-time complete attendance, or original status
+    return record.status == 'Present' || record.status == 'Absent' ? record.status : 'Present';
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<AttendanceRecord>>(
-      future: _attendanceRecordsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Error: ${snapshot.error}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.red),
+    if (_isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Colors.red.shade300,
               ),
+              const SizedBox(height: 16),
+              Text(
+                'Unable to load attendance records',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.red.shade600,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Please try again later',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadInitialData,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_records.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(40.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.calendar_today,
+                size: 64,
+                color: Colors.grey.shade300,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No attendance records yet',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Your attendance history will appear here',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.grey.shade500,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _records.length + (_hasMoreData ? 1 : 0),
+      padding: EdgeInsets.zero,
+      itemBuilder: (context, index) {
+        if (index == _records.length) {
+          // Load More Button
+          return Container(
+            padding: const EdgeInsets.all(16),
+            child: Center(
+              child: _isLoadingMore
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: _loadMoreData,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
+                      child: const Text('Load More'),
+                    ),
             ),
           );
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text(
-                'No attendance records found for this month.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
-          );
-          } else {
-            final reversedRecords = snapshot.data!.reversed.toList();
-            return ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(), // Re-added to prevent inner scrolling
-            itemCount: reversedRecords.length,
-              itemBuilder: (context, index) {
-                final record = reversedRecords[index];
+        }
 
-                // Date Formatting
-                final DateTime recordDate = DateTime.parse(record.date);
-                final String formattedDate = DateFormat('dd-MM-yyyy').format(recordDate);
+        final record = _records[index];
+        final isLast = index == _records.length - 1;
 
-                // Time Formatting and N/A replacement
-                String formatTime(String time) {
-                  if (time == 'N/A') return ''; // Return empty string for N/A
-                  try {
-                    final DateTime parsedTime = DateFormat('HH:mm:ss').parse(time);
-                    return DateFormat('hh:mm a').format(parsedTime);
-                  } catch (e) {
-                    return time; // Return original if parsing fails
-                  }
-                }
+        // Date Formatting
+        final DateTime recordDate = DateTime.parse(record.date);
+        final String formattedDate = DateFormat('dd MMM yyyy').format(recordDate);
+        final String dayName = DateFormat('EEEE').format(recordDate);
 
-                final String formattedInTime = formatTime(record.inTime);
-                final String formattedOutTime = formatTime(record.outTime);
+        // Time Formatting
+        String formatTime(String time) {
+          if (time == 'N/A') return '--:--';
+          try {
+            final DateTime parsedTime = DateFormat('HH:mm:ss').parse(time);
+            return DateFormat('hh:mm a').format(parsedTime);
+          } catch (e) {
+            return time;
+          }
+        }
 
-                // Define office times for comparison
-                final TimeOfDay? officeInTimeLimit = widget.officeStartTime != null
-                    ? TimeOfDay.fromDateTime(widget.officeStartTime!)
-                    : null;
-                final TimeOfDay? officeOutTimeLimit = widget.officeEndTime != null
-                    ? TimeOfDay.fromDateTime(widget.officeEndTime!)
-                    : null;
+        final String formattedInTime = formatTime(record.inTime);
+        final String formattedOutTime = formatTime(record.outTime);
 
-                Color inTimeColor = Colors.black; // Default color
-                Color outTimeColor = Colors.black; // Default color
+        // Office times for comparison
+        final TimeOfDay? officeInTimeLimit = widget.officeStartTime != null
+            ? TimeOfDay.fromDateTime(widget.officeStartTime!)
+            : null;
+        final TimeOfDay? officeOutTimeLimit = widget.officeEndTime != null
+            ? TimeOfDay.fromDateTime(widget.officeEndTime!)
+            : null;
 
-                // Determine In Time color
-                if (officeInTimeLimit != null && record.inTime != 'N/A') {
-                  try {
-                    final DateTime parsedInTime = DateFormat('HH:mm:ss').parse(record.inTime);
-                    final TimeOfDay actualInTime = TimeOfDay.fromDateTime(parsedInTime);
-                    if (actualInTime.hour < officeInTimeLimit.hour ||
-                        (actualInTime.hour == officeInTimeLimit.hour && actualInTime.minute <= officeInTimeLimit.minute)) {
-                      inTimeColor = Colors.green;
-                    } else {
-                      inTimeColor = Colors.red;
-                    }
-                  } catch (e) { /* Handle parsing error if necessary */ }
-                }
+        // Determine colors
+        Color getInTimeColor() {
+          if (officeInTimeLimit == null || record.inTime == 'N/A') return Colors.grey.shade600;
+          try {
+            final DateTime parsedInTime = DateFormat('HH:mm:ss').parse(record.inTime);
+            final TimeOfDay actualInTime = TimeOfDay.fromDateTime(parsedInTime);
+            if (actualInTime.hour < officeInTimeLimit.hour ||
+                (actualInTime.hour == officeInTimeLimit.hour && actualInTime.minute <= officeInTimeLimit.minute)) {
+              return Colors.green.shade600;
+            } else {
+              return Colors.red.shade600;
+            }
+          } catch (e) {
+            return Colors.grey.shade600;
+          }
+        }
 
-                // Determine Out Time color
-                if (officeOutTimeLimit != null && record.outTime != 'N/A') {
-                  try {
-                    final DateTime parsedOutTime = DateFormat('HH:mm:ss').parse(record.outTime);
-                    final TimeOfDay actualOutTime = TimeOfDay.fromDateTime(parsedOutTime);
-                    if (actualOutTime.hour < officeOutTimeLimit.hour ||
-                        (actualOutTime.hour == officeOutTimeLimit.hour && actualOutTime.minute < officeOutTimeLimit.minute)) {
-                      outTimeColor = Colors.red;
-                    } else {
-                      outTimeColor = Colors.green;
-                    }
-                  } catch (e) { /* Handle parsing error if necessary */ }
-                }
+        Color getOutTimeColor() {
+          if (officeOutTimeLimit == null || record.outTime == 'N/A') return Colors.grey.shade600;
+          try {
+            final DateTime parsedOutTime = DateFormat('HH:mm:ss').parse(record.outTime);
+            final TimeOfDay actualOutTime = TimeOfDay.fromDateTime(parsedOutTime);
+            if (actualOutTime.hour >= officeOutTimeLimit.hour &&
+                actualOutTime.minute >= officeOutTimeLimit.minute) {
+              return Colors.green.shade600;
+            } else {
+              return Colors.red.shade600;
+            }
+          } catch (e) {
+            return Colors.grey.shade600;
+          }
+        }
 
-                Color statusColor;
-                switch (record.status) {
-                  case 'Present':
-                    statusColor = Colors.green;
-                    break;
-                  case 'Late Come':
-                    statusColor = Colors.orange;
-                    break;
-                  case 'Early Left':
-                    statusColor = Colors.deepOrange;
-                    break;
-                  case 'Absent':
-                    statusColor = Colors.red;
-                    break;
-                  default:
-                    statusColor = Colors.grey;
-                }
+        Color getStatusColor() {
+          final displayStatus = getDisplayStatus(record);
+          switch (displayStatus) {
+            case 'Present':
+              return Colors.green.shade600;
+            case 'Late Come':
+              return Colors.orange.shade600;
+            case 'Early Left':
+              return Colors.deepOrange.shade600;
+            case 'Early-Late':
+              return Colors.deepOrange.shade700;
+            case 'Absent':
+              return Colors.red.shade600;
+            case 'Incomplete':
+              return Colors.orange.shade700; // Orange color for incomplete
+            case 'Working':
+              return Colors.blue.shade600; // Blue color for working
+            default:
+              return Colors.grey.shade600;
+          }
+        }
 
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: Text(
-                              record.status,
-                              style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
-                            ),
+        IconData? getStatusIcon() {
+          final displayStatus = getDisplayStatus(record);
+          switch (displayStatus) {
+            case 'Present':
+              return Icons.check_circle;
+            case 'Late Come':
+              return Icons.schedule;
+            case 'Early Left':
+              return Icons.schedule_send;
+            case 'Early-Late':
+              return Icons.access_time; // Clock icon for both early and late
+            case 'Absent':
+              return Icons.cancel;
+            case 'Working':
+              return null; // No icon for Working status
+            case 'Incomplete':
+              return Icons.warning; // Warning icon for incomplete
+            default:
+              return Icons.help;
+          }
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Timeline indicator
+              SizedBox(
+                width: 60,
+                child: Column(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: getStatusColor(),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: getStatusColor().withOpacity(0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
                           ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Date: $formattedDate',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            const SizedBox(height: 4),
-                            Text('In: $formattedInTime', style: TextStyle(color: inTimeColor)),
-                            Text('Out: $formattedOutTime', style: TextStyle(color: outTimeColor)),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
+                    ),
+                    if (!isLast)
+                      Container(
+                        width: 2,
+                        height: 80,
+                        color: Colors.grey.shade300,
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                      ),
+                  ],
+                ),
+              ),
+
+              // Content card
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.only(left: 16, right: 16),
+                  child: Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: Colors.grey.shade200,
+                        width: 1,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Date and status
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      dayName,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade600,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      formattedDate,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                constraints: const BoxConstraints(maxWidth: 100),
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: getStatusColor().withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: getStatusColor().withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (getStatusIcon() != null) ...[
+                                      Icon(
+                                        getStatusIcon(),
+                                        size: 12,
+                                        color: getStatusColor(),
+                                      ),
+                                      const SizedBox(width: 2),
+                                    ],
+                                    Flexible(
+                                      child: Text(
+                                        getDisplayStatus(record),
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w600,
+                                          color: getStatusColor(),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Time information
+                          Row(
+                            children: [
+                              // Check-in time
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade50,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Colors.green.shade200,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Icon(
+                                        Icons.login,
+                                        color: Colors.green.shade600,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Check In',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.green.shade600,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        formattedInTime,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: getInTimeColor(),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(width: 12),
+
+                              // Check-out time
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.shade50,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Colors.red.shade200,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Icon(
+                                        Icons.logout,
+                                        color: Colors.red.shade600,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Check Out',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.red.shade600,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        formattedOutTime,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: getOutTimeColor(),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                );
-              },
-            );
-          }
-        },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

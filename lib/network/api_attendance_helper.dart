@@ -246,22 +246,40 @@ class ApiAttendanceHelper {
                         throw Exception('An error occurred while fetching geofence: $e');
                       }
                     }
-  static Future<List<AttendanceRecord>> getAttendanceRecords({String? fromDate, String? toDate}) async {
+  static Future<List<AttendanceRecord>> getAttendanceRecords({
+    String? fromDate,
+    String? toDate,
+    int? limit,
+    int? offset,
+  }) async {
     final User? user = await SessionManager.getSessionData();
     if (user == null) {
       throw Exception('User not logged in');
     }
+
     final now = DateTime.now();
     final firstDayOfMonth = DateTime(now.year, now.month, 1);
     final DateTime toDateObj = DateTime.now();
+
     final String finalFromDate = fromDate ?? '${firstDayOfMonth.year}-${firstDayOfMonth.month.toString().padLeft(2, '0')}-${firstDayOfMonth.day.toString().padLeft(2, '0')}';
     final String finalToDate = toDate ?? '${toDateObj.year}-${toDateObj.month.toString().padLeft(2, '0')}-${toDateObj.day.toString().padLeft(2, '0')}';
+
     final Map<String, dynamic> queryParams = {
       'user_id': user.userId,
       'from_date': finalFromDate,
       'to_date': finalToDate,
     };
+
+    // Add pagination parameters if provided
+    if (limit != null) {
+      queryParams['limit'] = limit.toString();
+    }
+    if (offset != null) {
+      queryParams['offset'] = offset.toString();
+    }
+
     final Uri uri = ServerApi.getDailyAttendanceSummary.replace(queryParameters: queryParams);
+
     try {
       final response = await http.get(
         uri,
@@ -269,6 +287,7 @@ class ApiAttendanceHelper {
           'Cookie': 'sid=${user.sid}',
         },
       );
+
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
 

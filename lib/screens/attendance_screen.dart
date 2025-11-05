@@ -30,6 +30,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   DateTime? _officeStartTime;
   DateTime? _officeEndTime;
 
+  // Progress tracking
+  bool _showProgressOverlay = false;
+  String _currentStep = '';
+  double _progressValue = 0.0;
+  bool _canCancel = true;
+
   @override
   void initState() {
     super.initState();
@@ -66,23 +72,49 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 
-  Future<void> _handleAttendanceRequest(String logType) async {
+  void _updateProgress(String step, double progress) {
+    if (mounted) {
+      setState(() {
+        _currentStep = step;
+        _progressValue = progress;
+      });
+    }
+  }
+
+  void _showProgressDialog() {
     setState(() {
-      _isButtonLoading = true;
+      _showProgressOverlay = true;
+      _canCancel = true;
     });
+  }
+
+  void _hideProgressDialog() {
+    setState(() {
+      _showProgressOverlay = false;
+      _currentStep = '';
+      _progressValue = 0.0;
+    });
+  }
+
+  Future<void> _handleAttendanceRequest(String logType) async {
+    _showProgressDialog();
+    _updateProgress('Initializing...', 0.1);
 
     try {
-      // Get Location
+      // Step 1: Get Location
+      _updateProgress('Getting your location...', 0.2);
       Position currentPosition = await _determinePosition();
 
-      // Geofence Check
+      // Step 2: Geofence Check
+      _updateProgress('Verifying location...', 0.4);
       if (_geofenceConfig != null) {
         if (!_isInsideGeofence(currentPosition)) {
           throw Exception('You are outside the ${_geofenceConfig!.locationName}');
         }
       }
 
-      // If inside geofence, open camera
+      // Step 3: Open Camera
+      _updateProgress('Opening camera...', 0.6);
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
         source: ImageSource.camera,
@@ -90,31 +122,26 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         preferredCameraDevice: CameraDevice.front,
       );
 
-      // If an image is taken, submit attendance
+      // Step 4: Submit Attendance
       if (image != null) {
-        await _submitAttendance(logType, image.path, currentPosition);
+        _updateProgress('Processing attendance...', 0.8);
+        await _submitAttendanceWithProgress(logType, image.path, currentPosition);
       } else {
-        // If user cancels camera, stop loading
-        setState(() {
-          _isButtonLoading = false;
-        });
+        // User cancelled camera
+        _hideProgressDialog();
       }
     } catch (e) {
+      _hideProgressDialog();
       if (mounted) {
         CustomColor.showErrorSnackBar(context, e.toString().replaceAll('Exception: ', ''));
       }
-      setState(() {
-        _isButtonLoading = false;
-      });
     }
-    // No finally block needed here for setting _isButtonLoading to false,
-    // as it's handled in the success path of _submitAttendance or in the catch/cancel paths.
   }
 
-  Future<void> _submitAttendance(String logType, String imagePath, Position currentPosition) async {
-    // Button loading is already true from _handleAttendanceRequest
+  Future<void> _submitAttendanceWithProgress(String logType, String imagePath, Position currentPosition) async {
     try {
       // Step 1: Create Record and get docname
+      _updateProgress('Creating attendance record...', 0.85);
       final String docname = await ApiAttendanceHelper.markAttendance(
         logType: logType,
         latitude: currentPosition.latitude,
@@ -122,17 +149,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       );
 
       // Step 2: Upload Image and get URL
+      _updateProgress('Uploading photo...', 0.95);
       final String fileUrl = await ApiAttendanceHelper.uploadImage(
         docname: docname,
         imagePath: imagePath,
       );
 
       // Step 3: Update the document with the file URL
+      _updateProgress('Finalizing...', 1.0);
       await ApiAttendanceHelper.updateImagePath(
         docname: docname,
         filePath: fileUrl,
       );
 
+      _hideProgressDialog();
       HapticFeedback.vibrate();
       CustomColor.showSuccessSnackBar(context, 'Attendance marked successfully!');
       if (mounted) {
@@ -141,14 +171,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         _attendanceListKey.currentState?.refreshData();
       }
     } catch (e) {
+      _hideProgressDialog();
       if (mounted) {
         CustomColor.showErrorSnackBar(context, e.toString().replaceAll('Exception: ', ''));
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isButtonLoading = false;
-        });
       }
     }
   }
@@ -202,143 +227,421 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // No need for isCheckInDisabled and isCheckOutDisabled here anymore
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Attendance', style: TextStyle(color: Colors.white)),
-        backgroundColor: CustomColor.MainColor,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Builder(
-              builder: (context) {
-                if (_isScreenLoading) {
-                  return ElevatedButton.icon(
-                    onPressed: null, // Disabled
-                    icon: const Icon(Icons.hourglass_empty, color: Colors.white),
-                    label: const Text('Checking...', style: TextStyle(color: Colors.white)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                    ),
-                  );
-                }
-
-                String buttonText = '';
-                IconData buttonIcon = Icons.login;
-                Color buttonColor = Colors.green;
-                VoidCallback? onPressedCallback;
-
-                // Case 1: Already Checked Out for today
-                if (_todayAttendanceStatus?.hasCheckedOut ?? false) {
-                  buttonText = 'MARKED';
-                  buttonIcon = Icons.check_circle;
-                  buttonColor = Colors.grey;
-                  onPressedCallback = null; // Disabled
-                }
-                // Case 2: Checked In, but not yet Checked Out
-                else if (_todayAttendanceStatus?.hasCheckedIn ?? false) {
-                  buttonText = 'CHECK OUT';
-                  buttonIcon = Icons.logout;
-                  buttonColor = Colors.red;
-                  onPressedCallback = _isButtonLoading ? null : () => _handleAttendanceRequest('Out');
-                }
-                // Case 3: No punches for today (or only 'Out' which is invalid)
-                else {
-                  buttonText = 'CHECK IN';
-                  buttonIcon = Icons.login;
-                  buttonColor = Colors.green;
-                  onPressedCallback = _isButtonLoading ? null : () => _handleAttendanceRequest('In');
-                }
-
-                return ElevatedButton.icon(
-                  onPressed: onPressedCallback,
-                  icon: Icon(buttonIcon, color: Colors.white),
-                  label: Text(buttonText, style: TextStyle(color: Colors.white)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: buttonColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                  ),
-                );
-              },
-            ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              CustomColor.MainColor.withOpacity(0.1),
+              Colors.white,
+            ],
           ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          if (_isScreenLoading)
-            const Center(child: CircularProgressIndicator())
-          else
-            RefreshIndicator(
-              onRefresh: () async {
-                await _fetchInitialStatusAndGeofence();
-                _attendanceListKey.currentState?.refreshData();
-              },
-              child: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(), // Explicitly set physics
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Center(
-                          child: Text(
-                            DateFormat('EEEE, d MMMM yyyy').format(DateTime.now()),
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: CustomColor.MainColor,
+        ),
+        child: Stack(
+          children: [
+            if (_isScreenLoading)
+              const Center(child: CircularProgressIndicator())
+            else
+              SafeArea(
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    await _fetchInitialStatusAndGeofence();
+                    _attendanceListKey.currentState?.refreshData();
+                  },
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      // Header Section
+                      SliverToBoxAdapter(
+                        child: Container(
+                          padding: const EdgeInsets.all(20.0),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                CustomColor.MainColor,
+                                CustomColor.MainColor.withOpacity(0.8),
+                              ],
+                            ),
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(30),
+                              bottomRight: Radius.circular(30),
                             ),
                           ),
-                        ),
-                        if (_officeStartTime != null && _officeEndTime != null)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Card(
-                              elevation: 2,
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(Icons.access_time, color: Colors.blue),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Office Hours: ${DateFormat('hh:mm a').format(_officeStartTime!)} - ${DateFormat('hh:mm a').format(_officeEndTime!)}',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.blue,
+                          child: Column(
+                            children: [
+                              // Date Display
+                              Text(
+                                DateFormat('EEEE').format(DateTime.now()),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w300,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                DateFormat('d MMMM yyyy').format(DateTime.now()),
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              // Office Hours Card
+                              if (_officeStartTime != null && _officeEndTime != null)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(15),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.access_time,
+                                        color: Colors.white,
+                                        size: 20,
                                       ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        '${DateFormat('hh:mm a').format(_officeStartTime!)} - ${DateFormat('hh:mm a').format(_officeEndTime!)}',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                              const SizedBox(height: 30),
+
+                              // Status Dashboard
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 5),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  children: [
+                                    // Attendance Status
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                      children: [
+                                        _buildStatusIndicator(
+                                          'Check In',
+                                          _todayAttendanceStatus?.hasCheckedIn ?? false,
+                                          Icons.login,
+                                          Colors.green,
+                                        ),
+                                        Container(
+                                          height: 40,
+                                          width: 2,
+                                          color: Colors.grey.shade300,
+                                        ),
+                                        _buildStatusIndicator(
+                                          'Check Out',
+                                          _todayAttendanceStatus?.hasCheckedOut ?? false,
+                                          Icons.logout,
+                                          Colors.red,
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 20),
+
+                                    // Action Button
+                                    Builder(
+                                      builder: (context) {
+                                        if (_isButtonLoading) {
+                                          return Container(
+                                            width: 200,
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade300,
+                                              borderRadius: BorderRadius.circular(25),
+                                            ),
+                                            child: const Center(
+                                              child: SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }
+
+                                        String buttonText = '';
+                                        IconData buttonIcon = Icons.login;
+                                        Color buttonColor = Colors.green;
+                                        VoidCallback? onPressedCallback;
+
+                                        if (_todayAttendanceStatus?.hasCheckedOut ?? false) {
+                                          buttonText = 'Attendance Complete';
+                                          buttonIcon = Icons.check_circle;
+                                          buttonColor = Colors.grey;
+                                          onPressedCallback = null;
+                                        } else if (_todayAttendanceStatus?.hasCheckedIn ?? false) {
+                                          buttonText = 'Check Out';
+                                          buttonIcon = Icons.logout;
+                                          buttonColor = Colors.red;
+                                          onPressedCallback = () => _handleAttendanceRequest('Out');
+                                        } else {
+                                          buttonText = 'Check In';
+                                          buttonIcon = Icons.login;
+                                          buttonColor = Colors.green;
+                                          onPressedCallback = () => _handleAttendanceRequest('In');
+                                        }
+
+                                        return ElevatedButton.icon(
+                                          onPressed: onPressedCallback,
+                                          icon: Icon(buttonIcon, size: 24),
+                                          label: Text(
+                                            buttonText,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: buttonColor,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 30,
+                                              vertical: 15,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(25),
+                                            ),
+                                            elevation: 5,
+                                            shadowColor: buttonColor.withOpacity(0.3),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                        const SizedBox(height: 16),
-                        AttendanceListWidget(
-                          key: _attendanceListKey,
-                          officeStartTime: _officeStartTime,
-                          officeEndTime: _officeEndTime,
-                        ), // Assign key to AttendanceListWidget
-                      ],
+                        ),
+                      ),
+
+                      // Attendance List
+                      SliverToBoxAdapter(
+                        child: Container(
+                          margin: const EdgeInsets.only(top: 20),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 16.0),
+                                child: Text(
+                                  'Recent Attendance',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                              AttendanceListWidget(
+                                key: _attendanceListKey,
+                                officeStartTime: _officeStartTime,
+                                officeEndTime: _officeEndTime,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            CustomColor.showFullScreenLoading(isLoading: _isButtonLoading),
+
+            // Progress Overlay
+            if (_showProgressOverlay) _buildProgressOverlay(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProgressOverlay() {
+    return Container(
+      color: Colors.black.withOpacity(0.7),
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 40),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Progress Icon
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: CustomColor.MainColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _getProgressIcon(),
+                  color: CustomColor.MainColor,
+                  size: 32,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Progress Text
+              Text(
+                _currentStep,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 16),
+
+              // Progress Bar
+              Container(
+                width: double.infinity,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: _progressValue,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: CustomColor.MainColor,
+                      borderRadius: BorderRadius.circular(4),
                     ),
                   ),
                 ),
               ),
-            ),
-          CustomColor.showFullScreenLoading(isLoading: _isButtonLoading),
-        ],
+
+              const SizedBox(height: 8),
+
+              // Progress Percentage
+              Text(
+                '${(_progressValue * 100).round()}%',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Cancel Button
+              if (_canCancel)
+                TextButton(
+                  onPressed: () {
+                    _hideProgressDialog();
+                    CustomColor.showErrorSnackBar(context, 'Attendance process cancelled');
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
+    );
+  }
+
+  IconData _getProgressIcon() {
+    if (_progressValue < 0.3) {
+      return Icons.location_searching;
+    } else if (_progressValue < 0.5) {
+      return Icons.location_on;
+    } else if (_progressValue < 0.7) {
+      return Icons.camera_alt;
+    } else if (_progressValue < 0.9) {
+      return Icons.cloud_upload;
+    } else {
+      return Icons.check_circle;
+    }
+  }
+
+  Widget _buildStatusIndicator(String label, bool isActive, IconData icon, Color activeColor) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isActive ? activeColor.withOpacity(0.1) : Colors.grey.shade100,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isActive ? activeColor : Colors.grey.shade300,
+              width: 2,
+            ),
+          ),
+          child: Icon(
+            icon,
+            color: isActive ? activeColor : Colors.grey,
+            size: 24,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: isActive ? activeColor : Colors.grey,
+          ),
+        ),
+      ],
     );
   }
 }
