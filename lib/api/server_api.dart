@@ -8,10 +8,14 @@ class ServerApi {
   static final Uri employee = Uri.parse('${baseUrl}api/resource/Employee');
   static final Uri appErrorLog = Uri.parse('${baseUrl}api/resource/App Error Log');
   static final Uri appVersion = Uri.parse('${baseUrl}api/resource/Mobile App/latest');
+  static final Uri attendanceRecords = Uri.parse('${baseUrl}api/resource/Attendance Records');
+  static final Uri attendanceGeofence = Uri.parse('${baseUrl}api/resource/Attendance Geofence');
 
   // Methods
   static final Uri saveFcmToken = Uri.parse('${baseUrl}api/method/credlawn.api.save_fcm_token.save_fcm_token');
   static final Uri syncFeedback = Uri.parse('${baseUrl}api/method/credlawn.mobile.api.feedback_sync.sync_feedback_data');
+  static final Uri uploadFile = Uri.parse('${baseUrl}api/method/upload_file');
+  static final Uri getDailyAttendanceSummary = Uri.parse('${baseUrl}api/method/credlawn.api.attendance.get_daily_attendance_summary');
 
   // Leads endpoints
   static Uri getEmployeeLeads([Map<String, dynamic>? queryParams]) {

@@ -6,7 +6,7 @@ import 'package:credlawn/models/user.dart';
 import 'package:credlawn/models/geofence_config.dart';
 import 'package:credlawn/models/attendance_record_model.dart';
 import 'package:credlawn/models/today_attendance_status.dart';
-import 'package:credlawn/network/api_network.dart';
+import 'package:credlawn/api/server_api.dart';
 import 'package:http/http.dart' as http;
 class ApiAttendanceHelper {
   static Future<String> markAttendance({
@@ -27,10 +27,10 @@ class ApiAttendanceHelper {
       'longitude': longitude,
       
     };
-    const String url = '${ApiNetwork.baseUrl}/api/resource/Attendance Records';
+    final Uri url = ServerApi.attendanceRecords;
     try {
       final response = await http.post(
-        Uri.parse(url),
+        url,
         headers: {
           'Content-Type': 'application/json',
           'Cookie': 'sid=$sid',
@@ -42,7 +42,7 @@ class ApiAttendanceHelper {
         return responseData['data']['name'];
       } else {
         ErrorLogger.logApiError(
-          endpoint: url,
+          endpoint: url.toString(),
           method: 'POST',
           statusCode: response.statusCode,
           responseBody: response.body,
@@ -73,7 +73,7 @@ class ApiAttendanceHelper {
     final newFilename = '$random$extension';
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('${ApiNetwork.baseUrl}/api/method/upload_file'),
+      ServerApi.uploadFile,
     );
     request.headers['Cookie'] = 'sid=${user.sid}';
     request.fields['doctype'] = 'Attendance Records';
@@ -94,7 +94,7 @@ class ApiAttendanceHelper {
         return responseData['message']['file_url'];
       } else {
         ErrorLogger.logApiError(
-          endpoint: '${ApiNetwork.baseUrl}/api/method/upload_file',
+          endpoint: ServerApi.uploadFile.toString(),
           method: 'POST',
           statusCode: response.statusCode,
           responseBody: responseBody,
@@ -120,7 +120,7 @@ class ApiAttendanceHelper {
     if (user == null) {
       throw Exception('User not logged in');
     }
-    final url = '${ApiNetwork.baseUrl}/api/resource/Attendance Records/$docname';
+    final url = '${ServerApi.baseUrl}/api/resource/Attendance Records/$docname';
     final body = {'atn_image': filePath};
     try {
       final response = await http.put(
@@ -211,11 +211,7 @@ class ApiAttendanceHelper {
           'fields': fields,
           'filters': filters,
         };
-        final Uri uri = Uri.https(
-          Uri.parse(ApiNetwork.baseUrl).host,
-          '/api/resource/Attendance Geofence',
-          queryParams,
-        );
+        final Uri uri = ServerApi.attendanceGeofence.replace(queryParameters: queryParams);
     
         try {
           final response = await http.get(
@@ -265,11 +261,7 @@ class ApiAttendanceHelper {
       'from_date': finalFromDate,
       'to_date': finalToDate,
     };
-    final Uri uri = Uri.https(
-      Uri.parse(ApiNetwork.baseUrl).host,
-      Uri.parse(ApiNetwork.getDailyAttendanceSummary).path, 
-      queryParams,
-    );
+    final Uri uri = ServerApi.getDailyAttendanceSummary.replace(queryParameters: queryParams);
     try {
       final response = await http.get(
         uri,
