@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:credlawn/models/geofence_config.dart';
 import 'package:credlawn/screens/attendance_list_widget.dart'; // Added this import
 import 'package:credlawn/screens/attendance_filter_widget.dart'; // Added filter widget import
+import 'package:credlawn/screens/attendance_statistics_screen.dart'; // Added statistics screen import
 // Added GoogleFonts import
 import 'package:credlawn/models/today_attendance_status.dart'; // Added this import
 
@@ -493,7 +494,22 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                       ),
                                     ),
                                     const Spacer(),
-                                      IconButton(
+                                    IconButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => const AttendanceStatisticsScreen(),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(
+                                        Icons.bar_chart,
+                                        color: Color(0xFF2563EB),
+                                      ),
+                                      tooltip: 'View Statistics',
+                                    ),
+                                    IconButton(
                                       onPressed: _showFilterBottomSheet,
                                       icon: Icon(
                                         Icons.filter_list,
