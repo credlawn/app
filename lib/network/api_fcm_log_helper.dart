@@ -1,11 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:credlawn/network/api_network.dart';
+import 'package:credlawn/network/server_api.dart';
 import 'package:credlawn/models/fcm_log_model.dart';
 import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/models/user.dart';
 
-Future<List<FcmLogModel>> fetchFcmLogs({required int page, String? searchTerm}) async {
+Future<List<FcmLogModel>> fetchFcmLogs({required int page, String? searchTerm, String? status}) async {
   final User? user = await SessionManager.getSessionData();
   if (user == null) {
     throw Exception('User not logged in.');
@@ -20,14 +21,18 @@ Future<List<FcmLogModel>> fetchFcmLogs({required int page, String? searchTerm}) 
     queryParams['search_term'] = searchTerm;
   }
 
+  if (status != null && status.isNotEmpty) {
+    queryParams['status'] = status;
+  }
+
   String queryString = Uri(queryParameters: queryParams).query;
-  final Uri uri = Uri.parse('${ApiNetwork.getFcmLogs}?$queryString');
+  final Uri uri = Uri.parse('${ServerApi.getFcmLogs}?$queryString');
 
   try {
     final response = await http.get(
       uri,
       headers: {'Cookie': 'sid=$sid'},
-    );
+    ).timeout(Duration(seconds: 10));
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> jsonResponse = json.decode(response.body);
@@ -52,7 +57,7 @@ Future<void> updateFcmLogStatus({required String logId}) async {
   }
   final String sid = user.sid;
 
-  final Uri uri = Uri.parse(ApiNetwork.updateFcmLogStatus);
+  final Uri uri = Uri.parse(ServerApi.updateFcmLogStatus);
 
   try {
     final response = await http.post(
@@ -62,7 +67,7 @@ Future<void> updateFcmLogStatus({required String logId}) async {
         'Content-Type': 'application/json',
       },
       body: json.encode({'log_id': logId}),
-    );
+    ).timeout(Duration(seconds: 10));
 
     if (response.statusCode != 200) {
       throw Exception('Failed to update FCM log status: ${response.statusCode}');
@@ -79,13 +84,13 @@ Future<int> getUnreadFcmLogsCount() async {
   }
   final String sid = user.sid;
 
-  final Uri uri = Uri.parse(ApiNetwork.getUnreadFcmLogsCount);
+  final Uri uri = Uri.parse(ServerApi.getUnreadFcmLogsCount);
 
   try {
     final response = await http.get(
       uri,
       headers: {'Cookie': 'sid=$sid'},
-    );
+    ).timeout(Duration(seconds: 10));
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> jsonResponse = json.decode(response.body);

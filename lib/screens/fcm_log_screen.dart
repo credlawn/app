@@ -44,6 +44,9 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
       });
     });
 
+    // Set initial tab
+    _selectedTab = 'Unread';
+
     _fetchLogs();
     _fetchUnreadCount();
 
@@ -59,16 +62,6 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
         if (_searchTerm != _searchController.text) {
           _searchTerm = _searchController.text;
           _resetAndFetchLogs();
-        }
-      });
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
-        if (_tabController.index == 0) {
-          _selectedTab = 'Unread';
-        } else {
-          _selectedTab = 'Read';
         }
       });
     });
@@ -93,7 +86,8 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
     });
 
     try {
-      final newLogs = await fetchFcmLogs(page: _page, searchTerm: _searchTerm);
+      final status = _selectedTab == 'All' ? null : _selectedTab;
+      final newLogs = await fetchFcmLogs(page: _page, searchTerm: _searchTerm, status: status);
       setState(() {
         _page++;
         _logs.addAll(newLogs);
@@ -105,6 +99,7 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
     } catch (e) {
       setState(() {
         _isLoading = false;
+        _hasMore = false; // Stop pagination spinner on error
       });
       if (mounted) {
         CustomColor.showErrorSnackBar(context, 'Error fetching logs: ${e.toString()}');
@@ -234,6 +229,7 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
                   _selectedTab = 'Read';
                 }
               });
+              _resetAndFetchLogs();
             },
             indicator: BoxDecoration(
               gradient: LinearGradient(
@@ -311,21 +307,7 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
       );
     }
 
-    List<FcmLogModel> filteredLogs = _logs;
-
-    if (_searchTerm.isEmpty) {
-      filteredLogs = filteredLogs.where((log) {
-        if (_selectedTab == 'Unread') {
-          return log.messageStatus == 'Unread';
-        } else if (_selectedTab == 'Read') {
-          return log.messageStatus == 'Read';
-        } else {
-          return true;
-        }
-      }).toList();
-    }
-
-    if (filteredLogs.isEmpty && !_isLoading) {
+    if (_logs.isEmpty && !_isLoading) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -407,9 +389,9 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
 
     return ListView.builder(
       controller: _scrollController,
-      itemCount: filteredLogs.length + (_hasMore ? 1 : 0),
+      itemCount: _logs.length + (_hasMore ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index == filteredLogs.length) {
+        if (index == _logs.length) {
           return Padding(
             padding: EdgeInsets.symmetric(vertical: 24),
             child: Center(
@@ -418,7 +400,7 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
           );
         }
 
-        final log = filteredLogs[index];
+        final log = _logs[index];
         final isUnread = log.messageStatus == 'Unread';
 
         return Container(
