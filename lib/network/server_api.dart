@@ -27,6 +27,7 @@ class ServerApi {
   static const String saveCustomerFeedback = '${baseUrl}api/method/credlawn.api.save_feedback.save_customer_feedback';
   static const String getFcmLogs = '${baseUrl}api/method/credlawn.api.get_fcm_logs.get_user_fcm_logs';
   static const String updateFcmLogStatus = '${baseUrl}api/method/credlawn.api.get_fcm_logs.update_fcm_log_status';
+  static const String markFcmLogScreenRead = '${baseUrl}api/method/credlawn.api.get_fcm_logs.mark_fcm_log_screen_read';
   static const String getUnreadFcmLogsCount = '${baseUrl}api/method/credlawn.api.get_fcm_logs.get_unread_fcm_logs_count';
   static const String getFollowUps = '${baseUrl}api/method/credlawn.api.get_follow_ups.get_follow_ups';
   static const String deleteFollowUp = '${baseUrl}api/method/credlawn.api.delete_follow_up.delete_follow_up';

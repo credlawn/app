@@ -29,22 +29,28 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
-        title: Text(
-          'Notification',
-          style: GoogleFonts.inter(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+    return WillPopScope(
+      onWillPop: () async {
+        // Mark as screen read when user navigates back (system back or AppBar back)
+        await markFcmLogScreenRead(logId: widget.log.name);
+        return true; // Allow the pop
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
+        appBar: AppBar(
+          title: Text(
+            'Notification',
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
           ),
+          backgroundColor: CustomColor.MainColor,
+          elevation: 0,
+          centerTitle: false,
+          iconTheme: const IconThemeData(color: Colors.white),
         ),
-        backgroundColor: CustomColor.MainColor,
-        elevation: 0,
-        centerTitle: false,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
       body: Column(
         children: [
           Expanded(
@@ -214,6 +220,8 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
                     ),
                     child: TextButton(
                       onPressed: () {
+                        // Mark as screen read when user navigates back
+                        markFcmLogScreenRead(logId: widget.log.name);
                         Navigator.pop(context);
                       },
                       style: TextButton.styleFrom(
@@ -305,6 +313,7 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

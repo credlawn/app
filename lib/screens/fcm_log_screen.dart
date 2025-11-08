@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:credlawn/custom/custom_color.dart';
 import 'package:credlawn/models/fcm_log_model.dart';
 import 'package:credlawn/network/api_fcm_log_helper.dart';
 import 'package:credlawn/screens/notification_detail_screen.dart';
+import 'package:credlawn/screens/no_internet_screen.dart';
 import 'package:intl/intl.dart';
 
 class FcmLogScreen extends StatefulWidget {
@@ -20,6 +22,7 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
   int _page = 1;
   bool _isLoading = false;
   bool _hasMore = true;
+  bool _isOffline = false;
   String _searchTerm = '';
   int _unreadCount = 0;
 
@@ -30,16 +33,23 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
 
   late TabController _tabController;
 
+  // Add Report tab
+  final List<String> _tabLabels = ['Unread', 'Read', 'Report'];
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       setState(() {
         if (_tabController.index == 0) {
           _selectedTab = 'Unread';
-        } else {
+        } else if (_tabController.index == 1) {
           _selectedTab = 'Read';
+        } else if (_tabController.index == 2) {
+          _selectedTab = 'Report';
+        } else {
+          _selectedTab = 'IPA';
         }
       });
     });
@@ -81,13 +91,33 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
   Future<void> _fetchLogs() async {
     if (!_hasMore || _isLoading) return;
 
+    // Quick connectivity check
+    final List<ConnectivityResult> connectivityResults = await Connectivity().checkConnectivity();
+    final hasInternet = connectivityResults.contains(ConnectivityResult.mobile) ||
+                        connectivityResults.contains(ConnectivityResult.wifi);
+
+    if (!hasInternet) {
+      setState(() {
+        _isOffline = true;
+        _isLoading = false;
+        _hasMore = false;
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = true;
+      _isOffline = false; // Reset offline state when attempting to fetch
     });
 
     try {
-      final status = _selectedTab == 'All' ? null : _selectedTab;
-      final newLogs = await fetchFcmLogs(page: _page, searchTerm: _searchTerm, status: status);
+      final status = _selectedTab == 'Unread' ? 'Unread' :
+                    _selectedTab == 'Read' ? 'Read' :
+                    _selectedTab == 'Report' ? 'Read' :
+                    _selectedTab == 'IPA' ? 'Read' : null;
+      final filterType = _selectedTab == 'Report' ? 'work_summary' :
+                        _selectedTab == 'IPA' ? 'ip_approved' : null;
+      final newLogs = await fetchFcmLogs(page: _page, searchTerm: _searchTerm, status: status, filterType: filterType);
       setState(() {
         _page++;
         _logs.addAll(newLogs);
@@ -101,9 +131,7 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
         _isLoading = false;
         _hasMore = false; // Stop pagination spinner on error
       });
-      if (mounted) {
-        CustomColor.showErrorSnackBar(context, 'Error fetching logs: ${e.toString()}');
-      }
+      // Error logging is handled in the API helper, no snackbar needed
     }
   }
 
@@ -225,8 +253,12 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
               setState(() {
                 if (index == 0) {
                   _selectedTab = 'Unread';
-                } else {
+                } else if (index == 1) {
                   _selectedTab = 'Read';
+                } else if (index == 2) {
+                  _selectedTab = 'Report';
+                } else {
+                  _selectedTab = 'IPA';
                 }
               });
               _resetAndFetchLogs();
@@ -271,6 +303,8 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
                 ),
               ),
               Tab(text: 'Read'),
+              Tab(text: 'Report'),
+              Tab(text: 'IPA'),
             ],
           ),
         ),
@@ -307,6 +341,59 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
       );
     }
 
+    if (_isOffline && _logs.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.wifi_off,
+              color: Colors.orange.shade600,
+              size: 80,
+            ),
+            SizedBox(height: 24),
+            Text(
+              'You are offline',
+              style: GoogleFonts.inter(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+              ),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Please check your internet connection and try again.',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                color: Colors.grey[600],
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: _resetAndFetchLogs,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: CustomColor.MainColor,
+                padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Retry',
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (_logs.isEmpty && !_isLoading) {
       return Center(
         child: Column(
@@ -327,10 +414,14 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
             ),
             SizedBox(height: 24),
             Text(
-              _searchTerm.isEmpty 
-                  ? _selectedTab == 'Unread' 
+              _searchTerm.isEmpty
+                  ? _selectedTab == 'Unread'
                       ? 'No Unread Notifications'
-                      : 'No Read Notifications'
+                      : _selectedTab == 'Read'
+                          ? 'No Read Notifications'
+                          : _selectedTab == 'Report'
+                              ? 'No Report Notifications'
+                              : 'No IPA Notifications'
                   : 'No Results Found',
               style: GoogleFonts.inter(
                 fontSize: 20,
@@ -343,7 +434,11 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
               _searchTerm.isEmpty
                   ? _selectedTab == 'Unread'
                       ? 'You\'re all caught up! No unread notifications.'
-                      : 'No notifications have been marked as read yet.'
+                      : _selectedTab == 'Read'
+                          ? 'No notifications have been marked as read yet.'
+                          : _selectedTab == 'Report'
+                              ? 'No work summary reports available.'
+                              : 'No IP approved notifications available.'
                   : 'No notifications match "$_searchTerm"',
               style: GoogleFonts.inter(
                 fontSize: 15,
@@ -415,6 +510,28 @@ class _FcmLogScreenState extends State<FcmLogScreen> with SingleTickerProviderSt
                     builder: (context) => NotificationDetailScreen(
                       log: log,
                       onMarkAsRead: () {
+                        if (_selectedTab == 'Unread') {
+                          if (log.title.toLowerCase().contains('work')) {
+                            // Work message marked as read -> go to Report tab
+                            setState(() {
+                              _selectedTab = 'Report';
+                              _tabController.index = 2;
+                            });
+                          } else if (log.title.toLowerCase().contains('ip')) {
+                            // IP message marked as read -> go to IPA tab
+                            setState(() {
+                              _selectedTab = 'IPA';
+                              _tabController.index = 3;
+                            });
+                          } else {
+                            // Regular message marked as read -> go to Read tab
+                            setState(() {
+                              _selectedTab = 'Read';
+                              _tabController.index = 1;
+                            });
+                          }
+                        }
+                        // From Report/IPA tabs, stay in the same tab (already correctly placed)
                         _resetAndFetchLogs();
                       },
                     ),
