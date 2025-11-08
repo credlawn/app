@@ -163,13 +163,6 @@ class _LoginScreenState extends State<LoginScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    spreadRadius: 3,
-                    blurRadius: 3,
-                    color: Colors.grey.shade400,
-                  ),
-                ],
                 color: CustomColor.MainColor,
                 borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(25),
@@ -181,63 +174,102 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const SizedBox(height: 30),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'LOGIN',
-                          style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
-                              color: Colors.white),
-                        ),
-                        const SizedBox(width: 10),
-                      ],
+                    Text(
+                      'Welcome back, login to continue',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 18,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 30),
                     TextField(
                       controller: _emailController,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
                       decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                            borderSide: BorderSide.none,
-                            borderRadius: BorderRadius.circular(8)),
-                        fillColor: Colors.white,
-                        filled: true,
-                        prefixIcon: const Icon(Icons.alternate_email_rounded),
-                        prefixIconColor: Colors.green,
                         hintText: 'Email',
+                        hintStyle: GoogleFonts.poppins(
+                          color: Colors.grey.shade500,
+                          fontSize: 16,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.email_outlined,
+                          color: CustomColor.MainColor,
+                          size: 22,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: CustomColor.MainColor, width: 2),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
                     TextField(
                       controller: _passwordController,
                       obscureText: viewPass,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
                       decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                            borderSide: BorderSide.none,
-                            borderRadius: BorderRadius.circular(8)),
-                        suffixIcon: InkWell(
-                          onTap: () {
+                        hintText: 'Password',
+                        hintStyle: GoogleFonts.poppins(
+                          color: Colors.grey.shade500,
+                          fontSize: 16,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.lock_outline,
+                          color: CustomColor.MainColor,
+                          size: 22,
+                        ),
+                        suffixIcon: IconButton(
+                          onPressed: () {
                             setState(() {
                               viewPass = !viewPass;
                             });
                           },
-                          child: viewPass
-                              ? const Icon(
-                                  CupertinoIcons.eye_slash,
-                                  color: Colors.green,
-                                )
-                              : const Icon(
-                                  CupertinoIcons.eye,
-                                  color: Colors.green,
-                                ),
+                          icon: Icon(
+                            viewPass ? Icons.visibility_off : Icons.visibility,
+                            color: Colors.grey.shade500,
+                            size: 22,
+                          ),
                         ),
-                        prefixIcon: const Icon(CupertinoIcons.lock),
-                        prefixIconColor: Colors.green,
-                        hintText: 'Password',
-                        hintStyle: GoogleFonts.poppins(),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: CustomColor.MainColor, width: 2),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 50),
@@ -263,6 +295,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: Colors.white),
                             ),
                           ),
+                    const SizedBox(height: 40),
+                    Text(
+                      '© 2025 Credlawn. All rights reserved.',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
