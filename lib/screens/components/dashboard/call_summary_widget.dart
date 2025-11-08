@@ -88,7 +88,7 @@ class CallSummaryWidget extends StatelessWidget {
           _buildCallSummaryItem(
             icon: Icons.speed,
             label: 'Hourly Efficiency',
-            value: '${hourlyEfficiency.toStringAsFixed(1)} calls/hr',
+            value: '${hourlyEfficiency.toStringAsFixed(1)} /hr',
             color: Colors.teal,
           ),
         ],

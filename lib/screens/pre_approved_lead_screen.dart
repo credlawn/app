@@ -129,14 +129,24 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
   }
 
   Future<void> _filterLeads() async {
-    final groupFiltered = await LeadFilteringService.getFilteredLeadsByGroup(_allLeads, _selectedLeadGroup);
     final query = _searchController.text.toLowerCase();
-    _filteredLeads = groupFiltered.where((leadWithInfo) {
-      if (query.isEmpty) return true;
-      final nameMatches = leadWithInfo.lead.customerName.toLowerCase().contains(query);
-      final mobileMatches = leadWithInfo.lead.mobileNo.toLowerCase().contains(query);
-      return nameMatches || mobileMatches;
-    }).toList();
+
+    if (query.isEmpty) {
+      // No search query - filter by selected group
+      _filteredLeads = await LeadFilteringService.getFilteredLeadsByGroup(_allLeads, _selectedLeadGroup);
+    } else {
+      // Search query present - search across ALL leads regardless of group
+      _filteredLeads = _allLeads.where((leadWithInfo) {
+        final nameMatches = leadWithInfo.lead.customerName.toLowerCase().contains(query);
+        final mobileMatches = leadWithInfo.lead.mobileNo.toLowerCase().contains(query);
+        return nameMatches || mobileMatches;
+      }).toList();
+    }
+
+    // Trigger UI rebuild with updated filtered results
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   List<LeadWithCallInfo> _getPendingFeedbackLeads(List<LeadWithCallInfo> allLeads) {
@@ -446,7 +456,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
           controller: _searchController,
           autofocus: true,
           decoration: const InputDecoration(
-            hintText: 'Search by name or mobile...',
+            hintText: 'Search all leads by name or mobile...',
             hintStyle: TextStyle(color: Colors.white70),
             border: InputBorder.none,
           ),
