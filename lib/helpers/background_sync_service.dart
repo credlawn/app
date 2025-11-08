@@ -31,12 +31,7 @@ class BackgroundSyncService {
     try {
       final dirtyLeads = await DatabaseService.instance.leadsRepository.getAllLeads();
       for (final lead in dirtyLeads.where((l) => l.isDirty == 1)) {
-        await ErrorLogger.logError(
-          title: 'Background Sync Processing Lead',
-          errorMessage: 'Processing lead: ${lead.frappeId}, status: ${lead.leadStatus}, is_dirty: ${lead.isDirty}',
-          errorType: 'Data Sync Debug',
-          userId: currentUser.userId,
-        );
+
         try {
           final bool success = await syncLeadUpdateToServer(lead, currentUser.sid);
           if (success) {
@@ -52,13 +47,6 @@ class BackgroundSyncService {
                   title: 'Background Lead Sync - No Rows Updated',
                   errorMessage: 'updateLeadLocalFields returned 0 rows for lead: ${lead.frappeId}, lead_status: ${lead.leadStatus}, is_dirty: ${lead.isDirty}',
                   errorType: 'Data Sync',
-                  userId: currentUser.userId,
-                );
-              } else {
-                await ErrorLogger.logError(
-                  title: 'Background Lead Sync - Flag Cleared',
-                  errorMessage: 'Successfully cleared is_dirty flag for lead: ${lead.frappeId}, lead_status: ${lead.leadStatus}',
-                  errorType: 'Data Sync Debug',
                   userId: currentUser.userId,
                 );
               }

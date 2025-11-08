@@ -243,14 +243,6 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
 
   void _initiateCall(LeadsModel lead) async {
     try {
-      final currentUser = await SessionManager.getSessionData();
-      await ErrorLogger.logError(
-        title: 'Call Initiated',
-        errorMessage: 'Initiating call to mobile: ${lead.mobileNo}, customer: ${lead.customerName}',
-        errorType: 'User Action',
-        userId: currentUser?.userId,
-      );
-
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -262,9 +254,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
 
       Future.delayed(const Duration(seconds: 5), () async {
         try {
-          // Update call statistics and determine lead status
           await DatabaseService.instance.leadsRepository.updateLeadStatusAfterCall(lead.frappeId, lead.mobileNo);
-
           await _refreshLeads();
           final leadsAfterRefresh = await getLeadsWithCallCounts();
           final updatedLeadWithInfo = leadsAfterRefresh.firstWhereOrNull(
@@ -274,32 +264,24 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
               updatedLeadWithInfo.callCount > 0 &&
               (updatedLeadWithInfo.lastCallDuration ?? 0) > 0 &&
               !_hasFeedback(updatedLeadWithInfo.lead.leadStatus)) {
-            await ErrorLogger.logError(
-              title: 'Feedback Prompt Triggered',
-              errorMessage: 'Showing feedback prompt for mobile: ${lead.mobileNo} after call',
-              errorType: 'User Action',
-              userId: currentUser?.userId,
-            );
             _showFeedbackBottomSheet(updatedLeadWithInfo.lead);
           } else {
             AppStateManager.clearPendingFeedbackMobile();
           }
         } catch (e) {
-          final currentUser = await SessionManager.getSessionData();
           await ErrorLogger.logException(
             context: 'PreApprovedLeadsScreen._initiateCall.delayedCallback',
             exception: e,
-            userId: currentUser?.userId,
+            userId: (await SessionManager.getSessionData())?.userId,
           );
           AppStateManager.clearPendingFeedbackMobile();
         }
       });
     } catch (e) {
-      final currentUser = await SessionManager.getSessionData();
       await ErrorLogger.logException(
         context: 'PreApprovedLeadsScreen._initiateCall',
         exception: e,
-        userId: currentUser?.userId,
+        userId: (await SessionManager.getSessionData())?.userId,
       );
     }
   }
@@ -369,41 +351,16 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
       final String androidUrl = "whatsapp://send?phone=$mobileWithCode&text=${ServerApi.whatsAppMessageUrl}";
       final String iosUrl = "https://wa.me/$mobileWithCode?text=${Uri.encodeComponent(ServerApi.whatsAppMessageUrl)}";
 
-      final currentUser = await SessionManager.getSessionData();
-      await ErrorLogger.logError(
-        title: 'WhatsApp Opened',
-        errorMessage: 'Opening WhatsApp for mobile: ${lead.mobileNo}',
-        errorType: 'User Action',
-        userId: currentUser?.userId,
-      );
-
       if (Platform.isIOS) {
-        final success = await launchUrl(Uri.parse(iosUrl), mode: LaunchMode.externalApplication);
-        if (!success) {
-          await ErrorLogger.logError(
-            title: 'WhatsApp Launch Failed',
-            errorMessage: 'Failed to launch WhatsApp on iOS for mobile: ${lead.mobileNo}',
-            errorType: 'External App',
-            userId: currentUser?.userId,
-          );
-        }
+        await launchUrl(Uri.parse(iosUrl), mode: LaunchMode.externalApplication);
       } else {
-        final success = await launchUrl(Uri.parse(androidUrl), mode: LaunchMode.externalApplication);
-        if (!success) {
-          await ErrorLogger.logError(
-            title: 'WhatsApp Launch Failed',
-            errorMessage: 'Failed to launch WhatsApp on Android for mobile: ${lead.mobileNo}',
-            errorType: 'External App',
-            userId: currentUser?.userId,
-          );
-        }
+        await launchUrl(Uri.parse(androidUrl), mode: LaunchMode.externalApplication);
       }
     } catch (e) {
-      final currentUser = await SessionManager.getSessionData();
       await ErrorLogger.logException(
         context: 'PreApprovedLeadsScreen._openWhatsApp',
         exception: e,
-        userId: currentUser?.userId,
+        userId: (await SessionManager.getSessionData())?.userId,
       );
     }
   }
@@ -411,26 +368,18 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
   Future<List<LeadWithCallInfo>> _loadLocalLeads() async {
     final User? currentUser = await SessionManager.getSessionData();
     if (currentUser == null) {
-      await ErrorLogger.logError(
-        title: 'User Not Logged In',
-        errorMessage: 'Attempted to fetch leads without authentication',
-        errorType: 'Authentication',
-      );
       return Future.error('User not logged in');
     }
-
     return await getLeadsWithCallCounts();
   }
 
   Future<void> _refreshLeads() async {
-    // For pull-to-refresh, perform sync synchronously so UI updates with fresh data
     final User? currentUser = await SessionManager.getSessionData();
     if (currentUser != null) {
       try {
         await BackgroundSyncService.syncLeads(currentUser);
       } catch (e) {
         if (e is SessionExpiredException) {
-          // Session expired, navigate to login
           if (mounted) {
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (context) => LoginScreen()),
@@ -444,11 +393,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
       }
     }
     final newLeads = await getLeadsWithCallCounts();
-
-    // Recalculate all lead statuses based on the latest call history
     await DatabaseService.instance.leadsRepository.recalculateAllLeadStatuses();
-
-    // Fetch the leads again to get the updated statuses
     final finalLeads = await getLeadsWithCallCounts();
 
     setState(() {
