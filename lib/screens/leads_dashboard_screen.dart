@@ -11,12 +11,16 @@ import 'package:credlawn/helpers/call_history_repository.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:credlawn/screens/components/dashboard/summary_cards_widget.dart';
 import 'package:credlawn/screens/components/dashboard/call_summary_widget.dart';
 import 'package:credlawn/screens/components/dashboard/status_chart_widget.dart';
 import 'package:credlawn/screens/components/dashboard/recent_leads_widget.dart' show RecentLeadsWidget;
 import 'package:credlawn/screens/components/dashboard/conversion_funnel_widget.dart';
 import 'package:credlawn/screens/components/dashboard/performance_trends_widget.dart';
+import 'package:credlawn/screens/components/dashboard/skeleton_loading_widget.dart';
 
 class LeadsDashboardScreen extends StatefulWidget {
   final User user;
@@ -28,6 +32,7 @@ class LeadsDashboardScreen extends StatefulWidget {
 }
 
 class _LeadsDashboardScreenState extends State<LeadsDashboardScreen> {
+  final ScreenshotController _screenshotController = ScreenshotController();
   List<LeadWithCallInfo> _allLeads = [];
   bool _isLoading = true;
   Map<String, int> _statusCounts = {};
@@ -259,6 +264,41 @@ class _LeadsDashboardScreenState extends State<LeadsDashboardScreen> {
     return data;
   }
 
+  Future<void> _shareScreenshot() async {
+    try {
+      // Capture screenshot
+      final imageBytes = await _screenshotController.capture();
+
+      if (imageBytes != null) {
+        // Get temporary directory
+        final tempDir = await getTemporaryDirectory();
+        final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+        final fileName = 'dashboard_$timestamp.png';
+        final file = File('${tempDir.path}/$fileName');
+
+        // Write image to file
+        await file.writeAsBytes(imageBytes);
+
+        // Share the file
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          text: 'Leads Dashboard Report - ${DateFormat('MMM dd, yyyy').format(DateTime.now())}',
+          subject: 'Dashboard Screenshot',
+        );
+      }
+    } catch (e) {
+      // Show error message if sharing fails
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to share screenshot'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -270,52 +310,57 @@ class _LeadsDashboardScreenState extends State<LeadsDashboardScreen> {
         ),
         backgroundColor: CustomColor.MainColor,
         elevation: 0.5,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share, color: Colors.white),
+            onPressed: _shareScreenshot,
+            tooltip: 'Share Dashboard',
+          ),
+        ],
       ),
       body: _isLoading
-          ? Center(
-              child: SpinKitFadingCircle(
-                color: CustomColor.MainColor,
-                size: 50.0,
-              ),
-            )
+          ? const SkeletonLoadingWidget()
           : RefreshIndicator(
               onRefresh: _loadDashboardData,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SummaryCardsWidget(
-                      ipApprovedToday: _ipApprovedToday,
-                      ipDeclineToday: _ipDeclineToday,
-                      todayLogin: _todayLogin,
-                      approvalRate: _approvalRate,
-                    ),
-                    const SizedBox(height: 24),
-                    CallSummaryWidget(
-                      totalAttempted: _totalAttempted,
-                      totalConnected: _totalConnected,
-                      totalDuration: _totalDuration,
-                      averageDuration: _formatAverageDuration(),
-                      hourlyEfficiency: _hourlyCallEfficiency,
-                    ),
-                    const SizedBox(height: 24),
-                    StatusChartWidget(statusCounts: _statusCounts),
-                    const SizedBox(height: 24),
-                    PerformanceTrendsWidget(
-                      performanceData: _getPerformanceData(),
-                    ),
-                    const SizedBox(height: 24),
-                    ConversionFunnelWidget(
-                      totalLeads: _allLeads.length,
-                      calledLeads: _allLeads.where((l) => l.callCount > 0).length,
-                      connectedLeads: _allLeads.where((l) => l.lastCallDuration != null && l.lastCallDuration! > 0).length,
-                      feedbackGiven: _allLeads.where((l) => _hasFeedback(l.lead.leadStatus)).length,
-                      approvedLeads: _ipApprovedToday,
-                    ),
-                    const SizedBox(height: 24),
-                    RecentLeadsWidget(recentLeads: _getRecentLeads()),
-                  ],
+              child: Screenshot(
+                controller: _screenshotController,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SummaryCardsWidget(
+                        ipApprovedToday: _ipApprovedToday,
+                        ipDeclineToday: _ipDeclineToday,
+                        todayLogin: _todayLogin,
+                        approvalRate: _approvalRate,
+                      ),
+                      const SizedBox(height: 24),
+                      CallSummaryWidget(
+                        totalAttempted: _totalAttempted,
+                        totalConnected: _totalConnected,
+                        totalDuration: _totalDuration,
+                        averageDuration: _formatAverageDuration(),
+                        hourlyEfficiency: _hourlyCallEfficiency,
+                      ),
+                      const SizedBox(height: 24),
+                      StatusChartWidget(statusCounts: _statusCounts),
+                      const SizedBox(height: 24),
+                      PerformanceTrendsWidget(
+                        performanceData: _getPerformanceData(),
+                      ),
+                      const SizedBox(height: 24),
+                      ConversionFunnelWidget(
+                        totalLeads: _allLeads.length,
+                        calledLeads: _allLeads.where((l) => l.callCount > 0).length,
+                        connectedLeads: _allLeads.where((l) => l.lastCallDuration != null && l.lastCallDuration! > 0).length,
+                        feedbackGiven: _allLeads.where((l) => _hasFeedback(l.lead.leadStatus)).length,
+                        approvedLeads: _ipApprovedToday,
+                      ),
+                      const SizedBox(height: 24),
+                      RecentLeadsWidget(recentLeads: _getRecentLeads()),
+                    ],
+                  ),
                 ),
               ),
             ),
