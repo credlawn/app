@@ -3,7 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../models/user.dart';
 import '../models/profile_model.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../network/api_profile_helper.dart'; 
+import '../network/api_profile_helper.dart';
 import 'package:credlawn/custom/custom_color.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -11,341 +11,201 @@ class ProfileScreen extends StatelessWidget {
 
   const ProfileScreen({super.key, required this.user});
 
+  Widget _buildProfileItem(String label, String value, IconData icon) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: CustomColor.MainColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            color: CustomColor.MainColor,
+            size: 20,
+          ),
+        ),
+        title: Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            color: Colors.grey.shade600,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: Text(
+          value.isEmpty ? 'Not available' : value,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
-      extendBodyBehindAppBar: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        backgroundColor: Colors.transparent, 
-        elevation: 0, // Removes the elevation shadow
+        title: Text(
+          'Profile',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: CustomColor.MainColor,
+        elevation: 0,
+        centerTitle: true,
       ),
-      body: Column(
-        children: [
-          // Background Image and Profile Section
-          Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/image/bg_img2.jpg'),
-                fit: BoxFit.cover,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Profile Header Section
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: CustomColor.MainColor,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
               ),
-            ),
-            child: Center(
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const SizedBox(height: 35),
-                  // Company Logo
-                  Image.asset(
-                    'assets/image/login_img.png',
-                    height: 60,
-                  ),
-                  const SizedBox(height: 10),
-                  // Profile Picture (network or default)
-                  SizedBox(
-                    height: 100,
-                    width: 100,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(75),
-                      child: CachedNetworkImage(
-                        imageUrl: user.userImage ?? "", // Network image (if available)
-                        fit: BoxFit.fill,
-                        placeholder: (context, url) => const CircularProgressIndicator(),
-                        errorWidget: (context, url, error) => Image.asset('assets/image/errorImage.png'),
-                        httpHeaders: {'Cookie': 'sid=${user.sid}'}, 
+                  const SizedBox(height: 30),
+                  // Profile Picture
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [CustomColor.MainColor, CustomColor.DrawerItems],
+                        ),
                       ),
+                      child: SizedBox(
+                        height: 100,
+                        width: 100,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(50),
+                          child: CachedNetworkImage(
+                            imageUrl: user.userImage ?? "",
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => const CircularProgressIndicator(),
+                            errorWidget: (context, url, error) => Image.asset(
+                              'assets/image/profileImage.png',
+                              fit: BoxFit.cover,
+                            ),
+                            httpHeaders: {'Cookie': 'sid=${user.sid}'},
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // User Name
+                  Text(
+                    user.fullName,
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // User Role
+                  Text(
+                    user.role ?? 'Employee',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      color: Colors.white.withOpacity(0.8),
                     ),
                   ),
                   const SizedBox(height: 30),
                 ],
               ),
             ),
-          ),
 
+            const SizedBox(height: 20),
 
-          FutureBuilder<ProfileModel>(
-            future: fetchProfileData(user.userId, user.sid), 
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              } else if (!snapshot.hasData) {
-                return Center(child: Text('No profile data available'));
-              } else {
-                final profile = snapshot.data!;
-
-                return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20),
-                  padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.white,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            // Profile Details Section
+            FutureBuilder<ProfileModel>(
+              future: fetchProfileData(user.userId, user.sid),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.all(40),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                } else if (snapshot.hasError) {
+                  return Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Center(
+                      child: Text(
+                        'Error loading profile: ${snapshot.error}',
+                        style: GoogleFonts.poppins(color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  );
+                } else if (!snapshot.hasData) {
+                  return Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Center(
+                      child: Text(
+                        'No profile data available',
+                        style: GoogleFonts.poppins(),
+                      ),
+                    ),
+                  );
+                } else {
+                  final profile = snapshot.data!;
+                  return Column(
                     children: [
-                      // Employee ID
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Employee ID :',
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              profile.employeeCode ?? "", // Fetch employee code from profile
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: CustomColor.MainColor, // Your custom color
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      // Name
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Name:',
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              profile.employeeName ?? "", // Fetch employee name from profile
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: CustomColor.MainColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      // Joining Date
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Joining Date:',
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              profile.joiningDate ?? "", // Joining Date from profile
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: CustomColor.MainColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      // Department
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Department:',
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              profile.department ?? "", // Department from profile
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: CustomColor.MainColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      // Designation
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Designation:',
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              profile.designation ?? "", // Designation from profile
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: CustomColor.MainColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      // Mobile No
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Mob no :',
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              profile.mobileNo ?? "", // Mobile number from profile
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: CustomColor.MainColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      // Email
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Email :',
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              profile.email ?? "", // Email from profile
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: CustomColor.MainColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      // Date of Birth
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Date of Birth :',
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              profile.dateOfBirth ?? "", // DOB from profile
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: CustomColor.MainColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      // Age
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Age :',
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              profile.age ?? "", // Age from profile
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: CustomColor.MainColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      // Tenure
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Tenure :',
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              profile.tenure ?? "", // Tenure from profile
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: CustomColor.MainColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
+                      _buildProfileItem('Employee ID', profile.employeeCode ?? "", Icons.badge),
+                      _buildProfileItem('Full Name', profile.employeeName ?? "", Icons.person),
+                      _buildProfileItem('Joining Date', profile.joiningDate ?? "", Icons.calendar_today),
+                      _buildProfileItem('Department', profile.department ?? "", Icons.business),
+                      _buildProfileItem('Designation', profile.designation ?? "", Icons.work),
+                      _buildProfileItem('Mobile Number', profile.mobileNo ?? "", Icons.phone),
+                      _buildProfileItem('Email Address', profile.email ?? "", Icons.email),
+                      _buildProfileItem('Date of Birth', profile.dateOfBirth ?? "", Icons.cake),
+                      _buildProfileItem('Age', profile.age ?? "", Icons.accessibility),
+                      _buildProfileItem('Tenure', profile.tenure ?? "", Icons.timeline),
+                      const SizedBox(height: 20),
                     ],
-                  ),
-                );
-              }
-            },
-          ),
-        ],
+                  );
+                }
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-

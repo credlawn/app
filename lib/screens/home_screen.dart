@@ -7,9 +7,9 @@ import 'package:credlawn/fragments/dashboard_fragment.dart';
 import 'package:credlawn/fragments/cards_fragment.dart';
 import 'package:credlawn/fragments/hr_fragment.dart';
 import 'package:credlawn/models/user.dart';
-import 'drawer_home_screen.dart'; // Import drawer
-import 'package:credlawn/helpers/call_log_sync_manager.dart';
-import 'package:credlawn/network/api_error_logger_helper.dart'; // Import api_error_logger_helper
+import 'package:credlawn/helpers/session_manager.dart';
+import 'login_screen.dart';
+import 'profile_screen.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -63,37 +63,48 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         backgroundColor: CustomColor.MainColor,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.sync, color: Colors.white),
-            onPressed: () async {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Please Wait...'),
-                  backgroundColor: Colors.blueGrey,
-                ),
-              );
-              try {
-                await CallLogSyncManager.syncCallLogs();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Lead Status synced successfully!'),
-                    backgroundColor: Colors.green,
-                  ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.person, color: Colors.white),
+            onSelected: (value) async {
+              if (value == 'profile') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ProfileScreen(user: widget.user)),
                 );
-              } catch (e) {
-                logAppError(errorMessage: e.toString(), errorContext: "Home Screen - Manual Sync Button");
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Sync failed: $e'),
-                    backgroundColor: Colors.red,
-                  ),
+              } else if (value == 'logout') {
+                await SessionManager.logout();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
                 );
               }
             },
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem<String>(
+                value: 'profile',
+                child: Row(
+                  children: [
+                    Icon(Icons.person, color: CustomColor.MainColor),
+                    const SizedBox(width: 8),
+                    Text('Profile', style: GoogleFonts.poppins()),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, color: CustomColor.MainColor),
+                    const SizedBox(width: 8),
+                    Text('Logout', style: GoogleFonts.poppins()),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
-      drawer: DrawerHomeScreen(user: widget.user),
+
       body: _fragment[_navBar], // Display selected fragment based on navBar index
       bottomNavigationBar: BottomNavigationBar(
         elevation: 10,
