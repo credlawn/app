@@ -13,6 +13,7 @@ import 'package:credlawn/helpers/background_sync_service.dart';
 import 'package:credlawn/helpers/error_logger.dart';
 import 'widgets/status_chips.dart';
 import 'widgets/follow_up_picker.dart';
+import 'widgets/date_of_birth_picker.dart';
 
 abstract class FeedbackBase extends StatefulWidget {
   final String mobileNo;
@@ -24,6 +25,7 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
   String? selectedStatus;
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
+  DateTime? selectedDateOfBirth;
   final TextEditingController _remarksController = TextEditingController();
   final TextEditingController _referenceNoController = TextEditingController();
 
@@ -198,6 +200,66 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
     );
   }
 
+  Widget _buildDateOfBirthField() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withAlpha(100),
+            blurRadius: 1.5,
+            spreadRadius: 1.5,
+            offset: const Offset(0.3, 0.3),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () => _showDateOfBirthPicker(),
+        child: Container(
+          height: 55.0,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Icon(Icons.calendar_today, color: CustomColor.MainColor),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  selectedDateOfBirth != null
+                      ? DateFormat('dd/MM/yyyy').format(selectedDateOfBirth!)
+                      : 'Select Date of Birth',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    color: selectedDateOfBirth != null ? Colors.black87 : Colors.grey.shade600,
+                  ),
+                ),
+              ),
+              Icon(Icons.arrow_drop_down, color: CustomColor.MainColor),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDateOfBirthPicker() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return DateOfBirthPicker(
+          initialDate: selectedDateOfBirth,
+          onDateSelected: (date) {
+            setState(() => selectedDateOfBirth = date);
+            Navigator.pop(context);
+          },
+        );
+      },
+    );
+  }
+
   Widget buildCustomerInfo() {
     return Container(
       decoration: BoxDecoration(
@@ -284,6 +346,7 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
               selectedStatus = status;
               _remarksController.clear();
               _referenceNoController.clear();
+              selectedDateOfBirth = null; // Clear date of birth when status changes
               if (status == 'Follow up') {
                 selectedDate = null;
                 selectedTime = null;
@@ -298,7 +361,13 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
 
   Widget buildFormFields() {
     if (selectedStatus == 'IP Approved') {
-      return _buildReferenceNumberField();
+      return Column(
+        children: [
+          _buildReferenceNumberField(),
+          const SizedBox(height: 16),
+          _buildDateOfBirthField(),
+        ],
+      );
     } else if (selectedStatus == 'Follow up') {
       return FollowUpPicker(
         selectedDate: selectedDate,
@@ -400,6 +469,9 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
           arnNo: selectedStatus == 'IP Approved' ? _referenceNoController.text : null,
           followUpDate: updatedFollowUpDate,
           followUpTime: updatedFollowUpTime,
+          dateOfBirth: selectedStatus == 'IP Approved' && selectedDateOfBirth != null
+              ? DateFormat('yyyy-MM-dd').format(selectedDateOfBirth!)
+              : null,
           isDirty: 1,
           lastModifiedAt: DateTime.now().millisecondsSinceEpoch,
           lastFeedbackId: feedbackId,

@@ -306,10 +306,6 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
         builder: (context) {
           return FeedbackBottomSheet(
             mobileNo: pendingLeads.first.lead.mobileNo,
-            onCallAnyway: (mobile) {
-              Navigator.of(context).pop();
-              _initiateCall(lead);
-            },
           );
         },
       ).then((result) {
@@ -333,10 +329,6 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
       builder: (context) {
         return FeedbackBottomSheet(
           mobileNo: lead.mobileNo,
-          onCallAnyway: (mobile) {
-            Navigator.of(context).pop();
-            _callNumber(lead);
-          },
         );
       },
     ).then((result) {

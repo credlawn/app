@@ -118,6 +118,7 @@ class LeadsRepository {
     String? followUpTime,
     int? lastFeedbackId,
     int? lastFeedbackTimestamp,
+    String? dateOfBirth,
   }) async {
     final db = await _appDatabase.database;
     final Map<String, dynamic> fieldsToUpdate = {};
@@ -143,6 +144,7 @@ class LeadsRepository {
     if (followUpTime != null) fieldsToUpdate['follow_up_time'] = followUpTime;
     if (lastFeedbackId != null) fieldsToUpdate['last_feedback_id'] = lastFeedbackId;
     if (lastFeedbackTimestamp != null) fieldsToUpdate['last_feedback_timestamp'] = lastFeedbackTimestamp;
+    if (dateOfBirth != null) fieldsToUpdate['date_of_birth'] = dateOfBirth;
 
     return db.update(
       'leads',

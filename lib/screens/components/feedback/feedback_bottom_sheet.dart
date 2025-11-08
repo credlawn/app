@@ -4,12 +4,9 @@ import 'package:credlawn/custom/custom_color.dart';
 import 'feedback_base.dart';
 
 class FeedbackBottomSheet extends FeedbackBase {
-  final Function(String mobileNo) onCallAnyway;
-
   const FeedbackBottomSheet({
     super.key,
     required super.mobileNo,
-    required this.onCallAnyway,
   });
 
   @override
@@ -100,20 +97,7 @@ class _FeedbackBottomSheetState extends FeedbackBaseState<FeedbackBottomSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(false);
-                widget.onCallAnyway(widget.mobileNo);
-              },
-              child: Text(
-                'Call Anyway',
-                style: GoogleFonts.poppins(
-                  color: CustomColor.MainColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+
           ],
         ),
       ),
