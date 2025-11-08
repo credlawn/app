@@ -7,6 +7,7 @@ import '../network/api_follow_up_helper.dart';
 import '../screens/pre_approved_lead_screen.dart';
 import '../screens/new_card_login_screen.dart';
 import '../screens/my_login_screen.dart';
+import '../screens/leads_dashboard_screen.dart';
 
 import '../screens/fcm_log_screen.dart';
 
@@ -24,6 +25,12 @@ class _DashboardFragmentState extends State<DashboardFragment> {
   int _unreadNotificationCount = 0;
   
   final List<Map<String, dynamic>> _leadsSection = [
+    {
+      'icon': Icons.dashboard,
+      'title': 'Leads Dashboard',
+      'color': Color(0xFF3B82F6),
+      'background': Color(0xFFFFFFFF),
+    },
     {
       'icon': Icons.phone_forwarded,
       'title': 'Pre Approved',
@@ -94,6 +101,7 @@ class _DashboardFragmentState extends State<DashboardFragment> {
 
   void _navigateToScreen(String title) {
     final Map<String, Widget> screenMap = {
+      'Leads Dashboard': LeadsDashboardScreen(user: widget.user),
       'Pre Approved': PreApprovedLeadsScreen(user: widget.user),
       'Follow-up': FollowUpScreen(),
       'My Login': const MyLoginScreen(), // Added My Login screen

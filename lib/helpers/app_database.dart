@@ -18,7 +18,7 @@ class AppDatabase {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 13, onCreate: _createDB, onUpgrade: _onUpgrade);
+    return await openDatabase(path, version: 14, onCreate: _createDB, onUpgrade: _onUpgrade);
   }
 
   Future _createDB(Database db, int version) async {
@@ -206,6 +206,11 @@ CREATE TABLE leads (
       await db.execute('ALTER TABLE leads ADD COLUMN last_modified_at INTEGER DEFAULT 0');
       await db.execute('UPDATE leads SET last_modified_at = last_synced_at WHERE last_synced_at IS NOT NULL');
       await db.execute('ALTER TABLE leads DROP COLUMN last_synced_at');
+    }
+    if (oldVersion < 14) {
+      // Add lead_status_date and date_of_birth columns to leads table
+      await db.execute('ALTER TABLE leads ADD COLUMN lead_status_date TEXT DEFAULT ""');
+      await db.execute('ALTER TABLE leads ADD COLUMN date_of_birth TEXT DEFAULT ""');
     }
   }
 

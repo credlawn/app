@@ -29,6 +29,8 @@ class LeadsModel {
   final int removeLead;
   final int? lastFeedbackId; // New field to store the ID of the last feedback
   final int? lastFeedbackTimestamp; // New field to store the timestamp of the last feedback
+  final String leadStatusDate; // Date when lead status was last changed
+  final String dateOfBirth; // Customer's date of birth
 
   LeadsModel({
     this.id,
@@ -60,6 +62,8 @@ class LeadsModel {
     required this.removeLead,
     this.lastFeedbackId, // Initialize new field
     this.lastFeedbackTimestamp, // Initialize new field
+    this.leadStatusDate = '', // New field
+    this.dateOfBirth = '', // New field
   });
 
   factory LeadsModel.fromJson(Map<String, dynamic> json) {
@@ -92,6 +96,8 @@ class LeadsModel {
       removeLead: json['remove_lead'] ?? 0,
       lastFeedbackId: null, // New field, not from API initially
       lastFeedbackTimestamp: null, // New field, not from API initially
+      leadStatusDate: json['lead_status_date'] ?? '', // New field
+      dateOfBirth: json['date_of_birth'] ?? '', // New field
     );
   }
 
@@ -126,6 +132,8 @@ class LeadsModel {
       removeLead: 0, // This field is only from the API, not stored locally
       lastFeedbackId: map['last_feedback_id'] as int?, // New field
       lastFeedbackTimestamp: map['last_feedback_timestamp'] as int?, // New field
+      leadStatusDate: map['lead_status_date'] ?? '', // New field
+      dateOfBirth: map['date_of_birth'] ?? '', // New field
     );
   }
 
@@ -158,6 +166,8 @@ class LeadsModel {
       'bank_status_date': bankStatusDate,
       'last_feedback_id': lastFeedbackId, // New field
       'last_feedback_timestamp': lastFeedbackTimestamp, // New field
+      'lead_status_date': leadStatusDate, // New field
+      'date_of_birth': dateOfBirth, // New field
     };
   }
 
@@ -191,6 +201,8 @@ class LeadsModel {
     int? removeLead,
     int? lastFeedbackId, // New field
     int? lastFeedbackTimestamp, // New field
+    String? leadStatusDate, // New field
+    String? dateOfBirth, // New field
   }) {
     return LeadsModel(
       id: id ?? this.id,
@@ -222,6 +234,8 @@ class LeadsModel {
       removeLead: removeLead ?? this.removeLead,
       lastFeedbackId: lastFeedbackId ?? this.lastFeedbackId, // New field
       lastFeedbackTimestamp: lastFeedbackTimestamp ?? this.lastFeedbackTimestamp, // New field
+      leadStatusDate: leadStatusDate ?? this.leadStatusDate, // New field
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth, // New field
     );
   }
 }

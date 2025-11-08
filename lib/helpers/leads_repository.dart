@@ -121,7 +121,15 @@ class LeadsRepository {
   }) async {
     final db = await _appDatabase.database;
     final Map<String, dynamic> fieldsToUpdate = {};
-    if (leadStatus != null) fieldsToUpdate['lead_status'] = leadStatus;
+
+    // If lead status is being updated, also update lead_status_date
+    if (leadStatus != null) {
+      fieldsToUpdate['lead_status'] = leadStatus;
+      // Set lead_status_date to today's date in YYYY-MM-DD format
+      final today = DateTime.now();
+      fieldsToUpdate['lead_status_date'] = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    }
+
     if (remarks != null) fieldsToUpdate['remarks'] = remarks;
     if (arnNo != null) fieldsToUpdate['arn_no'] = arnNo;
     if (attemptedCalls != null) fieldsToUpdate['attempted_calls'] = attemptedCalls;
