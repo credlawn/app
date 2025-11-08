@@ -33,6 +33,10 @@ class _LeadsDashboardScreenState extends State<LeadsDashboardScreen> {
   int _pendingFeedback = 0;
   int _todaysLeads = 0;
   double _conversionRate = 0.0;
+  int _ipApprovedToday = 0;
+  int _ipDeclineToday = 0;
+  int _todayLogin = 0;
+  double _approvalRate = 0.0;
 
   @override
   void initState() {
@@ -68,9 +72,14 @@ class _LeadsDashboardScreenState extends State<LeadsDashboardScreen> {
     _totalDuration = 0;
     _pendingFeedback = 0;
     _todaysLeads = 0;
+    _ipApprovedToday = 0;
+    _ipDeclineToday = 0;
+    _todayLogin = 0;
+    _approvalRate = 0.0;
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    final todayString = DateFormat('yyyy-MM-dd').format(today);
     final todayStart = today.millisecondsSinceEpoch;
     final todayEnd = now.millisecondsSinceEpoch;
 
@@ -109,9 +118,11 @@ class _LeadsDashboardScreenState extends State<LeadsDashboardScreen> {
     for (var leadWithInfo in leads) {
       final lead = leadWithInfo.lead;
 
-      // Status counts for pie chart
-      final status = lead.leadStatus ?? 'Unknown';
-      _statusCounts[status] = (_statusCounts[status] ?? 0) + 1;
+      // Status counts for pie chart (exclude "New" and only today)
+      if (lead.leadStatus != 'New' && lead.leadStatusDate == todayString) {
+        final status = lead.leadStatus ?? 'Unknown';
+        _statusCounts[status] = (_statusCounts[status] ?? 0) + 1;
+      }
 
       // Pending feedback
       if (leadWithInfo.callCount > 0 &&
@@ -131,6 +142,19 @@ class _LeadsDashboardScreenState extends State<LeadsDashboardScreen> {
       } catch (e) {
         // Invalid date, skip
       }
+
+      // IP Approved and IP Decline counts for today
+      if (lead.leadStatus == 'IP Approved' && lead.leadStatusDate == todayString) {
+        _ipApprovedToday++;
+      } else if (lead.leadStatus == 'IP Decline' && lead.leadStatusDate == todayString) {
+        _ipDeclineToday++;
+      }
+    }
+
+    // Calculate Today Login and Approval Rate
+    _todayLogin = _ipApprovedToday + _ipDeclineToday;
+    if (_todayLogin > 0) {
+      _approvalRate = (_ipApprovedToday / _todayLogin) * 100;
     }
 
     // Conversion rate
@@ -233,26 +257,26 @@ class _LeadsDashboardScreenState extends State<LeadsDashboardScreen> {
       physics: const NeverScrollableScrollPhysics(),
       children: [
         _buildSummaryCard(
-          title: 'Total Leads',
-          value: _allLeads.length.toString(),
-          icon: Icons.people,
-          color: Colors.blue,
-        ),
-        _buildSummaryCard(
-          title: 'Pending Feedback',
-          value: _pendingFeedback.toString(),
-          icon: Icons.feedback,
-          color: Colors.orange,
-        ),
-        _buildSummaryCard(
-          title: 'Today\'s Leads',
-          value: _todaysLeads.toString(),
-          icon: Icons.today,
+          title: 'IP Approved',
+          value: _ipApprovedToday.toString(),
+          icon: Icons.check_circle,
           color: Colors.green,
         ),
         _buildSummaryCard(
-          title: 'Conversion Rate',
-          value: '${_conversionRate.toStringAsFixed(1)}%',
+          title: 'IP Decline',
+          value: _ipDeclineToday.toString(),
+          icon: Icons.cancel,
+          color: Colors.red,
+        ),
+        _buildSummaryCard(
+          title: 'Today Login',
+          value: _todayLogin.toString(),
+          icon: Icons.login,
+          color: Colors.blue,
+        ),
+        _buildSummaryCard(
+          title: 'Approval Rate',
+          value: '${_approvalRate.toStringAsFixed(1)}%',
           icon: Icons.trending_up,
           color: Colors.purple,
         ),
@@ -356,7 +380,7 @@ class _LeadsDashboardScreenState extends State<LeadsDashboardScreen> {
           const SizedBox(height: 16),
           _buildCallSummaryItem(
             icon: Icons.call,
-            label: 'Successful Connections',
+            label: 'Connected Calls',
             value: _totalConnected.toString(),
             color: Colors.green,
           ),
@@ -444,19 +468,59 @@ class _LeadsDashboardScreenState extends State<LeadsDashboardScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          SizedBox(
-            height: 300,
-            child: PieChart(
-              PieChartData(
-                sections: _getPieChartSections(),
-                sectionsSpace: 2,
-                centerSpaceRadius: 40,
-                centerSpaceColor: Colors.white,
+          if (_statusCounts.isEmpty)
+            Container(
+              height: 300,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.work_outline,
+                      size: 64,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Have you started your work today?',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'No leads worked on yet',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey.shade500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
+            )
+          else
+            Column(
+              children: [
+                SizedBox(
+                  height: 300,
+                  child: PieChart(
+                    PieChartData(
+                      sections: _getPieChartSections(),
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 40,
+                      centerSpaceColor: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                _buildChartLegend(),
+              ],
             ),
-          ),
-          const SizedBox(height: 20),
-          _buildChartLegend(),
         ],
       ),
     );
@@ -477,8 +541,10 @@ class _LeadsDashboardScreenState extends State<LeadsDashboardScreen> {
     final sections = <PieChartSectionData>[];
     int colorIndex = 0;
 
+    final totalFilteredLeads = _statusCounts.values.fold(0, (sum, count) => sum + count);
+
     _statusCounts.forEach((status, count) {
-      final percentage = (_allLeads.isNotEmpty) ? (count / _allLeads.length) * 100 : 0;
+      final percentage = (totalFilteredLeads > 0) ? (count / totalFilteredLeads) * 100 : 0;
       sections.add(
         PieChartSectionData(
           value: count.toDouble(),
