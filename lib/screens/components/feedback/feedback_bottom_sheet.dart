@@ -61,6 +61,7 @@ class _FeedbackBottomSheetState extends FeedbackBaseState<FeedbackBottomSheet> {
             const SizedBox(height: 20),
             buildStatusSection(),
             const SizedBox(height: 16),
+            buildErrorMessage(),
             buildFormFields(),
             const SizedBox(height: 20),
             Row(

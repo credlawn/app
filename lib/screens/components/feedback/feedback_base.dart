@@ -26,6 +26,7 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
   DateTime? selectedDateOfBirth;
+  String? _errorMessage;
   final TextEditingController _remarksController = TextEditingController();
   final TextEditingController _referenceNoController = TextEditingController();
 
@@ -344,6 +345,7 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
           onStatusChanged: (status) {
             setState(() {
               selectedStatus = status;
+              _errorMessage = null; // Clear error message when status changes
               _remarksController.clear();
               _referenceNoController.clear();
               selectedDateOfBirth = null; // Clear date of birth when status changes
@@ -381,6 +383,36 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
     return const SizedBox.shrink();
   }
 
+  Widget buildErrorMessage() {
+    if (_errorMessage == null) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _errorMessage!,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.red.shade700,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _logValidationError(String error) async {
     try {
       final currentUser = await SessionManager.getSessionData();
@@ -398,22 +430,25 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
 
 
   Future<void> submitFeedback() async {
+    // Clear any previous error message
+    setState(() => _errorMessage = null);
+
     // Validation
     if (selectedStatus == null) {
-      CustomColor.showErrorSnackBar(context, 'Please select a status.');
+      setState(() => _errorMessage = 'Please select a status.');
       await _logValidationError('No status selected');
       return;
     }
 
     if (selectedStatus == 'IP Approved' && _referenceNoController.text.isEmpty) {
-      CustomColor.showErrorSnackBar(context, 'Please enter a reference number.');
+      setState(() => _errorMessage = 'Please enter a reference number.');
       await _logValidationError('Reference number missing for IP Approved');
       return;
     }
 
     if (selectedStatus == 'Follow up') {
       if (selectedDate == null || selectedTime == null) {
-        CustomColor.showErrorSnackBar(context, 'Please select a date and time.');
+        setState(() => _errorMessage = 'Please select a date and time.');
         await _logValidationError('Follow-up date/time missing');
         return;
       }

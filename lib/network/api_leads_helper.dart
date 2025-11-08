@@ -61,7 +61,7 @@ Future<bool> syncLeadUpdateToServer(LeadsModel lead, String sid) async {
       body: json.encode({
         'frappe_id': lead.frappeId,
         'lead_status': lead.leadStatus,
-        'lead_status_date': lead.leadStatusDate.isNotEmpty ? lead.leadStatusDate : null,
+        'lead_status_date': lead.leadStatusDate.isNotEmpty ? lead.leadStatusDate : "",
         'remarks': lead.remarks,
         'arn_no': lead.arnNo,
         'attempted_calls': lead.attemptedCalls,
@@ -71,7 +71,7 @@ Future<bool> syncLeadUpdateToServer(LeadsModel lead, String sid) async {
         'last_modified_at': DateTime.fromMillisecondsSinceEpoch(lead.lastModifiedAt).toIso8601String(),
         'follow_up_date': lead.followUpDate,
         'follow_up_time': lead.followUpTime,
-        'date_of_birth': lead.dateOfBirth.isNotEmpty ? lead.dateOfBirth : null,
+        'date_of_birth': lead.dateOfBirth.isNotEmpty ? lead.dateOfBirth : "",
       }),
     );
 
