@@ -5,11 +5,17 @@ class AppStateManager {
   static const String _pendingFeedbackKey = 'pending_feedback_mobile_no';
 
   static final ValueNotifier<bool> _dirtyLeadNotifier = ValueNotifier<bool>(false);
+  static final ValueNotifier<bool> _sessionExpiredNotifier = ValueNotifier<bool>(false);
 
   static ValueNotifier<bool> get dirtyLeadNotifier => _dirtyLeadNotifier;
+  static ValueNotifier<bool> get sessionExpiredNotifier => _sessionExpiredNotifier;
 
   static void notifyLeadDirty() {
     _dirtyLeadNotifier.value = true;
+  }
+
+  static void notifySessionExpired() {
+    _sessionExpiredNotifier.value = true;
   }
 
   static Future<void> setPendingFeedbackMobile(String mobileNo) async {

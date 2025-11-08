@@ -5,6 +5,9 @@ import 'package:credlawn/models/user.dart';
 import 'package:credlawn/network/api_leads_helper.dart';
 import 'package:credlawn/helpers/error_logger.dart';
 import 'package:credlawn/helpers/session_manager.dart';
+import 'package:credlawn/helpers/app_state_manager.dart';
+import 'package:credlawn/screens/login_screen.dart';
+import 'package:flutter/material.dart';
 
 class BackgroundSyncService {
   static Future<void> triggerSync() async {
@@ -76,7 +79,17 @@ class BackgroundSyncService {
           }
         } catch (e) {
           final errorMessage = e.toString();
-          if (errorMessage.contains('CONCURRENCY_ERROR') ||
+          if (e is SessionExpiredException) {
+            // Session expired, stop syncing, notify UI, and log
+            await ErrorLogger.logError(
+              title: 'Background Sync Stopped - Session Expired',
+              errorMessage: 'Session expired during background sync. Stopping sync.',
+              errorType: 'Auth',
+              userId: currentUser.userId,
+            );
+            AppStateManager.notifySessionExpired();
+            return; // Stop the sync process
+          } else if (errorMessage.contains('CONCURRENCY_ERROR') ||
               errorMessage.contains('Document has been modified after you have opened it')) {
             await DatabaseService.instance.leadsRepository.updateLeadLocalFields(
               lead.frappeId,
@@ -93,17 +106,36 @@ class BackgroundSyncService {
         }
       }
 
-      final apiLeads = await fetchEmployeeLeadsFromApi(currentUser.userId, currentUser.sid);
-      final Set<String> apiFrappeIds = apiLeads.map((lead) => lead.frappeId).toSet();
+      try {
+        final apiLeads = await fetchEmployeeLeadsFromApi(currentUser.userId, currentUser.sid);
+        final Set<String> apiFrappeIds = apiLeads.map((lead) => lead.frappeId).toSet();
 
-      for (final apiLead in apiLeads) {
-        await DatabaseService.instance.leadsRepository.upsertLeadFromApi(apiLead);
-      }
+        for (final apiLead in apiLeads) {
+          await DatabaseService.instance.leadsRepository.upsertLeadFromApi(apiLead);
+        }
 
-      final allLocalLeads = await DatabaseService.instance.leadsRepository.getAllLeads();
-      for (final localLead in allLocalLeads) {
-        if (localLead.allocationStatus == 'Active' && !apiFrappeIds.contains(localLead.frappeId)) {
-          await DatabaseService.instance.leadsRepository.markLeadAsInactive(localLead.frappeId);
+        final allLocalLeads = await DatabaseService.instance.leadsRepository.getAllLeads();
+        for (final localLead in allLocalLeads) {
+          if (localLead.allocationStatus == 'Active' && !apiFrappeIds.contains(localLead.frappeId)) {
+            await DatabaseService.instance.leadsRepository.markLeadAsInactive(localLead.frappeId);
+          }
+        }
+      } catch (e) {
+        if (e is SessionExpiredException) {
+          await ErrorLogger.logError(
+            title: 'Background Sync Stopped - Session Expired During Fetch',
+            errorMessage: 'Session expired while fetching leads. Stopping sync.',
+            errorType: 'Auth',
+            userId: currentUser.userId,
+          );
+          AppStateManager.notifySessionExpired();
+          return;
+        } else {
+          await ErrorLogger.logException(
+            context: 'BackgroundSyncService.syncLeads.fetchEmployeeLeadsFromApi',
+            exception: e,
+            userId: currentUser.userId,
+          );
         }
       }
 

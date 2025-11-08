@@ -29,6 +29,7 @@ import 'package:credlawn/screens/components/empty_view.dart';
 import 'package:credlawn/screens/components/feedback/feedback_bottom_sheet.dart';
 import 'package:credlawn/helpers/lead_filtering_service.dart';
 import 'package:credlawn/screens/customer_details_screen.dart';
+import 'package:credlawn/screens/login_screen.dart';
 import 'dart:convert'; // Import for jsonEncode
 
 class PreApprovedLeadsScreen extends StatefulWidget {
@@ -58,6 +59,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
     });
 
     AppStateManager.dirtyLeadNotifier.addListener(_onDirtyLeadNotification);
+    AppStateManager.sessionExpiredNotifier.addListener(_onSessionExpiredNotification);
   }
 
   void _loadInitialData() async {
@@ -82,6 +84,16 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
     }
   }
 
+  void _onSessionExpiredNotification() {
+    if (AppStateManager.sessionExpiredNotifier.value && mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => LoginScreen()),
+        (route) => false,
+      );
+      AppStateManager.sessionExpiredNotifier.value = false;
+    }
+  }
+
   void _expandItem(String mobileNo) {
     setState(() {
       if (_expandedLeadId == mobileNo) {
@@ -97,6 +109,7 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
     WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     AppStateManager.dirtyLeadNotifier.removeListener(_onDirtyLeadNotification);
+    AppStateManager.sessionExpiredNotifier.removeListener(_onSessionExpiredNotification);
     super.dispose();
   }
 
@@ -413,7 +426,22 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
     // For pull-to-refresh, perform sync synchronously so UI updates with fresh data
     final User? currentUser = await SessionManager.getSessionData();
     if (currentUser != null) {
-      await BackgroundSyncService.syncLeads(currentUser);
+      try {
+        await BackgroundSyncService.syncLeads(currentUser);
+      } catch (e) {
+        if (e is SessionExpiredException) {
+          // Session expired, navigate to login
+          if (mounted) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => LoginScreen()),
+              (route) => false,
+            );
+          }
+          return;
+        } else {
+          rethrow;
+        }
+      }
     }
     final newLeads = await getLeadsWithCallCounts();
 

@@ -6,6 +6,15 @@ import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/models/user.dart';
 import 'package:credlawn/helpers/error_logger.dart';
 
+// Custom exception for session expiry
+class SessionExpiredException implements Exception {
+  final String message;
+  SessionExpiredException(this.message);
+
+  @override
+  String toString() => 'SessionExpiredException: $message';
+}
+
 Future<List<LeadsModel>> fetchEmployeeLeadsFromApi(String userId, String sid) async {
   final uri = ServerApi.getEmployeeLeads({'user_id': userId});
 
@@ -21,10 +30,23 @@ Future<List<LeadsModel>> fetchEmployeeLeadsFromApi(String userId, String sid) as
         return leads;
       }
       return Future.error('API Response is missing the "message" key.');
+    } else if (response.statusCode == 401 || response.statusCode == 403) {
+      // Session expired or invalid
+      await SessionManager.clearSession();
+      await ErrorLogger.logError(
+        title: 'Session Expired During Lead Fetch',
+        errorMessage: 'Session invalid (status ${response.statusCode}). Cleared session.',
+        errorType: 'Auth',
+        userId: userId,
+      );
+      throw SessionExpiredException('Your session has expired. Please log in again.');
     }
     return Future.error('Failed to load leads from API: ${response.statusCode}');
   } catch (e) {
-    return Future.error('Exception during API fetch: $e');
+    if (e is! SessionExpiredException) {
+      return Future.error('Exception during API fetch: $e');
+    }
+    rethrow;
   }
 }
 
@@ -54,6 +76,16 @@ Future<bool> syncLeadUpdateToServer(LeadsModel lead, String sid) async {
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       return jsonResponse['message']?['status'] == 'success';
+    } else if (response.statusCode == 401 || response.statusCode == 403) {
+      // Session expired or invalid
+      await SessionManager.clearSession();
+      await ErrorLogger.logError(
+        title: 'Session Expired During Lead Sync',
+        errorMessage: 'Session invalid (status ${response.statusCode}) during sync of lead ${lead.frappeId}. Cleared session.',
+        errorType: 'Auth',
+        userId: user?.userId,
+      );
+      throw SessionExpiredException('Your session has expired. Please log in again.');
     } else {
       if (response.statusCode == 417) {
         if (response.body.contains('not found')) {
@@ -104,6 +136,16 @@ Future<bool> markLeadInactiveOnServer(String frappeId, String sid) async {
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       return jsonResponse['status'] == 'success';
+    } else if (response.statusCode == 401 || response.statusCode == 403) {
+      // Session expired or invalid
+      await SessionManager.clearSession();
+      await ErrorLogger.logError(
+        title: 'Session Expired During Mark Inactive',
+        errorMessage: 'Session invalid (status ${response.statusCode}) during mark inactive for lead ${frappeId}. Cleared session.',
+        errorType: 'Auth',
+        userId: user?.userId,
+      );
+      throw SessionExpiredException('Your session has expired. Please log in again.');
     } else {
       await ErrorLogger.logApiError(
         endpoint: uri.toString(),
@@ -115,11 +157,13 @@ Future<bool> markLeadInactiveOnServer(String frappeId, String sid) async {
       return false;
     }
   } catch (e) {
-    await ErrorLogger.logException(
-      context: 'markLeadInactiveOnServer',
-      exception: e,
-      userId: user?.userId,
-    );
-    return false;
+    if (e is! SessionExpiredException) {
+      await ErrorLogger.logException(
+        context: 'markLeadInactiveOnServer',
+        exception: e,
+        userId: user?.userId,
+      );
+    }
+    rethrow;
   }
 }
