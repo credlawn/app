@@ -41,6 +41,7 @@ class _LeadsDashboardScreenState extends State<LeadsDashboardScreen> {
   int _ipDeclineToday = 0;
   int _todayLogin = 0;
   double _approvalRate = 0.0;
+  double _hourlyCallEfficiency = 0.0;
 
   @override
   void initState() {
@@ -165,6 +166,17 @@ class _LeadsDashboardScreenState extends State<LeadsDashboardScreen> {
     if (_totalAttempted > 0) {
       _conversionRate = (_totalConnected / _totalAttempted) * 100;
     }
+
+    // Calculate hourly call efficiency
+    final workStartHour = 9; // Assuming work starts at 9 AM
+    final currentHour = now.hour;
+
+    if (currentHour >= workStartHour) {
+      final hoursWorked = currentHour - workStartHour + 1; // +1 to include current hour
+      if (hoursWorked > 0) {
+        _hourlyCallEfficiency = _totalAttempted / hoursWorked;
+      }
+    }
   }
 
   bool _hasFeedback(String? leadStatus) {
@@ -258,12 +270,6 @@ class _LeadsDashboardScreenState extends State<LeadsDashboardScreen> {
         ),
         backgroundColor: CustomColor.MainColor,
         elevation: 0.5,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _loadDashboardData,
-          ),
-        ],
       ),
       body: _isLoading
           ? Center(
@@ -291,6 +297,7 @@ class _LeadsDashboardScreenState extends State<LeadsDashboardScreen> {
                       totalConnected: _totalConnected,
                       totalDuration: _totalDuration,
                       averageDuration: _formatAverageDuration(),
+                      hourlyEfficiency: _hourlyCallEfficiency,
                     ),
                     const SizedBox(height: 24),
                     StatusChartWidget(statusCounts: _statusCounts),

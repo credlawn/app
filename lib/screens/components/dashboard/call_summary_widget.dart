@@ -6,6 +6,7 @@ class CallSummaryWidget extends StatelessWidget {
   final int totalConnected;
   final int totalDuration;
   final String averageDuration;
+  final double hourlyEfficiency;
 
   const CallSummaryWidget({
     super.key,
@@ -13,6 +14,7 @@ class CallSummaryWidget extends StatelessWidget {
     required this.totalConnected,
     required this.totalDuration,
     required this.averageDuration,
+    required this.hourlyEfficiency,
   });
 
   String _formatDuration(int totalSeconds) {
@@ -81,6 +83,13 @@ class CallSummaryWidget extends StatelessWidget {
             label: 'Avg Call Duration',
             value: averageDuration,
             color: Colors.purple,
+          ),
+          const SizedBox(height: 16),
+          _buildCallSummaryItem(
+            icon: Icons.speed,
+            label: 'Hourly Efficiency',
+            value: '${hourlyEfficiency.toStringAsFixed(1)} calls/hr',
+            color: Colors.teal,
           ),
         ],
       ),
