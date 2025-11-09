@@ -6,6 +6,8 @@ import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/network/api_manager_dashboard_helper.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
+import 'today_details_screen.dart';
+import 'mtd_details_screen.dart';
 
 class ManagerHomeScreen extends StatefulWidget {
   final User user;
@@ -32,6 +34,13 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
       _dashboardData = data;
       _isLoading = false;
     });
+  }
+
+  Future<void> _refreshData() async {
+    setState(() {
+      _isLoading = true;
+    });
+    await _fetchDashboardData();
   }
 
   Widget _buildDashboardCard(String title, int count, Color color) {
@@ -86,6 +95,30 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, VoidCallback onDetailsTap) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[800],
+          ),
+        ),
+        IconButton(
+          onPressed: onDetailsTap,
+          icon: Icon(
+            Icons.info_outline,
+            color: CustomColor.MainColor,
+            size: 24,
+          ),
+        ),
+      ],
     );
   }
 
@@ -160,69 +193,78 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
                     style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey),
                   ),
                 )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Today',
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[800],
+              : RefreshIndicator(
+                  onRefresh: _refreshData,
+                  color: CustomColor.MainColor,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionHeader('Today', () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TodayDetailsScreen(
+                                employees: _dashboardData!['today']['employees'] ?? [],
+                              ),
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 12),
+                        GridView.count(
+                          crossAxisCount: 2,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          children: [
+                            _buildDashboardCard(
+                              'IP Approved',
+                              (_dashboardData!['today']['summary']['ip_approved'] ?? 0) as int,
+                              const Color(0xFF10B981),
+                            ),
+                            _buildDashboardCard(
+                              'IP Decline',
+                              (_dashboardData!['today']['summary']['ip_decline'] ?? 0) as int,
+                              const Color(0xFFEF4444),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      GridView.count(
-                        crossAxisCount: 2,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        children: [
-                          _buildDashboardCard(
-                            'IP Approved',
-                            _dashboardData!['today']['ip_approved'] ?? 0,
-                            const Color(0xFF10B981),
-                          ),
-                          _buildDashboardCard(
-                            'IP Decline',
-                            _dashboardData!['today']['ip_decline'] ?? 0,
-                            const Color(0xFFEF4444),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'Month to Date',
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[800],
+                        const SizedBox(height: 24),
+                        _buildSectionHeader('Month to Date', () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MtdDetailsScreen(
+                                employees: _dashboardData!['mtd']['employees'] ?? [],
+                              ),
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 12),
+                        GridView.count(
+                          crossAxisCount: 2,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          children: [
+                            _buildDashboardCard(
+                              'IP Approved',
+                              (_dashboardData!['mtd']['summary']['ip_approved'] ?? 0) as int,
+                              const Color(0xFF10B981),
+                            ),
+                            _buildDashboardCard(
+                              'IP Decline',
+                              (_dashboardData!['mtd']['summary']['ip_decline'] ?? 0) as int,
+                              const Color(0xFFEF4444),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      GridView.count(
-                        crossAxisCount: 2,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        children: [
-                          _buildDashboardCard(
-                            'IP Approved',
-                            _dashboardData!['mtd']['ip_approved'] ?? 0,
-                            const Color(0xFF10B981),
-                          ),
-                          _buildDashboardCard(
-                            'IP Decline',
-                            _dashboardData!['mtd']['ip_decline'] ?? 0,
-                            const Color(0xFFEF4444),
-                          ),
-                        ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
     );
