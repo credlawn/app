@@ -18,7 +18,12 @@ class AppDatabase {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 14, onCreate: _createDB, onUpgrade: _onUpgrade);
+    final db = await openDatabase(path, version: 14, onCreate: _createDB, onUpgrade: _onUpgrade);
+
+    // Ensure all required columns exist (defensive migration)
+    await _ensureAllColumnsExist(db);
+
+    return db;
   }
 
   Future _createDB(Database db, int version) async {
@@ -211,6 +216,55 @@ CREATE TABLE leads (
       // Add lead_status_date and date_of_birth columns to leads table
       await db.execute('ALTER TABLE leads ADD COLUMN lead_status_date TEXT DEFAULT ""');
       await db.execute('ALTER TABLE leads ADD COLUMN date_of_birth TEXT DEFAULT ""');
+    }
+  }
+
+  // Ensure all required columns exist in the database (defensive migration)
+  Future<void> _ensureAllColumnsExist(Database db) async {
+    try {
+      // Check and add missing columns to leads table
+      await _ensureColumnExists(db, 'leads', 'lead_status_date', 'TEXT DEFAULT ""');
+      await _ensureColumnExists(db, 'leads', 'date_of_birth', 'TEXT DEFAULT ""');
+      await _ensureColumnExists(db, 'leads', 'last_feedback_id', 'INTEGER');
+      await _ensureColumnExists(db, 'leads', 'last_feedback_timestamp', 'INTEGER');
+      await _ensureColumnExists(db, 'leads', 'bank_status', 'TEXT DEFAULT ""');
+      await _ensureColumnExists(db, 'leads', 'bank_status_date', 'TEXT DEFAULT ""');
+      await _ensureColumnExists(db, 'leads', 'last_modified_at', 'INTEGER DEFAULT 0');
+
+      // Check and add missing columns to feedback table
+      await _ensureColumnExists(db, 'feedback', 'mobile_no', 'TEXT');
+      await _ensureColumnExists(db, 'feedback', 'customer_name', 'TEXT');
+      await _ensureColumnExists(db, 'feedback', 'is_synced', 'INTEGER DEFAULT 0');
+      await _ensureColumnExists(db, 'feedback', 'sync_attempts', 'INTEGER DEFAULT 0');
+      await _ensureColumnExists(db, 'feedback', 'last_sync_attempt', 'INTEGER DEFAULT 0');
+      await _ensureColumnExists(db, 'feedback', 'server_id', 'TEXT');
+
+      // Check and add missing columns to case_login table
+      await _ensureColumnExists(db, 'case_login', 'sync_id', 'TEXT UNIQUE');
+
+      // Check and add missing columns to call_history table
+      await _ensureColumnExists(db, 'call_history', 'user', 'TEXT DEFAULT ""');
+
+    } catch (e) {
+      // Log the error but don't crash the app
+      print('Error during defensive migration: $e');
+    }
+  }
+
+  // Helper method to check if a column exists and add it if it doesn't
+  Future<void> _ensureColumnExists(Database db, String tableName, String columnName, String columnDefinition) async {
+    try {
+      // Check if column exists by trying to select it
+      await db.rawQuery('SELECT $columnName FROM $tableName LIMIT 1');
+    } catch (e) {
+      // Column doesn't exist, add it
+      try {
+        await db.execute('ALTER TABLE $tableName ADD COLUMN $columnName $columnDefinition');
+        print('Added missing column $columnName to $tableName');
+      } catch (alterError) {
+        // If ALTER TABLE fails, the column might already exist or there's another issue
+        print('Could not add column $columnName to $tableName: $alterError');
+      }
     }
   }
 
