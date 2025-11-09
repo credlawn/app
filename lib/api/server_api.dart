@@ -25,6 +25,9 @@ class ServerApi {
   static final Uri updateLeadStatus = Uri.parse('${baseUrl}api/method/credlawn.mobile.api.leads.update_lead_status_and_details');
   static final Uri markLeadInactive = Uri.parse('${baseUrl}api/method/credlawn.api.leads.mark_lead_inactive_on_server');
 
+  // Manager Dashboard
+  static final Uri getManagerDashboardData = Uri.parse('${baseUrl}api/method/credlawn.mobile.api.manager_dashboard.get_manager_dashboard_data');
+
   // External URLs
   static const String whatsAppMessageUrl = '${baseUrl}tata';
 }

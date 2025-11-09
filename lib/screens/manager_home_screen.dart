@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:credlawn/custom/custom_color.dart';
 import 'package:credlawn/models/user.dart';
 import 'package:credlawn/helpers/session_manager.dart';
+import 'package:credlawn/network/api_manager_dashboard_helper.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
 
@@ -16,10 +17,82 @@ class ManagerHomeScreen extends StatefulWidget {
 }
 
 class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
+  Map<String, dynamic>? _dashboardData;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDashboardData();
+  }
+
+  Future<void> _fetchDashboardData() async {
+    final data = await getManagerDashboardData();
+    setState(() {
+      _dashboardData = data;
+      _isLoading = false;
+    });
+  }
+
+  Widget _buildDashboardCard(String title, int count, Color color) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.15),
+            blurRadius: 8,
+            spreadRadius: 1,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.bar_chart,
+              size: 24,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            count.toString(),
+            style: GoogleFonts.poppins(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         elevation: 0.5,
         shape: const RoundedRectangleBorder(
@@ -78,15 +151,80 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
           ),
         ],
       ),
-      body: Center(
-        child: Text(
-          'this is manager screen',
-          style: GoogleFonts.poppins(
-            fontSize: 24,
-            color: Colors.black,
-          ),
-        ),
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _dashboardData == null
+              ? Center(
+                  child: Text(
+                    'Failed to load dashboard data',
+                    style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey),
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Today',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        children: [
+                          _buildDashboardCard(
+                            'IP Approved',
+                            _dashboardData!['today']['ip_approved'] ?? 0,
+                            const Color(0xFF10B981),
+                          ),
+                          _buildDashboardCard(
+                            'IP Decline',
+                            _dashboardData!['today']['ip_decline'] ?? 0,
+                            const Color(0xFFEF4444),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Month to Date',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        children: [
+                          _buildDashboardCard(
+                            'IP Approved',
+                            _dashboardData!['mtd']['ip_approved'] ?? 0,
+                            const Color(0xFF10B981),
+                          ),
+                          _buildDashboardCard(
+                            'IP Decline',
+                            _dashboardData!['mtd']['ip_decline'] ?? 0,
+                            const Color(0xFFEF4444),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
     );
   }
 }
