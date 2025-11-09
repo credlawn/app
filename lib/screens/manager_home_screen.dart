@@ -49,53 +49,100 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
     return (approved / total) * 100;
   }
 
-  Widget _buildDashboardCard(String title, dynamic value, Color color, {bool isPercentage = false}) {
+  Widget _buildDashboardCard(String title, dynamic value, Color color, {bool isPercentage = false, IconData? icon, bool showTrend = false, String? trend}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 4,
+            color: color.withOpacity(0.08),
+            blurRadius: 12,
+            spreadRadius: 1,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.04),
+            blurRadius: 6,
             spreadRadius: 1,
             offset: const Offset(0, 2),
           ),
         ],
+        border: Border.all(
+          color: color.withOpacity(0.06),
+          width: 1,
+        ),
       ),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Icon with gradient background
           Container(
-            width: 32,
-            height: 32,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  color.withOpacity(0.2),
+                  color.withOpacity(0.1),
+                ],
+              ),
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.2),
+                  blurRadius: 6,
+                  spreadRadius: 1,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Icon(
-              Icons.bar_chart,
-              size: 16,
+              icon ?? Icons.bar_chart,
+              size: 20,
               color: color,
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            isPercentage ? '${value.toStringAsFixed(1)}%' : value.toString(),
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+          const SizedBox(height: 8),
+
+          // Value with trend indicator
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                isPercentage ? '${value.toStringAsFixed(1)}%' : value.toString(),
+                style: GoogleFonts.poppins(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              if (showTrend && trend != null) ...[
+                const SizedBox(width: 4),
+                Text(
+                  trend,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ],
           ),
-          const SizedBox(height: 2),
+
+          const SizedBox(height: 4),
+
+          // Title
           Text(
             title,
             style: GoogleFonts.poppins(
-              fontSize: 10,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
+              fontSize: 11,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w600,
+              height: 1.2,
             ),
             textAlign: TextAlign.center,
             maxLines: 2,
@@ -107,49 +154,103 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
   }
 
   Widget _buildSectionHeader(String title, VoidCallback onDetailsTap) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey[800],
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 6,
+            spreadRadius: 1,
+            offset: const Offset(0, 2),
           ),
-        ),
-        IconButton(
-          onPressed: onDetailsTap,
-          icon: Icon(
-            Icons.info_outline,
-            color: CustomColor.MainColor,
-            size: 24,
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: CustomColor.MainColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
           ),
-        ),
-      ],
+          Container(
+            decoration: BoxDecoration(
+              color: CustomColor.MainColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              onPressed: onDetailsTap,
+              icon: Icon(
+                Icons.info_outline,
+                color: CustomColor.MainColor,
+                size: 20,
+              ),
+              tooltip: 'View Details',
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFFF8FAFC),
+              const Color(0xFFF1F5F9),
+            ],
+          ),
+        ),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
       appBar: AppBar(
-        elevation: 0.5,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            bottomRight: Radius.circular(0),
-            bottomLeft: Radius.circular(0),
+        elevation: 2,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                CustomColor.MainColor,
+                CustomColor.MainColor.withOpacity(0.8),
+              ],
+            ),
           ),
         ),
         title: Text(
           'Manager Dashboard',
           style: GoogleFonts.poppins(
             fontSize: 20,
+            fontWeight: FontWeight.w600,
             color: Colors.white,
           ),
         ),
-        backgroundColor: CustomColor.MainColor,
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.person, color: Colors.white),
@@ -225,19 +326,21 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
                           crossAxisCount: 3,
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                          childAspectRatio: 0.8,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 0.85,
                           children: [
                             _buildDashboardCard(
                               'IP Approved',
                               (_dashboardData!['today']['summary']['ip_approved'] ?? 0) as int,
-                              const Color(0xFF10B981),
+                              const Color(0xFF16A34A), // Professional green
+                              icon: Icons.check_circle,
                             ),
                             _buildDashboardCard(
                               'IP Decline',
                               (_dashboardData!['today']['summary']['ip_decline'] ?? 0) as int,
-                              const Color(0xFFEF4444),
+                              const Color(0xFFDC2626), // Professional red
+                              icon: Icons.cancel,
                             ),
                             _buildDashboardCard(
                               'Approval Ratio',
@@ -245,7 +348,8 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
                                 (_dashboardData!['today']['summary']['ip_approved'] ?? 0) as int,
                                 (_dashboardData!['today']['summary']['ip_decline'] ?? 0) as int,
                               ),
-                              const Color(0xFF3B82F6),
+                              const Color(0xFF2563EB), // Professional blue
+                              icon: Icons.pie_chart,
                               isPercentage: true,
                             ),
                           ],
@@ -266,19 +370,21 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
                           crossAxisCount: 3,
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                          childAspectRatio: 0.8,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 0.85,
                           children: [
                             _buildDashboardCard(
                               'IP Approved',
                               (_dashboardData!['mtd']['summary']['ip_approved'] ?? 0) as int,
-                              const Color(0xFF10B981),
+                              const Color(0xFF16A34A), // Professional green
+                              icon: Icons.check_circle,
                             ),
                             _buildDashboardCard(
                               'IP Decline',
                               (_dashboardData!['mtd']['summary']['ip_decline'] ?? 0) as int,
-                              const Color(0xFFEF4444),
+                              const Color(0xFFDC2626), // Professional red
+                              icon: Icons.cancel,
                             ),
                             _buildDashboardCard(
                               'Approval Ratio',
@@ -286,7 +392,8 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
                                 (_dashboardData!['mtd']['summary']['ip_approved'] ?? 0) as int,
                                 (_dashboardData!['mtd']['summary']['ip_decline'] ?? 0) as int,
                               ),
-                              const Color(0xFF3B82F6),
+                              const Color(0xFF2563EB), // Professional blue
+                              icon: Icons.pie_chart,
                               isPercentage: true,
                             ),
                           ],
@@ -295,6 +402,8 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
                     ),
                   ),
                 ),
+        ),
+      ),
     );
   }
 }
