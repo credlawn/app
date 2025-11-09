@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:credlawn/models/user.dart';
 import 'home_screen.dart';
+import 'manager_home_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/cupertino.dart';
@@ -85,10 +86,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 );
               }
               CustomColor.showSuccessSnackBar(context, 'Welcome, ${user.fullName}');
+              Widget homeScreen = user.role == 'Manager' ? ManagerHomeScreen(user: user) : HomeScreen(user: user);
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => HomeScreen(user: user),
+                  builder: (context) => homeScreen,
                 ),
               );
             } else {

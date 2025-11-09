@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:credlawn/screens/login_screen.dart';
 import 'package:credlawn/screens/home_screen.dart';
+import 'package:credlawn/screens/manager_home_screen.dart';
 import 'package:credlawn/screens/app_update_screen.dart';
 import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/models/user.dart';
@@ -223,7 +224,14 @@ class _MyAppState extends State<MyApp> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
                 } else if (snapshot.hasError) return Center(child: Text('Error loading session'));
-                else if (snapshot.hasData && snapshot.data != null) return HomeScreen(user: snapshot.data!);
+                else if (snapshot.hasData && snapshot.data != null) {
+                  User user = snapshot.data!;
+                  if (user.role == 'Manager') {
+                    return ManagerHomeScreen(user: user);
+                  } else {
+                    return HomeScreen(user: user);
+                  }
+                }
                 else return LoginScreen();
               },
             ),
