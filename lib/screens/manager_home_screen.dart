@@ -43,55 +43,63 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
     await _fetchDashboardData();
   }
 
-  Widget _buildDashboardCard(String title, int count, Color color) {
+  double _calculateApprovalRatio(int approved, int declined) {
+    int total = approved + declined;
+    if (total == 0) return 0.0;
+    return (approved / total) * 100;
+  }
+
+  Widget _buildDashboardCard(String title, dynamic value, Color color, {bool isPercentage = false}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.15),
-            blurRadius: 8,
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 4,
             spreadRadius: 1,
-            offset: const Offset(0, 3),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 50,
-            height: 50,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
               color: color.withOpacity(0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.bar_chart,
-              size: 24,
+              size: 16,
               color: color,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           Text(
-            count.toString(),
+            isPercentage ? '${value.toStringAsFixed(1)}%' : value.toString(),
             style: GoogleFonts.poppins(
-              fontSize: 28,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             title,
             style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey[700],
+              fontSize: 10,
+              color: Colors.grey[600],
               fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -214,11 +222,12 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
                         }),
                         const SizedBox(height: 12),
                         GridView.count(
-                          crossAxisCount: 2,
+                          crossAxisCount: 3,
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          childAspectRatio: 0.8,
                           children: [
                             _buildDashboardCard(
                               'IP Approved',
@@ -229,6 +238,15 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
                               'IP Decline',
                               (_dashboardData!['today']['summary']['ip_decline'] ?? 0) as int,
                               const Color(0xFFEF4444),
+                            ),
+                            _buildDashboardCard(
+                              'Approval Ratio',
+                              _calculateApprovalRatio(
+                                (_dashboardData!['today']['summary']['ip_approved'] ?? 0) as int,
+                                (_dashboardData!['today']['summary']['ip_decline'] ?? 0) as int,
+                              ),
+                              const Color(0xFF3B82F6),
+                              isPercentage: true,
                             ),
                           ],
                         ),
@@ -245,11 +263,12 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
                         }),
                         const SizedBox(height: 12),
                         GridView.count(
-                          crossAxisCount: 2,
+                          crossAxisCount: 3,
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          childAspectRatio: 0.8,
                           children: [
                             _buildDashboardCard(
                               'IP Approved',
@@ -260,6 +279,15 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
                               'IP Decline',
                               (_dashboardData!['mtd']['summary']['ip_decline'] ?? 0) as int,
                               const Color(0xFFEF4444),
+                            ),
+                            _buildDashboardCard(
+                              'Approval Ratio',
+                              _calculateApprovalRatio(
+                                (_dashboardData!['mtd']['summary']['ip_approved'] ?? 0) as int,
+                                (_dashboardData!['mtd']['summary']['ip_decline'] ?? 0) as int,
+                              ),
+                              const Color(0xFF3B82F6),
+                              isPercentage: true,
                             ),
                           ],
                         ),
