@@ -80,6 +80,27 @@ class StatusChips extends StatelessWidget {
             textColor = Colors.indigo.shade800;
             icon = Icons.access_time_outlined;
             break;
+          case 'Hold':
+            backgroundColor = Colors.amber.shade50.withOpacity(0.5);
+            selectedColor = Colors.amber.shade600;
+            borderColor = Colors.amber.shade100;
+            textColor = Colors.amber.shade800;
+            icon = Icons.pause_circle_outline;
+            break;
+          case 'Voicemail':
+            backgroundColor = Colors.cyan.shade50.withOpacity(0.5);
+            selectedColor = Colors.cyan.shade600;
+            borderColor = Colors.cyan.shade100;
+            textColor = Colors.cyan.shade800;
+            icon = Icons.voicemail_outlined;
+            break;
+          case 'Not Eligible':
+            backgroundColor = Colors.grey.shade50.withOpacity(0.5);
+            selectedColor = Colors.grey.shade600;
+            borderColor = Colors.grey.shade100;
+            textColor = Colors.grey.shade800;
+            icon = Icons.not_interested_outlined;
+            break;
           default:
             backgroundColor = Colors.grey.shade100;
             selectedColor = CustomColor.MainColor;

@@ -241,6 +241,57 @@ class _MyAppState extends State<MyApp> {
   Future<User?> _checkSession(BuildContext context) async {
     await _checkAppVersion();
     var sessionData = await SessionManager.getSessionData();
+
+    // Handle migration for existing sessions without API keys
+    if (sessionData != null && (sessionData.apiKey == null || sessionData.apiKey!.isEmpty)) {
+      if (sessionData.sid != null && sessionData.sid!.isNotEmpty) {
+        try {
+          // Try to fetch API keys using existing SID
+          final apiKeys = await fetchApiKeys(sessionData.sid!);
+          sessionData = sessionData.copyWith(
+            apiKey: apiKeys['api_key'],
+            apiSecret: apiKeys['api_secret'],
+          );
+
+          // Update the session with API keys
+          await SessionManager.saveSessionData(
+            sid: sessionData.sid!,
+            fullName: sessionData.fullName,
+            userId: sessionData.userId,
+            userImage: sessionData.userImage ?? '',
+            employeeName: sessionData.employeeName ?? '',
+            employeeCode: sessionData.employeeCode ?? '',
+            joiningDate: sessionData.joiningDate ?? '',
+            dateOfBirth: sessionData.dateOfBirth ?? '',
+            gender: sessionData.gender ?? '',
+            department: sessionData.department ?? '',
+            designation: sessionData.designation ?? '',
+            mobileNo: sessionData.mobileNo ?? '',
+            email: sessionData.email ?? '',
+            age: sessionData.age ?? '',
+            tenure: sessionData.tenure ?? '',
+            role: sessionData.role ?? '',
+            apiKey: sessionData.apiKey,
+            apiSecret: sessionData.apiSecret,
+          );
+        } catch (e) {
+          // If fetching API keys fails, clear session and force re-login
+          await SessionManager.clearSession();
+          await ErrorLogger.logError(
+            title: 'Session Migration Failed',
+            errorMessage: 'Failed to migrate existing session to token auth: $e',
+            errorType: 'Auth',
+            userId: sessionData!.userId,
+          );
+          sessionData = null;
+        }
+      } else {
+        // No SID available, clear session
+        await SessionManager.clearSession();
+        sessionData = null;
+      }
+    }
+
     String? token = await FirebaseMessaging.instance.getToken();
     String? deviceId = await getDeviceId();
     if (token != null && deviceId != null) {

@@ -254,7 +254,7 @@ class LeadsRepository {
 
       final currentStatus = lead.leadStatus;
 
-      const finalFeedbackStatuses = ['IP Approved', 'IP Decline', 'Customer Denied', 'Docs Not Available', 'Already Carded', 'Recently Applied', 'Follow up'];
+      const finalFeedbackStatuses = ['IP Approved', 'IP Decline', 'Customer Denied', 'Docs Not Available', 'Already Carded', 'Recently Applied', 'Follow up', 'Voicemail', 'Hold'];
       if (finalFeedbackStatuses.contains(currentStatus)) {
         continue;
       }

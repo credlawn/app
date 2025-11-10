@@ -226,6 +226,14 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
         text = 'Follow Up';
         backgroundColor = Colors.cyan.shade700;
         break;
+      case 'Voicemail':
+        text = 'Voicemail';
+        backgroundColor = Colors.cyan.shade600;
+        break;
+      case 'Hold':
+        text = 'Hold';
+        backgroundColor = Colors.amber.shade600;
+        break;
       default:
         if (callCount == 0) {
           text = 'New';

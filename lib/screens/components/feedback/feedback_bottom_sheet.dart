@@ -34,27 +34,26 @@ class _FeedbackBottomSheetState extends FeedbackBaseState<FeedbackBottomSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Feedback for ${widget.mobileNo}',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: CustomColor.MainColor,
-              ),
-            ),
-            const SizedBox(height: 15),
             FutureBuilder<String>(
               future: getCustomerName(widget.mobileNo),
               builder: (context, snapshot) {
-                return Text(
-                  snapshot.hasData ? snapshot.data! : 'Loading...',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                final customerName = snapshot.hasData ? snapshot.data! : 'Loading...';
+                return Column(
+                  children: [
+                    Text(
+                      'You have a pending feedback',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red.shade700,
+                        decoration: TextDecoration.underline,
+                        decorationColor: Colors.red.shade700,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    buildCustomerInfo(),
+                  ],
                 );
               },
             ),
@@ -91,9 +90,26 @@ class _FeedbackBottomSheetState extends FeedbackBaseState<FeedbackBottomSheet> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
+                      disabledBackgroundColor: Colors.grey.shade400,
                     ),
-                    onPressed: submitFeedback,
-                    child: Text('Submit', style: GoogleFonts.poppins(color: Colors.white)),
+                    onPressed: isSubmitting ? null : submitFeedback,
+                    child: isSubmitting
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text('Submitting...', style: GoogleFonts.poppins(color: Colors.white)),
+                            ],
+                          )
+                        : Text('Submit', style: GoogleFonts.poppins(color: Colors.white)),
                   ),
                 ),
               ],

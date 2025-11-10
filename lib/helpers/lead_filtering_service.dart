@@ -12,13 +12,18 @@ class LeadFilteringService {
       return leads.where((lead) => lead.lead.leadStatus == 'New').toList();
 
       case 'CNR':
-      return leads.where((lead) => lead.lead.leadStatus == 'CNR').toList();
+        return leads.where((lead) =>
+          lead.lead.leadStatus == 'CNR' || lead.lead.leadStatus == 'Voicemail'
+        ).toList();
 
       case 'Inactive':
         return leads.where((lead) => lead.lead.leadStatus == 'Inactive').toList();
 
       case 'Called':
-        return leads.where((lead) => lead.lead.leadStatus == 'Called').toList();
+        return leads.where((lead) =>
+          lead.lead.leadStatus == 'Called' ||
+          lead.lead.leadStatus == 'Hold'
+        ).toList();
 
       case 'Failed':
         return leads.where((lead) =>
@@ -58,5 +63,22 @@ class LeadFilteringService {
 
   static bool _isFollowUpLead(LeadsModel lead) {
     return lead.leadStatus == 'Follow up' && lead.followUpDate != null;
+  }
+
+  static bool _isHoldLeadOlderThan2Days(LeadsModel lead) {
+    if (lead.leadStatus != 'Hold' || lead.leadStatusDate == null) {
+      return false;
+    }
+
+    try {
+      final statusDate = DateTime.parse(lead.leadStatusDate!);
+      final now = DateTime.now();
+      final difference = now.difference(statusDate).inDays;
+
+      return difference > 2;
+    } catch (e) {
+      // If date parsing fails, don't treat as old
+      return false;
+    }
   }
 }

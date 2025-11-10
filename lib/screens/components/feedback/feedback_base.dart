@@ -27,8 +27,12 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
   TimeOfDay? selectedTime;
   DateTime? selectedDateOfBirth;
   String? _errorMessage;
+  bool _isSubmitting = false;
   final TextEditingController _remarksController = TextEditingController();
   final TextEditingController _referenceNoController = TextEditingController();
+
+  // Getter to access _isSubmitting from child classes
+  bool get isSubmitting => _isSubmitting;
 
   final List<String> statusOptions = [
     'IP Approved',
@@ -37,7 +41,10 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
     'Docs Not Available',
     'Already Carded',
     'Recently Applied',
-    'Follow up'
+    'Follow up',
+    'Hold',
+    'Voicemail',
+    'Not Eligible'
   ];
 
   @override
@@ -370,6 +377,14 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
           _buildDateOfBirthField(),
         ],
       );
+    } else if (selectedStatus == 'IP Decline') {
+      return Column(
+        children: [
+          _buildDateOfBirthField(),
+          const SizedBox(height: 16),
+          _buildRemarksField(),
+        ],
+      );
     } else if (selectedStatus == 'Follow up') {
       return FollowUpPicker(
         selectedDate: selectedDate,
@@ -430,40 +445,87 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
 
 
   Future<void> _ensureRecentCallLogged(String frappeId, String mobileNo) async {
-    for (int attempt = 0; attempt < 2; attempt++) {
+    // Immediate check first
+    await DatabaseService.instance.callHistoryRepository.syncPhoneCallLogs();
+    await DatabaseService.instance.leadsRepository.updateCallStatisticsForLead(frappeId, mobileNo);
+    final int callCount = await DatabaseService.instance.callHistoryRepository.getCallCount(mobileNo);
+    
+    // If count > 0, we're done - call found
+    if (callCount > 0) {
+      return;
+    }
+    
+    // If count is 0, retry 3 times with 1 second delay each
+    for (int attempt = 0; attempt < 3; attempt++) {
+      await Future.delayed(const Duration(seconds: 1));
       try {
         await DatabaseService.instance.callHistoryRepository.syncPhoneCallLogs();
         await DatabaseService.instance.leadsRepository.updateCallStatisticsForLead(frappeId, mobileNo);
-        final int lastDuration = await DatabaseService.instance.callHistoryRepository.getLastCallDuration(mobileNo) ?? 0;
-        final bool connectedRecently = await DatabaseService.instance.callHistoryRepository.hasRecentSuccessfulCall(mobileNo, 1);
-        if (lastDuration > 0 || connectedRecently) {
-          break;
+        final int newCallCount = await DatabaseService.instance.callHistoryRepository.getCallCount(mobileNo);
+        if (newCallCount > 0) {
+          // Call found, exit early
+          return;
         }
-      } catch (_) {}
-      await Future.delayed(const Duration(seconds: 3));
+      } catch (_) {
+        // Continue to next retry even if error
+      }
     }
+    // After 3 retries (total 3 seconds), proceed anyway
   }
 
   Future<void> submitFeedback() async {
+    // Prevent multiple submissions
+    if (_isSubmitting) return;
+    
     // Clear any previous error message
-    setState(() => _errorMessage = null);
+    setState(() {
+      _errorMessage = null;
+      _isSubmitting = true;
+    });
 
     // Validation
     if (selectedStatus == null) {
-      setState(() => _errorMessage = 'Please select a status.');
+      setState(() {
+        _errorMessage = 'Please select a status.';
+        _isSubmitting = false;
+      });
       await _logValidationError('No status selected');
       return;
     }
 
     if (selectedStatus == 'IP Approved' && _referenceNoController.text.isEmpty) {
-      setState(() => _errorMessage = 'Please enter a reference number.');
+      setState(() {
+        _errorMessage = 'Please enter a reference number.';
+        _isSubmitting = false;
+      });
       await _logValidationError('Reference number missing for IP Approved');
+      return;
+    }
+
+    if (selectedStatus == 'Not Eligible' && _remarksController.text.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please enter remarks for Not Eligible status.';
+        _isSubmitting = false;
+      });
+      await _logValidationError('Remarks missing for Not Eligible');
+      return;
+    }
+
+    if (selectedStatus == 'Hold' && _remarksController.text.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please enter remarks for Hold status.';
+        _isSubmitting = false;
+      });
+      await _logValidationError('Remarks missing for Hold');
       return;
     }
 
     if (selectedStatus == 'Follow up') {
       if (selectedDate == null || selectedTime == null) {
-        setState(() => _errorMessage = 'Please select a date and time.');
+        setState(() {
+          _errorMessage = 'Please select a date and time.';
+          _isSubmitting = false;
+        });
         await _logValidationError('Follow-up date/time missing');
         return;
       }
@@ -472,6 +534,7 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
     try {
       final lead = await DatabaseService.instance.leadsRepository.getLeadByMobileNo(widget.mobileNo);
       if (lead == null) {
+        setState(() => _isSubmitting = false);
         CustomColor.showErrorSnackBar(context, 'Lead not found in local database.');
         await _logValidationError('Lead not found: ${widget.mobileNo}');
         return;
@@ -480,9 +543,12 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
       final currentUser = await SessionManager.getSessionData();
       final userId = currentUser?.userId;
 
+      // No status mapping needed - save as selected
+      final String actualStatus = selectedStatus!;
+
       final newFeedback = FeedbackModel(
         leadFrappeId: lead.frappeId,
-        status: selectedStatus!,
+        status: actualStatus,
         remarks: _remarksController.text.isNotEmpty ? _remarksController.text : null,
         arnNo: selectedStatus == 'IP Approved' && _referenceNoController.text.isNotEmpty
             ? _referenceNoController.text
@@ -515,12 +581,12 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
 
         final int rowsAffected = await DatabaseService.instance.leadsRepository.updateLeadLocalFields(
           lead.frappeId,
-          leadStatus: selectedStatus,
+          leadStatus: actualStatus,
           remarks: _remarksController.text,
           arnNo: selectedStatus == 'IP Approved' ? _referenceNoController.text : null,
           followUpDate: updatedFollowUpDate,
           followUpTime: updatedFollowUpTime,
-          dateOfBirth: selectedStatus == 'IP Approved' && selectedDateOfBirth != null
+          dateOfBirth: (selectedStatus == 'IP Approved' || selectedStatus == 'IP Decline') && selectedDateOfBirth != null
               ? DateFormat('yyyy-MM-dd').format(selectedDateOfBirth!)
               : null,
           isDirty: 1,
@@ -533,19 +599,23 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
           AppStateManager.clearPendingFeedbackMobile();
           AppStateManager.notifyLeadDirty();
           BackgroundSyncService.triggerSync(); // Trigger immediate background sync
+          setState(() => _isSubmitting = false);
           CustomColor.showSuccessSnackBar(context, 'Feedback submitted successfully!');
           _remarksController.clear();
           _referenceNoController.clear();
           onFeedbackSubmitted(true);
         } else {
+          setState(() => _isSubmitting = false);
           CustomColor.showErrorSnackBar(context, 'Failed to update lead with feedback info.');
           await _logValidationError('Failed to update lead local fields');
         }
       } else {
+        setState(() => _isSubmitting = false);
         CustomColor.showErrorSnackBar(context, 'Failed to save feedback to local database.');
         await _logValidationError('Failed to insert feedback to database');
       }
     } catch (e) {
+      setState(() => _isSubmitting = false);
       CustomColor.showErrorSnackBar(context, 'An error occurred while submitting feedback.');
       await ErrorLogger.logException(
         context: 'FeedbackBase.submitFeedback',

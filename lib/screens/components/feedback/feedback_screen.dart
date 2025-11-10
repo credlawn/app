@@ -55,9 +55,26 @@ class _FeedbackScreenState extends FeedbackBaseState<FeedbackScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
+                    disabledBackgroundColor: Colors.grey.shade400,
                   ),
-                  onPressed: submitFeedback,
-                  child: Text('Submit', style: GoogleFonts.poppins(color: Colors.white)),
+                  onPressed: isSubmitting ? null : submitFeedback,
+                  child: isSubmitting
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text('Submitting...', style: GoogleFonts.poppins(color: Colors.white)),
+                          ],
+                        )
+                      : Text('Submit', style: GoogleFonts.poppins(color: Colors.white)),
                 ),
               ],
             ),

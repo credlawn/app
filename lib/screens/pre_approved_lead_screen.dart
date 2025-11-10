@@ -151,10 +151,11 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
 
   List<LeadWithCallInfo> _getPendingFeedbackLeads(List<LeadWithCallInfo> allLeads) {
     return allLeads.where((lead) =>
-      (lead.callCount ?? 0) > 0 &&
-      (lead.lastCallDuration ?? 0) > 0 &&
-      !_hasFeedback(lead.lead.leadStatus) &&
-      !_isFollowUpLead(lead.lead)
+      lead.lead.allocationStatus == 'Active' &&
+      (
+        lead.lead.leadStatus == 'Called' ||
+        _isHoldLeadOlderThan2Days(lead.lead)
+      )
     ).toList();
   }
 
@@ -229,22 +230,6 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
                 });
               },
             ),
-            const SizedBox(height: 8),
-            TextButton(
-              style: TextButton.styleFrom(
-                minimumSize: const Size(double.infinity, 45),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                backgroundColor: Colors.green.withOpacity(0.1),
-              ),
-              child: Text(
-                'Call Anyway',
-                style: GoogleFonts.poppins(color: Colors.green.shade700, fontWeight: FontWeight.w600),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _initiateCall(originalLead);
-              },
-            ),
           ],
         );
       },
@@ -300,6 +285,13 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
   void _callNumber(LeadsModel lead) async {
     if (_selectedLeadGroup == 'Called') {
       _initiateCall(lead);
+      return;
+    }
+
+    // Check if Hold lead is older than 2 days - show feedback instead of call
+    // (This applies only when viewing leads outside the Hold tab)
+    if (_isHoldLeadOlderThan2Days(lead)) {
+      _showFeedbackBottomSheet(lead);
       return;
     }
 
@@ -425,6 +417,23 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
 
   bool _isFollowUpLead(LeadsModel lead) {
     return lead.leadStatus == 'Follow up' && lead.followUpDate != null;
+  }
+
+  bool _isHoldLeadOlderThan2Days(LeadsModel lead) {
+    if (lead.leadStatus != 'Hold' || lead.leadStatusDate == null) {
+      return false;
+    }
+
+    try {
+      final statusDate = DateTime.parse(lead.leadStatusDate!);
+      final now = DateTime.now();
+      final difference = now.difference(statusDate).inDays;
+
+      return difference > 2;
+    } catch (e) {
+      // If date parsing fails, don't treat as old
+      return false;
+    }
   }
 
   String _formatDateHeader(DateTime date) {
