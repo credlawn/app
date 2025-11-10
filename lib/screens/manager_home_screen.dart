@@ -154,59 +154,43 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
   }
 
   Widget _buildSectionHeader(String title, VoidCallback onDetailsTap) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 6,
-            spreadRadius: 1,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
               Container(
-                width: 4,
-                height: 24,
+                width: 3,
+                height: 20,
                 decoration: BoxDecoration(
                   color: CustomColor.MainColor,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(1.5),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Text(
                 title,
                 style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                   color: Colors.grey[800],
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: CustomColor.MainColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+          IconButton(
+            onPressed: onDetailsTap,
+            icon: Icon(
+              Icons.info_outline,
+              color: CustomColor.MainColor,
+              size: 18,
             ),
-            child: IconButton(
-              onPressed: onDetailsTap,
-              icon: Icon(
-                Icons.info_outline,
-                color: CustomColor.MainColor,
-                size: 20,
-              ),
-              tooltip: 'View Details',
-            ),
+            tooltip: 'View Details',
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(),
           ),
         ],
       ),
