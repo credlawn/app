@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:credlawn/models/user.dart';
+import 'package:credlawn/models/login_result.dart';
 import 'home_screen.dart';
 import 'manager_home_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -72,9 +73,10 @@ class _LoginScreenState extends State<LoginScreen> {
           var cookies = response.headers['set-cookie'];
 
           if (cookies != null) {
-            User? user = await apiLoginHelper(jsonResponse, cookies);
+            LoginResult loginResult = await apiLoginHelper(jsonResponse, cookies);
 
-            if (user != null) {
+            if (loginResult.success && loginResult.user != null) {
+              User user = loginResult.user!;
               String? token = await FirebaseMessaging.instance.getToken();
               String? deviceId = await getDeviceId();
               if (token != null && deviceId != null) {
@@ -94,16 +96,36 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               );
             } else {
+              // Handle different error types
+              String errorMessage;
+              switch (loginResult.errorType) {
+                case LoginErrorType.invalidCredentials:
+                  errorMessage = 'Invalid credentials';
+                  break;
+                case LoginErrorType.unauthorizedAccess:
+                  errorMessage = 'Unauthorized access error';
+                  break;
+                case LoginErrorType.permissionDenied:
+                  errorMessage = 'You don\'t have permission to access resources';
+                  break;
+                case LoginErrorType.networkError:
+                  errorMessage = 'Network connection error';
+                  break;
+                default:
+                  errorMessage = loginResult.errorMessage ?? 'Authentication failed';
+              }
+
               await ErrorLogger.logError(
-                title: 'User Data Fetch Failed',
-                errorMessage: 'apiLoginHelper returned null user after successful login',
+                title: 'Login Validation Failed',
+                errorMessage: 'Error Type: ${loginResult.errorType}, Message: ${loginResult.errorMessage}',
                 errorType: 'Auth',
                 userId: email,
               );
+
               setState(() {
-                _message = 'Error: Unable to fetch user data.';
+                _message = errorMessage;
               });
-              CustomColor.showErrorSnackBar(context, 'Error: Unable to get user data.');
+              CustomColor.showErrorSnackBar(context, errorMessage);
             }
           } else {
             await ErrorLogger.logError(
@@ -112,6 +134,10 @@ class _LoginScreenState extends State<LoginScreen> {
               errorType: 'Auth',
               userId: email,
             );
+            setState(() {
+              _message = 'Authentication error: No session received';
+            });
+            CustomColor.showErrorSnackBar(context, 'Authentication error: No session received');
           }
         }
       } else {

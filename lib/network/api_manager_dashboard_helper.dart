@@ -5,20 +5,11 @@ import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/models/user.dart';
 
 Future<Map<String, dynamic>?> getManagerDashboardData() async {
-  final User? user = await SessionManager.getSessionData();
-  String? sid = user?.sid;
-
-  if (sid == null) {
-    return null;
-  }
-
   try {
+    final headers = await SessionManager.getAuthHeaders();
     final response = await http.get(
       ServerApi.getManagerDashboardData,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': 'sid=$sid',
-      },
+      headers: headers,
     );
 
     if (response.statusCode == 200) {
@@ -28,11 +19,19 @@ Future<Map<String, dynamic>?> getManagerDashboardData() async {
       } else {
         return null;
       }
+    } else if (response.statusCode == 401 || response.statusCode == 403) {
+      await SessionManager.clearSession();
+      throw Exception('Authentication failed - please login again');
     } else {
       return null;
     }
   } catch (e) {
-    print('An error occurred while fetching manager dashboard data: $e');
+    if (e.toString().contains('No valid API credentials found')) {
+      await SessionManager.clearSession();
+      throw Exception('Please login to continue');
+    } else if (e.toString().contains('Authentication failed')) {
+      throw e;
+    }
     return null;
   }
 }

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/user.dart';
-import '../models/profile_model.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../network/api_profile_helper.dart';
 import 'package:credlawn/custom/custom_color.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -154,54 +152,20 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Profile Details Section
-            FutureBuilder<ProfileModel>(
-              future: fetchProfileData(user.userId, user.sid),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.all(40),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                } else if (snapshot.hasError) {
-                  return Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Center(
-                      child: Text(
-                        'Error loading profile: ${snapshot.error}',
-                        style: GoogleFonts.poppins(color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  );
-                } else if (!snapshot.hasData) {
-                  return Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Center(
-                      child: Text(
-                        'No profile data available',
-                        style: GoogleFonts.poppins(),
-                      ),
-                    ),
-                  );
-                } else {
-                  final profile = snapshot.data!;
-                  return Column(
-                    children: [
-                      _buildProfileItem('Employee ID', profile.employeeCode ?? "", Icons.badge),
-                      _buildProfileItem('Full Name', profile.employeeName ?? "", Icons.person),
-                      _buildProfileItem('Joining Date', profile.joiningDate ?? "", Icons.calendar_today),
-                      _buildProfileItem('Department', profile.department ?? "", Icons.business),
-                      _buildProfileItem('Designation', profile.designation ?? "", Icons.work),
-                      _buildProfileItem('Mobile Number', profile.mobileNo ?? "", Icons.phone),
-                      _buildProfileItem('Email Address', profile.email ?? "", Icons.email),
-                      _buildProfileItem('Date of Birth', profile.dateOfBirth ?? "", Icons.cake),
-                      _buildProfileItem('Age', profile.age ?? "", Icons.accessibility),
-                      _buildProfileItem('Tenure', profile.tenure ?? "", Icons.timeline),
-                      const SizedBox(height: 20),
-                    ],
-                  );
-                }
-              },
+            Column(
+              children: [
+                _buildProfileItem('Employee ID', user.employeeCode ?? "", Icons.badge),
+                _buildProfileItem('Full Name', user.employeeName ?? "", Icons.person),
+                _buildProfileItem('Joining Date', user.joiningDate ?? "", Icons.calendar_today),
+                _buildProfileItem('Department', user.department ?? "", Icons.business),
+                _buildProfileItem('Designation', user.designation ?? "", Icons.work),
+                _buildProfileItem('Mobile Number', user.mobileNo ?? "", Icons.phone),
+                _buildProfileItem('Email Address', user.email ?? "", Icons.email),
+                _buildProfileItem('Date of Birth', user.dateOfBirth ?? "", Icons.cake),
+                _buildProfileItem('Age', user.age ?? "", Icons.accessibility),
+                _buildProfileItem('Tenure', user.tenure ?? "", Icons.timeline),
+                const SizedBox(height: 20),
+              ],
             ),
           ],
         ),

@@ -29,11 +29,31 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
   }
 
   Future<void> _fetchDashboardData() async {
-    final data = await getManagerDashboardData();
-    setState(() {
-      _dashboardData = data;
-      _isLoading = false;
-    });
+    try {
+      final data = await getManagerDashboardData();
+      setState(() {
+        _dashboardData = data;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _dashboardData = null;
+        _isLoading = false;
+      });
+
+      // Check if it's an authentication error
+      if (e.toString().contains('Authentication failed') ||
+          e.toString().contains('Please login to continue')) {
+        // Clear session and redirect to login
+        await SessionManager.clearSession();
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => LoginScreen()),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _refreshData() async {

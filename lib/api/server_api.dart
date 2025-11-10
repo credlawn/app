@@ -16,6 +16,8 @@ class ServerApi {
   static final Uri syncFeedback = Uri.parse('${baseUrl}api/method/credlawn.mobile.api.feedback_sync.sync_feedback_data');
   static final Uri uploadFile = Uri.parse('${baseUrl}api/method/upload_file');
   static final Uri getDailyAttendanceSummary = Uri.parse('${baseUrl}api/method/credlawn.api.attendance.get_daily_attendance_summary');
+  static final Uri getApiKeys = Uri.parse('${baseUrl}api/method/credlawn.mobile.api.auth.get_api_keys');
+  static final Uri getUserProfile = Uri.parse('${baseUrl}api/method/credlawn.mobile.api.profile.get_user_profile');
 
   // Leads endpoints
   static Uri getEmployeeLeads([Map<String, dynamic>? queryParams]) {

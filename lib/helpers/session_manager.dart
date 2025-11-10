@@ -22,6 +22,8 @@ class SessionManager {
     required String age,
     required String tenure,
     required String role,
+    String? apiKey,
+    String? apiSecret,
   }) async {
     final user = User(
       sid: sid,
@@ -40,10 +42,13 @@ class SessionManager {
       age: age,
       tenure: tenure,
       role: role,
+      apiKey: apiKey,
+      apiSecret: apiSecret,
     );
 
-    await SharedPreferences.getInstance()
-        .then((prefs) => prefs.setString(_userKey, user.toJson()));
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = user.toJson();
+    await prefs.setString(_userKey, userJson);
 
     await ErrorLogger.logError(
       title: 'User Login Successful',
@@ -56,7 +61,10 @@ class SessionManager {
   static Future<User?> getSessionData() async {
     final prefs = await SharedPreferences.getInstance();
     final userJson = prefs.getString(_userKey);
-    return userJson != null ? User.fromJson(userJson) : null;
+    if (userJson != null) {
+      return User.fromJson(userJson);
+    }
+    return null;
   }
 
   static Future<String?> getValidSid() async {
@@ -108,5 +116,17 @@ class SessionManager {
       errorType: 'Logout',
       userId: user?.userId,
     );
+  }
+
+  static Future<Map<String, String>> getAuthHeaders() async {
+    final user = await getSessionData();
+    if (user?.apiKey != null && user?.apiSecret != null && user!.apiKey!.isNotEmpty && user.apiSecret!.isNotEmpty) {
+      return {
+        'Authorization': 'token ${user.apiKey}:${user.apiSecret}',
+        'Content-Type': 'application/json',
+      };
+    } else {
+      throw Exception('No valid API credentials found. Please login again.');
+    }
   }
 }
