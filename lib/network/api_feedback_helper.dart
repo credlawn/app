@@ -6,13 +6,6 @@ import 'package:credlawn/models/user.dart'; // Import User model
 import 'package:credlawn/models/feedback_model.dart'; // Import FeedbackModel
 
 Future<bool> saveCustomerFeedback(FeedbackModel feedback) async {
-  final User? user = await SessionManager.getSessionData();
-  String? sid = user?.sid;
-
-  if (sid == null) {
-    return false;
-  }
-
   final Map<String, dynamic> body = {
     'mobile_no': feedback.mobileNo ?? feedback.leadFrappeId, // Use mobileNo if available, otherwise use leadFrappeId
     'remarks': feedback.remarks,
@@ -33,10 +26,7 @@ Future<bool> saveCustomerFeedback(FeedbackModel feedback) async {
   try {
     final response = await http.post(
       Uri.parse(ApiNetwork.saveCustomerFeedback),
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': 'sid=$sid',
-      },
+      headers: await SessionManager.getAuthHeaders(),
       body: jsonEncode(body),
     );
 

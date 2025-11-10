@@ -245,7 +245,7 @@ class _MyAppState extends State<MyApp> {
     String? deviceId = await getDeviceId();
     if (token != null && deviceId != null) {
       if (sessionData != null) {
-        await sendFcmTokenToServer(token: token, deviceId: deviceId, userId: sessionData.userId, sid: sessionData.sid);
+        await sendFcmTokenToServer(token: token, deviceId: deviceId, userId: sessionData.userId);
       } else {
         await sendFcmTokenToServer(token: token, deviceId: deviceId);
       }

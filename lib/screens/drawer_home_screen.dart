@@ -2,17 +2,37 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../custom/custom_color.dart';
-import '../helpers/session_manager.dart'; 
+import '../helpers/session_manager.dart';
 import 'package:credlawn/screens/attendance_screen.dart';
-import 'login_screen.dart'; 
-import '../models/user.dart'; 
-import 'profile_screen.dart';  
-import 'package:cached_network_image/cached_network_image.dart';  
+import 'login_screen.dart';
+import '../models/user.dart';
+import 'profile_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
-class DrawerHomeScreen extends StatelessWidget {
+class DrawerHomeScreen extends StatefulWidget {
   final User user;
 
   const DrawerHomeScreen({super.key, required this.user});
+
+  @override
+  State<DrawerHomeScreen> createState() => _DrawerHomeScreenState();
+}
+
+class _DrawerHomeScreenState extends State<DrawerHomeScreen> {
+  Map<String, String>? authHeaders;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAuthHeaders();
+  }
+
+  Future<void> _loadAuthHeaders() async {
+    final headers = await SessionManager.getAuthHeaders();
+    setState(() {
+      authHeaders = headers;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,16 +66,16 @@ class DrawerHomeScreen extends StatelessWidget {
                         child: user.userImage?.isNotEmpty ?? false
                             ? CachedNetworkImage(
                                 imageUrl: user.userImage!,
-                                httpHeaders: {'Cookie': 'sid=${user.sid}'}, 
-                                fit: BoxFit.fill, 
+                                httpHeaders: authHeaders,
+                                fit: BoxFit.fill,
                                 progressIndicatorBuilder: (context, url, downloadProgress) {
-                                  return Center(child: CircularProgressIndicator(value: downloadProgress.progress));  
+                                  return Center(child: CircularProgressIndicator(value: downloadProgress.progress));
                                 },
                                 errorWidget: (context, url, error) {
-                                  return Image.asset('assets/image/errorImage.png');  
+                                  return Image.asset('assets/image/errorImage.png');
                                 },
                               )
-                            : Image.asset('assets/image/profileImage.png', fit: BoxFit.fill),  
+                            : Image.asset('assets/image/profileImage.png', fit: BoxFit.fill),
                       ),
                     ),
                     const SizedBox(height: 10),

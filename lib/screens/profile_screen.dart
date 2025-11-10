@@ -3,11 +3,32 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../models/user.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:credlawn/custom/custom_color.dart';
+import '../helpers/session_manager.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   final User user;
 
   const ProfileScreen({super.key, required this.user});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  Map<String, String>? authHeaders;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAuthHeaders();
+  }
+
+  Future<void> _loadAuthHeaders() async {
+    final headers = await SessionManager.getAuthHeaders();
+    setState(() {
+      authHeaders = headers;
+    });
+  }
 
   Widget _buildProfileItem(String label, String value, IconData icon) {
     return Container(
@@ -106,29 +127,29 @@ class ProfileScreen extends StatelessWidget {
                           colors: [CustomColor.MainColor, CustomColor.DrawerItems],
                         ),
                       ),
-                      child: SizedBox(
-                        height: 100,
-                        width: 100,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(50),
-                          child: CachedNetworkImage(
-                            imageUrl: user.userImage ?? "",
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => const CircularProgressIndicator(),
-                            errorWidget: (context, url, error) => Image.asset(
-                              'assets/image/profileImage.png',
+                        child: SizedBox(
+                          height: 100,
+                          width: 100,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(50),
+                            child: CachedNetworkImage(
+                              imageUrl: widget.user.userImage ?? "",
                               fit: BoxFit.cover,
+                              placeholder: (context, url) => const CircularProgressIndicator(),
+                              errorWidget: (context, url, error) => Image.asset(
+                                'assets/image/profileImage.png',
+                                fit: BoxFit.cover,
+                              ),
+                              httpHeaders: authHeaders,
                             ),
-                            httpHeaders: {'Cookie': 'sid=${user.sid}'},
                           ),
                         ),
-                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   // User Name
                   Text(
-                    user.fullName,
+                    widget.user.fullName,
                     style: GoogleFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -138,7 +159,7 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   // User Role
                   Text(
-                    user.role ?? 'Employee',
+                    widget.user.role ?? 'Employee',
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       color: Colors.white.withOpacity(0.8),
@@ -154,16 +175,16 @@ class ProfileScreen extends StatelessWidget {
             // Profile Details Section
             Column(
               children: [
-                _buildProfileItem('Employee ID', user.employeeCode ?? "", Icons.badge),
-                _buildProfileItem('Full Name', user.employeeName ?? "", Icons.person),
-                _buildProfileItem('Joining Date', user.joiningDate ?? "", Icons.calendar_today),
-                _buildProfileItem('Department', user.department ?? "", Icons.business),
-                _buildProfileItem('Designation', user.designation ?? "", Icons.work),
-                _buildProfileItem('Mobile Number', user.mobileNo ?? "", Icons.phone),
-                _buildProfileItem('Email Address', user.email ?? "", Icons.email),
-                _buildProfileItem('Date of Birth', user.dateOfBirth ?? "", Icons.cake),
-                _buildProfileItem('Age', user.age ?? "", Icons.accessibility),
-                _buildProfileItem('Tenure', user.tenure ?? "", Icons.timeline),
+                _buildProfileItem('Employee ID', widget.user.employeeCode ?? "", Icons.badge),
+                _buildProfileItem('Full Name', widget.user.employeeName ?? "", Icons.person),
+                _buildProfileItem('Joining Date', widget.user.joiningDate ?? "", Icons.calendar_today),
+                _buildProfileItem('Department', widget.user.department ?? "", Icons.business),
+                _buildProfileItem('Designation', widget.user.designation ?? "", Icons.work),
+                _buildProfileItem('Mobile Number', widget.user.mobileNo ?? "", Icons.phone),
+                _buildProfileItem('Email Address', widget.user.email ?? "", Icons.email),
+                _buildProfileItem('Date of Birth', widget.user.dateOfBirth ?? "", Icons.cake),
+                _buildProfileItem('Age', widget.user.age ?? "", Icons.accessibility),
+                _buildProfileItem('Tenure', widget.user.tenure ?? "", Icons.timeline),
                 const SizedBox(height: 20),
               ],
             ),

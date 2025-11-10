@@ -8,12 +8,6 @@ import 'package:credlawn/helpers/session_manager.dart';
 import 'package:credlawn/models/user.dart';
 
 Future<List<FcmLogModel>> fetchFcmLogs({required int page, String? searchTerm, String? status, String? filterType}) async {
-  final User? user = await SessionManager.getSessionData();
-  if (user == null) {
-    throw Exception('User not logged in.');
-  }
-  final String sid = user.sid;
-
   final Map<String, String> queryParams = {
     'page': page.toString(),
   };
@@ -36,7 +30,7 @@ Future<List<FcmLogModel>> fetchFcmLogs({required int page, String? searchTerm, S
   try {
     final response = await http.get(
       uri,
-      headers: {'Cookie': 'sid=$sid'},
+      headers: await SessionManager.getAuthHeaders(),
     ).timeout(Duration(seconds: 10));
 
     if (response.statusCode == 200) {
@@ -61,21 +55,12 @@ Future<List<FcmLogModel>> fetchFcmLogs({required int page, String? searchTerm, S
 }
 
 Future<void> updateFcmLogStatus({required String logId}) async {
-  final User? user = await SessionManager.getSessionData();
-  if (user == null) {
-    throw Exception('User not logged in.');
-  }
-  final String sid = user.sid;
-
   final Uri uri = Uri.parse(ServerApi.updateFcmLogStatus);
 
   try {
     final response = await http.post(
       uri,
-      headers: {
-        'Cookie': 'sid=$sid',
-        'Content-Type': 'application/json',
-      },
+      headers: await SessionManager.getAuthHeaders(),
       body: json.encode({'log_id': logId}),
     ).timeout(Duration(seconds: 10));
 
@@ -93,18 +78,12 @@ Future<void> updateFcmLogStatus({required String logId}) async {
 }
 
 Future<int> getUnreadFcmLogsCount() async {
-  final User? user = await SessionManager.getSessionData();
-  if (user == null) {
-    throw Exception('User not logged in.');
-  }
-  final String sid = user.sid;
-
   final Uri uri = Uri.parse(ServerApi.getUnreadFcmLogsCount);
 
   try {
     final response = await http.get(
       uri,
-      headers: {'Cookie': 'sid=$sid'},
+      headers: await SessionManager.getAuthHeaders(),
     ).timeout(Duration(seconds: 10));
 
     if (response.statusCode == 200) {
@@ -124,21 +103,12 @@ Future<int> getUnreadFcmLogsCount() async {
 }
 
 Future<void> markFcmLogScreenRead({required String logId}) async {
-  final User? user = await SessionManager.getSessionData();
-  if (user == null) {
-    throw Exception('User not logged in.');
-  }
-  final String sid = user.sid;
-
   final Uri uri = Uri.parse(ServerApi.markFcmLogScreenRead);
 
   try {
     final response = await http.post(
       uri,
-      headers: {
-        'Cookie': 'sid=$sid',
-        'Content-Type': 'application/json',
-      },
+      headers: await SessionManager.getAuthHeaders(),
       body: json.encode({'log_id': logId}),
     ).timeout(Duration(seconds: 10));
 

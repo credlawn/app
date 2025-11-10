@@ -364,7 +364,6 @@ onSelected: (bool selected) {
               arnNo: caseLogin.arnNo,
               remarks: caseLogin.remarks,
               user: caseLogin.user!,
-              sid: user.sid,
               syncId: currentSyncId,
             );
 

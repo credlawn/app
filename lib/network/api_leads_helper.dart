@@ -15,11 +15,11 @@ class SessionExpiredException implements Exception {
   String toString() => 'SessionExpiredException: $message';
 }
 
-Future<List<LeadsModel>> fetchEmployeeLeadsFromApi(String userId, String sid) async {
+Future<List<LeadsModel>> fetchEmployeeLeadsFromApi(String userId) async {
   final uri = ServerApi.getEmployeeLeads({'user_id': userId});
 
   try {
-    final response = await http.get(uri, headers: {'Cookie': 'sid=$sid'});
+    final response = await http.get(uri, headers: await SessionManager.getAuthHeaders());
 
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
@@ -50,14 +50,14 @@ Future<List<LeadsModel>> fetchEmployeeLeadsFromApi(String userId, String sid) as
   }
 }
 
-Future<bool> syncLeadUpdateToServer(LeadsModel lead, String sid) async {
+Future<bool> syncLeadUpdateToServer(LeadsModel lead) async {
   final user = await SessionManager.getSessionData();
   final uri = ServerApi.updateLeadStatus;
 
   try {
     final response = await http.post(
       uri,
-      headers: {'Content-Type': 'application/json', 'Cookie': 'sid=$sid'},
+      headers: await SessionManager.getAuthHeaders(),
       body: json.encode({
         'frappe_id': lead.frappeId,
         'lead_status': lead.leadStatus,
@@ -124,14 +124,14 @@ Future<bool> syncLeadUpdateToServer(LeadsModel lead, String sid) async {
   }
 }
 
-Future<bool> markLeadInactiveOnServer(String frappeId, String sid) async {
+Future<bool> markLeadInactiveOnServer(String frappeId) async {
   final user = await SessionManager.getSessionData();
   final uri = ServerApi.markLeadInactive;
 
   try {
     final response = await http.post(
       uri,
-      headers: {'Content-Type': 'application/json', 'Cookie': 'sid=$sid'},
+      headers: await SessionManager.getAuthHeaders(),
       body: json.encode({'frappe_id': frappeId}),
     );
 

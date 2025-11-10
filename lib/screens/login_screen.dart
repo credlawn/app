@@ -84,7 +84,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   token: token,
                   deviceId: deviceId,
                   userId: user.userId,
-                  sid: user.sid,
                 );
               }
               CustomColor.showSuccessSnackBar(context, 'Welcome, ${user.fullName}');

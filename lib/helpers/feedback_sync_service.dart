@@ -36,10 +36,6 @@ class FeedbackSyncService {
   }
 
   static Future<Map<String, dynamic>> _syncWithServer(List<FeedbackModel> feedbackList) async {
-    final user = await SessionManager.getSessionData();
-    final sid = user?.sid;
-    if (sid == null) throw Exception('User not authenticated');
-
     final feedbackData = feedbackList.map((feedback) {
       return {
         'local_id': feedback.id,
@@ -57,7 +53,7 @@ class FeedbackSyncService {
 
     final response = await http.post(
       ServerApi.syncFeedback,
-      headers: {'Content-Type': 'application/json', 'Cookie': 'sid=$sid'},
+      headers: await SessionManager.getAuthHeaders(),
       body: jsonEncode({'feedback_list': feedbackData}),
     );
 

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:credlawn/models/case_login_model.dart';
 import 'package:credlawn/network/api_network.dart';
+import 'package:credlawn/helpers/session_manager.dart';
 
 Future<Map<String, dynamic>> submitCaseLoginToServer({
   required String customerName,
@@ -11,7 +12,6 @@ Future<Map<String, dynamic>> submitCaseLoginToServer({
   required String arnNo,
   required String remarks,
   required String user,
-  required String sid,
   required String syncId,
   String? modified,
 }) async {
@@ -23,10 +23,7 @@ Future<Map<String, dynamic>> submitCaseLoginToServer({
   try {
   final response = await http.post(
     uri,
-    headers: {
-      'Content-Type': 'application/json',
-      'Cookie': 'sid=$sid',
-    },
+    headers: await SessionManager.getAuthHeaders(),
     body: json.encode({
       'customer_name': customerName,
       'mobile_no': mobileNo,
@@ -50,7 +47,7 @@ Future<Map<String, dynamic>> submitCaseLoginToServer({
   }
 }
 
-Future<Map<String, dynamic>> getUserCaseLoginsFromServer(String userId, String sid) async {
+Future<Map<String, dynamic>> getUserCaseLoginsFromServer(String userId) async {
   final Uri uri = Uri.https(
     Uri.parse(ApiNetwork.baseUrl).host,
     'api/method/credlawn.mobile.api.case_login.get_user_case_logins',
@@ -60,10 +57,7 @@ Future<Map<String, dynamic>> getUserCaseLoginsFromServer(String userId, String s
   try {
     final response = await http.get(
       uri,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': 'sid=$sid',
-      },
+      headers: await SessionManager.getAuthHeaders(),
     );
 
     if (response.statusCode == 200) {

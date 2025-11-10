@@ -13,28 +13,24 @@ class ApiAttendanceHelper {
     required String logType,
     required double latitude,
     required double longitude,
-    
+
   }) async {
     final User? user = await SessionManager.getSessionData();
     if (user == null) {
       throw Exception('User not logged in');
     }
-    final String sid = user.sid;
     final Map<String, dynamic> body = {
       'user': user.userId,
       'log_type': logType,
       'latitude': latitude,
       'longitude': longitude,
-      
+
     };
     final Uri url = ServerApi.attendanceRecords;
     try {
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cookie': 'sid=$sid',
-        },
+        headers: await SessionManager.getAuthHeaders(),
         body: jsonEncode(body),
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -68,19 +64,19 @@ class ApiAttendanceHelper {
     if (user == null) {
       throw Exception('User not logged in');
     }
-    final random = Random().nextInt(900000) + 100000; 
+    final random = Random().nextInt(900000) + 100000;
     final extension = imagePath.substring(imagePath.lastIndexOf('.'));
     final newFilename = '$random$extension';
     final request = http.MultipartRequest(
       'POST',
       ServerApi.uploadFile,
     );
-    request.headers['Cookie'] = 'sid=${user.sid}';
+    request.headers.addAll(await SessionManager.getAuthHeaders());
     request.fields['doctype'] = 'Attendance Records';
     request.fields['docname'] = docname;
     request.fields['fieldname'] = 'atn_image';
     request.fields['is_private'] = '1';
-    request.fields['optimize'] = '1'; 
+    request.fields['optimize'] = '1';
     request.files.add(await http.MultipartFile.fromPath(
       'file',
       imagePath,
@@ -125,10 +121,7 @@ class ApiAttendanceHelper {
     try {
       final response = await http.put(
         Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Cookie': 'sid=${user.sid}',
-        },
+        headers: await SessionManager.getAuthHeaders(),
         body: jsonEncode(body),
       );
       if (response.statusCode != 200) {
@@ -204,21 +197,19 @@ class ApiAttendanceHelper {
         if (user == null) {
           throw Exception('User not logged in');
         }
-    
-        final String filters = '[["is_active","=",1]]'; 
+
+        final String filters = '[["is_active","=",1]]';
         final String fields = '["location_name", "latitude", "longitude", "radius", "office_start_time", "office_end_time"]';
         final Map<String, dynamic> queryParams = {
           'fields': fields,
           'filters': filters,
         };
         final Uri uri = ServerApi.attendanceGeofence.replace(queryParameters: queryParams);
-    
+
         try {
           final response = await http.get(
             uri,
-            headers: {
-              'Cookie': 'sid=${user.sid}',
-            },
+            headers: await SessionManager.getAuthHeaders(),
           );
     
                 if (response.statusCode == 200) {
@@ -283,9 +274,7 @@ class ApiAttendanceHelper {
     try {
       final response = await http.get(
         uri,
-        headers: {
-          'Cookie': 'sid=${user.sid}',
-        },
+        headers: await SessionManager.getAuthHeaders(),
       );
 
       if (response.statusCode == 200) {

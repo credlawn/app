@@ -123,7 +123,6 @@ class CallLogSyncManager {
         syncTime: syncTime,
         userEmail: user.userId,
         allRawLogsJson: allRawLogsJson,
-        sid: user.sid,
       );
 
       if (success) {

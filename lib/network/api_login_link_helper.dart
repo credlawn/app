@@ -6,12 +6,6 @@ import 'package:credlawn/helpers/session_manager.dart'; // Assuming session mana
 import 'package:credlawn/models/user.dart'; // Import User model
 
 Future<List<LoginLinkModel>> fetchLoginLinks() async {
-  final User? user = await SessionManager.getSessionData();
-  if (user == null) {
-    throw Exception('User not logged in.');
-  }
-  final String sid = user.sid;
-
   final Uri uri = Uri.https(
     Uri.parse(ApiNetwork.baseUrl).host,
     Uri.parse(ApiNetwork.getLoginLinks).path,
@@ -20,7 +14,7 @@ Future<List<LoginLinkModel>> fetchLoginLinks() async {
   try {
     final response = await http.get(
       uri,
-      headers: {'Cookie': 'sid=$sid'},
+      headers: await SessionManager.getAuthHeaders(),
     );
 
     if (response.statusCode == 200) {

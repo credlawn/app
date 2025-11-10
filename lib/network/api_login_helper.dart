@@ -106,7 +106,6 @@ Future<void> sendFcmTokenToServer({
   required String token,
   required String deviceId,
   String? userId,
-  String? sid,
 }) async {
   final body = {
     'fcm_token': token,
@@ -117,18 +116,10 @@ Future<void> sendFcmTokenToServer({
     body['user'] = userId;
   }
 
-  final headers = {
-    "Content-Type": "application/json",
-  };
-
-  if (sid != null) {
-    headers["Cookie"] = 'sid=$sid';
-  }
-
   try {
     final response = await http.post(
       ServerApi.saveFcmToken,
-      headers: headers,
+      headers: await SessionManager.getAuthHeaders(),
       body: json.encode(body),
     );
 

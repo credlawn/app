@@ -10,11 +10,6 @@ Future<void> logAppError({
 }) async {
   final User? user = await SessionManager.getSessionData();
   String? userId = user?.userId;
-  String? sid = user?.sid;
-
-  if (sid == null) {
-    return;
-  }
 
   final Map<String, dynamic> body = {
     'error_message': errorMessage,
@@ -25,10 +20,7 @@ Future<void> logAppError({
   try {
     final response = await http.post(
       Uri.parse(ServerApi.logAppError),
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': 'sid=$sid',
-      },
+      headers: await SessionManager.getAuthHeaders(),
       body: jsonEncode(body),
     );
 

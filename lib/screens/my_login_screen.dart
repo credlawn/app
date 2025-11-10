@@ -42,7 +42,7 @@ void initState() {
         _isLoading = true;
       });
 
-      final Map<String, dynamic> serverResponse = await getUserCaseLoginsFromServer(currentUser.userId, currentUser.sid);
+      final Map<String, dynamic> serverResponse = await getUserCaseLoginsFromServer(currentUser.userId);
 
       if (serverResponse['message'] == null) {
         CustomColor.showErrorSnackBar(context, 'Invalid server response format');
@@ -153,7 +153,6 @@ if (!exists) {
     arnNo: caseLogin.arnNo,
     remarks: caseLogin.remarks,
     user: caseLogin.user!,
-    sid: currentUser.sid,
     syncId: caseLogin.syncId,
     modified: caseLogin.modified,
   );

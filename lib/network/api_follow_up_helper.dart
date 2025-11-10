@@ -7,20 +7,16 @@ import 'package:credlawn/models/user.dart';
 
 Future<List<FollowUp>> getFollowUps() async {
   final User? user = await SessionManager.getSessionData();
-  String? sid = user?.sid;
   String? userId = user?.userId;
 
-  if (sid == null || userId == null) {
+  if (userId == null) {
     return [];
   }
 
   try {
     final response = await http.post(
       Uri.parse(ApiNetwork.getFollowUps),
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': 'sid=$sid',
-      },
+      headers: await SessionManager.getAuthHeaders(),
       body: jsonEncode({'user_id': userId}),
     );
 
@@ -42,20 +38,10 @@ Future<List<FollowUp>> getFollowUps() async {
 }
 
 Future<bool> deleteFollowUp(String mobileNo) async {
-  final User? user = await SessionManager.getSessionData();
-  String? sid = user?.sid;
-
-  if (sid == null) {
-    return false;
-  }
-
   try {
     final response = await http.post(
       Uri.parse(ApiNetwork.deleteFollowUp),
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': 'sid=$sid',
-      },
+      headers: await SessionManager.getAuthHeaders(),
       body: jsonEncode({'mobile_no': mobileNo}),
     );
 
@@ -77,20 +63,16 @@ Future<bool> deleteFollowUp(String mobileNo) async {
 
 Future<int> getUpcomingFollowUpsCount() async {
   final User? user = await SessionManager.getSessionData();
-  String? sid = user?.sid;
   String? userId = user?.userId;
 
-  if (sid == null || userId == null) {
+  if (userId == null) {
     return 0;
   }
 
   try {
     final response = await http.post(
       Uri.parse(ApiNetwork.getUpcomingFollowUpsCount),
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': 'sid=$sid',
-      },
+      headers: await SessionManager.getAuthHeaders(),
       body: jsonEncode({'user_id': userId}),
     );
 

@@ -33,7 +33,7 @@ class BackgroundSyncService {
       for (final lead in dirtyLeads.where((l) => l.isDirty == 1)) {
 
         try {
-          final bool success = await syncLeadUpdateToServer(lead, currentUser.sid);
+          final bool success = await syncLeadUpdateToServer(lead);
           if (success) {
             try {
               final rowsAffected = await DatabaseService.instance.leadsRepository.updateLeadLocalFields(
@@ -95,7 +95,7 @@ class BackgroundSyncService {
       }
 
       try {
-        final apiLeads = await fetchEmployeeLeadsFromApi(currentUser.userId, currentUser.sid);
+        final apiLeads = await fetchEmployeeLeadsFromApi(currentUser.userId);
         final Set<String> apiFrappeIds = apiLeads.map((lead) => lead.frappeId).toSet();
 
         for (final apiLead in apiLeads) {

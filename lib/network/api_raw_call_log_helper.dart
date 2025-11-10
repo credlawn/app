@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:credlawn/network/api_network.dart';
+import 'package:credlawn/helpers/session_manager.dart';
 
 Future<bool> addSyncRecord({
   required String syncDate,
   required String syncTime,
   required String userEmail,
   required String allRawLogsJson,
-  required String sid,
 }) async {
   final Map<String, dynamic> body = {
     'sync_date': syncDate,
@@ -19,10 +19,7 @@ Future<bool> addSyncRecord({
   try {
     final response = await http.post(
       Uri.parse(ApiNetwork.addSyncRecord),
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': 'sid=$sid',
-      },
+      headers: await SessionManager.getAuthHeaders(),
       body: jsonEncode(body),
     );
 
