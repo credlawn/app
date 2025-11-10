@@ -90,6 +90,7 @@ class CallLogSyncManager {
 
       for (final logEntry in newCallLogs) {
         if (logEntry.timestamp == null) continue;
+        if (logEntry.number == null || (logEntry.number?.isEmpty ?? true)) continue;
         if (logEntry.timestamp! <= dateFromMillis) continue;
 
         final String rawLogJson = jsonEncode({

@@ -429,6 +429,21 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
 
 
 
+  Future<void> _ensureRecentCallLogged(String frappeId, String mobileNo) async {
+    for (int attempt = 0; attempt < 2; attempt++) {
+      try {
+        await DatabaseService.instance.callHistoryRepository.syncPhoneCallLogs();
+        await DatabaseService.instance.leadsRepository.updateCallStatisticsForLead(frappeId, mobileNo);
+        final int lastDuration = await DatabaseService.instance.callHistoryRepository.getLastCallDuration(mobileNo) ?? 0;
+        final bool connectedRecently = await DatabaseService.instance.callHistoryRepository.hasRecentSuccessfulCall(mobileNo, 1);
+        if (lastDuration > 0 || connectedRecently) {
+          break;
+        }
+      } catch (_) {}
+      await Future.delayed(const Duration(seconds: 3));
+    }
+  }
+
   Future<void> submitFeedback() async {
     // Clear any previous error message
     setState(() => _errorMessage = null);
@@ -487,6 +502,7 @@ abstract class FeedbackBaseState<T extends FeedbackBase> extends State<T> {
       final feedbackId = await DatabaseService.instance.feedbackRepository.insertFeedback(newFeedback);
 
       if (feedbackId > 0) {
+        await _ensureRecentCallLogged(lead.frappeId, lead.mobileNo);
         await DatabaseService.instance.leadsRepository.updateCallStatisticsForLead(lead.frappeId, lead.mobileNo);
 
         String? updatedFollowUpDate = selectedStatus == 'Follow up'

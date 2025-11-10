@@ -262,8 +262,9 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
 
       await FlutterPhoneDirectCaller.callNumber(lead.mobileNo);
 
-      Future.delayed(const Duration(seconds: 5), () async {
+      Future.delayed(const Duration(seconds: 12), () async {
         try {
+          await DatabaseService.instance.callHistoryRepository.syncPhoneCallLogs();
           await DatabaseService.instance.leadsRepository.updateLeadStatusAfterCall(lead.frappeId, lead.mobileNo);
           await _refreshLeads();
           final leadsAfterRefresh = await getLeadsWithCallCounts();
@@ -400,8 +401,8 @@ class _PreApprovedLeadsScreenState extends State<PreApprovedLeadsScreen> with Wi
 
     setState(() {
       _allLeads = finalLeads;
-      _filterLeads();
     });
+    await _filterLeads();
   }
 
   bool _hasFeedback(String? leadStatus) {
