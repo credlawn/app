@@ -176,72 +176,96 @@ class _LeadListItemState extends State<LeadListItem> with SingleTickerProviderSt
   Widget _buildStatusBadge() {
     final status = widget.leadWithInfo.lead.leadStatus;
     final callCount = widget.leadWithInfo.callCount;
+    final lead = widget.leadWithInfo.lead;
 
     String text = '';
     Color backgroundColor = Colors.grey;
     Color textColor = Colors.white;
 
-    switch (status) {
-      case 'New':
-        text = 'New';
-        backgroundColor = Colors.green;
-        break;
-      case 'Called':
-        text = 'Called';
-        backgroundColor = Colors.teal;
-        break;
-      case 'CNR':
-        text = 'CNR';
-        backgroundColor = Colors.orange;
-        break;
-      case 'Inactive':
-        text = 'Inactive';
-        backgroundColor = Colors.red.shade400;
-        break;
-      case 'IP Approved':
-        text = 'IP Approved';
-        backgroundColor = Colors.green.shade600;
-        break;
-      case 'IP Decline':
-        text = 'IP Decline';
-        backgroundColor = Colors.red.shade700;
-        break;
-      case 'Customer Denied':
-        text = 'Customer Denied';
-        backgroundColor = Colors.red.shade600;
-        break;
-      case 'Docs Not Available':
-        text = 'Docs Not Available';
-        backgroundColor = Colors.orange.shade600;
-        break;
-      case 'Already Carded':
-        text = 'Already Carded';
-        backgroundColor = Colors.purple.shade600;
-        break;
-      case 'Recently Applied':
-        text = 'Recently Applied';
-        backgroundColor = Colors.blue.shade600;
-        break;
-      case 'Follow up':
+    // Special handling for Follow Up tab - show date/time instead of status
+    if (widget.selectedLeadGroup == 'Follow Up' && status == 'Follow up') {
+      String followUpText = '';
+      if (lead.followUpDate != null && lead.followUpDate!.isNotEmpty) {
+        try {
+          final date = DateTime.parse(lead.followUpDate!);
+          followUpText = DateFormat('dd/MM').format(date);
+        } catch (e) {
+          followUpText = lead.followUpDate!;
+        }
+      }
+      if (lead.followUpTime != null && lead.followUpTime!.isNotEmpty) {
+        followUpText += followUpText.isNotEmpty ? ' ${lead.followUpTime!}' : lead.followUpTime!;
+      }
+      if (followUpText.isNotEmpty) {
+        text = followUpText;
+        backgroundColor = Colors.blue;
+      } else {
         text = 'Follow Up';
-        backgroundColor = Colors.cyan.shade700;
-        break;
-      case 'Voicemail':
-        text = 'Voicemail';
-        backgroundColor = Colors.cyan.shade600;
-        break;
-      case 'Hold':
-        text = 'Hold';
-        backgroundColor = Colors.amber.shade600;
-        break;
-      default:
-        if (callCount == 0) {
+        backgroundColor = Colors.blue;
+      }
+    } else {
+      switch (status) {
+        case 'New':
           text = 'New';
           backgroundColor = Colors.green;
-        }
-        // If status is null or empty, we don't show a specific status badge,
-        // but we might still show the call count.
-        break;
+          break;
+        case 'Called':
+          text = 'Called';
+          backgroundColor = Colors.teal;
+          break;
+        case 'CNR':
+          text = 'CNR';
+          backgroundColor = Colors.orange;
+          break;
+        case 'Inactive':
+          text = 'Inactive';
+          backgroundColor = Colors.red.shade400;
+          break;
+        case 'IP Approved':
+          text = 'IP Approved';
+          backgroundColor = Colors.green.shade600;
+          break;
+        case 'IP Decline':
+          text = 'IP Decline';
+          backgroundColor = Colors.red.shade700;
+          break;
+        case 'Customer Denied':
+          text = 'Customer Denied';
+          backgroundColor = Colors.red.shade600;
+          break;
+        case 'Docs Not Available':
+          text = 'Docs Not Available';
+          backgroundColor = Colors.orange.shade600;
+          break;
+        case 'Already Carded':
+          text = 'Already Carded';
+          backgroundColor = Colors.purple.shade600;
+          break;
+        case 'Recently Applied':
+          text = 'Recently Applied';
+          backgroundColor = Colors.blue.shade600;
+          break;
+        case 'Follow up':
+          text = 'Follow Up';
+          backgroundColor = Colors.cyan.shade700;
+          break;
+        case 'Voicemail':
+          text = 'Voicemail';
+          backgroundColor = Colors.cyan.shade600;
+          break;
+        case 'Hold':
+          text = 'Hold';
+          backgroundColor = Colors.amber.shade600;
+          break;
+        default:
+          if (callCount == 0) {
+            text = 'New';
+            backgroundColor = Colors.green;
+          }
+          // If status is null or empty, we don't show a specific status badge,
+          // but we might still show the call count.
+          break;
+      }
     }
 
     return Padding(

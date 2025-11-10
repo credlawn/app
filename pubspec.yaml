@@ -1,9 +1,9 @@
 name: credlawn
-description: A new Flutter project.
+description: CRM.
 publish_to: 'none'
 
 
-version: 2.0.0+1
+version: 2.1.0+1
 
 environment:
   sdk: '>=3.0.5 <4.0.0'
